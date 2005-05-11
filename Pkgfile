@@ -4,7 +4,7 @@
 # Maintainer:  James Mills <prologic@shortcircuit.net.au>
 # Packager:    James Mills <prologic@shortcircuit.net.au>
 #
-# Depends: python
+# Depends on: python
 
 name=pymills
 version=`getver`
