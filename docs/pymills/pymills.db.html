@@ -1,0 +1,141 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module pymills.db</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.db</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/db.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/db.py</a></font></td></tr></table>
+    <p><tt>Database&nbsp;Module<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;contains&nbsp;classes&nbsp;that&nbsp;provide&nbsp;interfaces&nbsp;to&nbsp;the<br>
+MySQL&nbsp;and&nbsp;<a href="#SQLite">SQLite</a>&nbsp;databases.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="sqlite.html">sqlite</a><br>
+</td><td width="25%" valign=top><a href="string.html">string</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="exceptions.html#Exception">exceptions.Exception</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="pymills.db.html#Error">Error</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="pymills.db.html#SQLite">SQLite</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Error">class <strong>Error</strong></a>(<a href="exceptions.html#Exception">exceptions.Exception</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#Error">Error</a>&nbsp;Class<br>
+&nbsp;<br>
+Used&nbsp;to&nbsp;raise&nbsp;exceptions&nbsp;upon&nbsp;erors<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods inherited from <a href="exceptions.html#Exception">exceptions.Exception</a>:<br>
+<dl><dt><a name="Error-__getitem__"><strong>__getitem__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="Error-__init__"><strong>__init__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="Error-__str__"><strong>__str__</strong></a>(...)</dt></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SQLite">class <strong>SQLite</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#SQLite">SQLite</a>&nbsp;Database&nbsp;Class<br>
+&nbsp;<br>
+This&nbsp;class&nbsp;provides&nbsp;an&nbsp;interface&nbsp;to&nbsp;the&nbsp;<a href="#SQLite">SQLite</a>&nbsp;database.<br>
+&nbsp;<br>
+Example:<br>
+&gt;&gt;&gt;&nbsp;import&nbsp;db<br>
+&gt;&gt;&gt;&nbsp;db&nbsp;=&nbsp;db.<a href="#SQLite">SQLite</a>("test.db")<br>
+&gt;&gt;&gt;&nbsp;db.<a href="#SQLite-query">query</a>("CREATE&nbsp;TABLE&nbsp;foo&nbsp;(first&nbsp;TEXT,&nbsp;last&nbsp;TEXT);")<br>
+[]<br>
+&gt;&gt;&gt;&nbsp;db.<a href="#SQLite-insert">insert</a>("foo",&nbsp;["first",&nbsp;"last"],&nbsp;["James",&nbsp;"Mills"])<br>
+&gt;&gt;&gt;&nbsp;records&nbsp;=&nbsp;db.<a href="#SQLite-select">select</a>(["first",&nbsp;"last"],&nbsp;"foo")<br>
+&gt;&gt;&gt;&nbsp;records.get("first")<br>
+'James'<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SQLite-__del__"><strong>__del__</strong></a>(self)</dt><dd><tt>Close&nbsp;the&nbsp;connection</tt></dd></dl>
+
+<dl><dt><a name="SQLite-__init__"><strong>__init__</strong></a>(self, database)</dt><dd><tt>Initializes<br>
+&nbsp;<br>
+Setup&nbsp;the&nbsp;connection&nbsp;to&nbsp;teh&nbsp;database&nbsp;(a&nbsp;file&nbsp;for&nbsp;<a href="#SQLite">SQLite</a>)<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;database&nbsp;:&nbsp;string&nbsp;of&nbsp;the&nbsp;database&nbsp;filename</tt></dd></dl>
+
+<dl><dt><a name="SQLite-delete"><strong>delete</strong></a>(self, table, condition)</dt><dd><tt>Deletes&nbsp;some&nbsp;data<br>
+&nbsp;<br>
+This&nbsp;uses&nbsp;DELETE&nbsp;to&nbsp;delete&nbsp;a&nbsp;row&nbsp;of&nbsp;data&nbsp;from&nbsp;the<br>
+database&nbsp;given&nbsp;by&nbsp;the&nbsp;table&nbsp;and&nbsp;condition.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;table&nbsp;:&nbsp;string&nbsp;of&nbsp;table&nbsp;to&nbsp;delete&nbsp;from<br>
+&nbsp;&nbsp;&nbsp;condition&nbsp;:&nbsp;string&nbsp;containing&nbsp;the&nbsp;condition<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;None</tt></dd></dl>
+
+<dl><dt><a name="SQLite-insert"><strong>insert</strong></a>(self, table, fields, values)</dt><dd><tt>Insert&nbsp;some&nbsp;data<br>
+&nbsp;<br>
+This&nbsp;uses&nbsp;INSERT&nbsp;to&nbsp;insert&nbsp;a&nbsp;row&nbsp;of&nbsp;data&nbsp;into&nbsp;the<br>
+database&nbsp;given&nbsp;by&nbsp;the&nbsp;fields,&nbsp;table&nbsp;and&nbsp;values.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;table&nbsp;:&nbsp;string&nbsp;of&nbsp;table&nbsp;to&nbsp;insert&nbsp;into<br>
+&nbsp;&nbsp;&nbsp;fields&nbsp;:&nbsp;list&nbsp;of&nbsp;fields&nbsp;to&nbsp;insert<br>
+&nbsp;&nbsp;&nbsp;values&nbsp;:&nbsp;list&nbsp;of&nbsp;values&nbsp;to&nbsp;insert<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;None</tt></dd></dl>
+
+<dl><dt><a name="SQLite-query"><strong>query</strong></a>(self, sql)</dt><dd><tt>Execute&nbsp;a&nbsp;query<br>
+&nbsp;<br>
+This&nbsp;executes&nbsp;the&nbsp;query&nbsp;in&nbsp;sql,&nbsp;this&nbsp;can&nbsp;be&nbsp;any&nbsp;query<br>
+that&nbsp;is&nbsp;valid&nbsp;SQL.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;sql&nbsp;:&nbsp;string&nbsp;of&nbsp;the&nbsp;sql&nbsp;query&nbsp;to&nbsp;be&nbsp;executed<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;list&nbsp;(list&nbsp;of&nbsp;uples)</tt></dd></dl>
+
+<dl><dt><a name="SQLite-select"><strong>select</strong></a>(self, fields, table, condition<font color="#909090">=None</font>, limit<font color="#909090">=None</font>)</dt><dd><tt>Select&nbsp;some&nbsp;data<br>
+&nbsp;<br>
+This&nbsp;uses&nbsp;SELECT&nbsp;to&nbsp;select&nbsp;some&nbsp;rows&nbsp;of&nbsp;data&nbsp;from&nbsp;the<br>
+database&nbsp;given&nbsp;the&nbsp;fields,&nbsp;table,&nbsp;condition&nbsp;and&nbsp;limit.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;fields&nbsp;:&nbsp;list&nbsp;of&nbsp;fields&nbsp;to&nbsp;select<br>
+&nbsp;&nbsp;&nbsp;table&nbsp;:&nbsp;string&nbsp;of&nbsp;table&nbsp;to&nbsp;select&nbsp;from<br>
+&nbsp;&nbsp;&nbsp;condition&nbsp;:&nbsp;string&nbsp;containing&nbsp;the&nbsp;condition<br>
+&nbsp;&nbsp;&nbsp;limit&nbsp;:&nbsp;int&nbsp;specifying&nbsp;the&nbsp;limit&nbsp;(no.&nbsp;of&nbsp;rows)<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;Object&nbsp;(instance&nbsp;of&nbsp;_Records)</tt></dd></dl>
+
+</td></tr></table></td></tr></table>
+</body></html>

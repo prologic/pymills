@@ -1,0 +1,146 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module pymills.irc</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.irc</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/irc.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/irc.py</a></font></td></tr></table>
+    <p><tt>IRC<br>
+&nbsp;<br>
+IRC&nbsp;Library<br>
+&nbsp;<br>
+*&nbsp;<a href="#Client">Client</a><br>
+*&nbsp;Server</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="string.html">string</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="pymills.sockets.html#TCPClient">pymills.sockets.TCPClient</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="pymills.irc.html#Client">Client</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Client">class <strong>Client</strong></a>(<a href="pymills.sockets.html#TCPClient">pymills.sockets.TCPClient</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Client-__del__"><strong>__del__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Client-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize&nbsp;Class</tt></dd></dl>
+
+<dl><dt><a name="Client-getNick"><strong>getNick</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Client-ircCTCP"><strong>ircCTCP</strong></a>(self, to, type, message)</dt></dl>
+
+<dl><dt><a name="Client-ircCTCPREPLY"><strong>ircCTCPREPLY</strong></a>(self, to, type, message)</dt></dl>
+
+<dl><dt><a name="Client-ircDEOP"><strong>ircDEOP</strong></a>(self, channel, nick)</dt></dl>
+
+<dl><dt><a name="Client-ircDEVOICE"><strong>ircDEVOICE</strong></a>(self, channel, nick)</dt></dl>
+
+<dl><dt><a name="Client-ircJOIN"><strong>ircJOIN</strong></a>(self, channel, key<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="Client-ircKICK"><strong>ircKICK</strong></a>(self, channel, nick, message)</dt></dl>
+
+<dl><dt><a name="Client-ircMODE"><strong>ircMODE</strong></a>(self, mode)</dt></dl>
+
+<dl><dt><a name="Client-ircNICK"><strong>ircNICK</strong></a>(self, nick)</dt></dl>
+
+<dl><dt><a name="Client-ircNOTICE"><strong>ircNOTICE</strong></a>(self, to, message)</dt></dl>
+
+<dl><dt><a name="Client-ircOP"><strong>ircOP</strong></a>(self, channel, nick)</dt></dl>
+
+<dl><dt><a name="Client-ircPART"><strong>ircPART</strong></a>(self, channel, message<font color="#909090">='Leaving...'</font>)</dt></dl>
+
+<dl><dt><a name="Client-ircPING"><strong>ircPING</strong></a>(self, server)</dt></dl>
+
+<dl><dt><a name="Client-ircPONG"><strong>ircPONG</strong></a>(self, daemon)</dt></dl>
+
+<dl><dt><a name="Client-ircPRIVMSG"><strong>ircPRIVMSG</strong></a>(self, to, message)</dt></dl>
+
+<dl><dt><a name="Client-ircQUIT"><strong>ircQUIT</strong></a>(self, message<font color="#909090">=''</font>)</dt></dl>
+
+<dl><dt><a name="Client-ircRAW"><strong>ircRAW</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="Client-ircSERVER"><strong>ircSERVER</strong></a>(self, host, port, password<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="Client-ircTOPIC"><strong>ircTOPIC</strong></a>(self, channel, topic)</dt></dl>
+
+<dl><dt><a name="Client-ircUSER"><strong>ircUSER</strong></a>(self, user, host, server, name)</dt></dl>
+
+<dl><dt><a name="Client-ircVOICE"><strong>ircVOICE</strong></a>(self, channel, nick)</dt></dl>
+
+<dl><dt><a name="Client-onCTCP"><strong>onCTCP</strong></a>(self, source, target, type, message)</dt></dl>
+
+<dl><dt><a name="Client-onINVITE"><strong>onINVITE</strong></a>(self, source, to, channel)</dt></dl>
+
+<dl><dt><a name="Client-onJOIN"><strong>onJOIN</strong></a>(self, source, channel)</dt></dl>
+
+<dl><dt><a name="Client-onKICK"><strong>onKICK</strong></a>(self, source, channel, nick, reason)</dt></dl>
+
+<dl><dt><a name="Client-onMESSAGE"><strong>onMESSAGE</strong></a>(self, source, target, message)</dt></dl>
+
+<dl><dt><a name="Client-onMODE"><strong>onMODE</strong></a>(self, source, channel, modes)</dt></dl>
+
+<dl><dt><a name="Client-onNICK"><strong>onNICK</strong></a>(self, source, nick)</dt></dl>
+
+<dl><dt><a name="Client-onNOTICE"><strong>onNOTICE</strong></a>(self, source, target, message)</dt></dl>
+
+<dl><dt><a name="Client-onPART"><strong>onPART</strong></a>(self, source, channel, message)</dt></dl>
+
+<dl><dt><a name="Client-onPING"><strong>onPING</strong></a>(self, server)</dt></dl>
+
+<dl><dt><a name="Client-onQUIT"><strong>onQUIT</strong></a>(self, nick, reason)</dt></dl>
+
+<dl><dt><a name="Client-onRAW"><strong>onRAW</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="Client-onREAD"><strong>onREAD</strong></a>(self, line)</dt></dl>
+
+<dl><dt><a name="Client-onTOPIC"><strong>onTOPIC</strong></a>(self, nick, channel, topic)</dt></dl>
+
+<hr>
+Methods inherited from <a href="pymills.sockets.html#TCPClient">pymills.sockets.TCPClient</a>:<br>
+<dl><dt><a name="Client-close"><strong>close</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Client-getTraffic"><strong>getTraffic</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Client-onCONNECT"><strong>onCONNECT</strong></a>(self, host, port)</dt></dl>
+
+<dl><dt><a name="Client-onDISCONNECT"><strong>onDISCONNECT</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Client-onERROR"><strong>onERROR</strong></a>(self, error)</dt></dl>
+
+<dl><dt><a name="Client-open"><strong>open</strong></a>(self, host, port)</dt><dd><tt>Open&nbsp;connection&nbsp;to&nbsp;remote&nbsp;host</tt></dd></dl>
+
+<dl><dt><a name="Client-process"><strong>process</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Client-run"><strong>run</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Client-write"><strong>write</strong></a>(self, data)</dt></dl>
+
+</td></tr></table></td></tr></table>
+</body></html>
