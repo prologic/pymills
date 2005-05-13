@@ -10,5 +10,14 @@
 	>]>
 
 <tree>
-<node done="no" type="todo"><data>TODO List</data></node>
+<node type="todo" done="no"><data>TODO List</data>
+	<node done="no" type="todo"><data>Finish upgrading quality of ...</data>
+		<node done="no" type="todo"><data>utils</data></node>
+		<node done="no" type="todo"><data>IO</data></node>
+		<node done="no" type="todo"><data>IRC</data></node>
+		<node done="no" type="todo"><data>Math</data></node>
+		<node done="no" type="todo"><data>Sockets</data></node>
+		<node done="no" type="todo"><data>IRCBot</data></node>
+	</node>
+</node>
 </tree>
