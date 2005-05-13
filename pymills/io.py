@@ -11,8 +11,12 @@ I/O related tasks a little easier.
 
 __version__ = '0.3.1'
 
-import sys, string, readline, inspect
-from Tokenizer import Tokenizer
+import sys
+import string
+import inspect
+import readline
+
+from utils import Tokenizer
 
 class stdin:
 	"Class to handle standard input operations"
