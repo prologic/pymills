@@ -2,12 +2,32 @@
 # Module:   __init__
 # Date:     04th August 2004
 # Author:   James Mills <prologic@shortcircuit.net.au>
+# $LastChangedDate: 2005-05-11 00:00:26 +1000 (Wed, 11 May 2005) $
+# $Author: prologic $
+# $Id: db.py 1926 2005-05-10 14:00:26Z prologic $
 
 """James Mills Python Library
 
 This is my library of packages and modules that I have
-devloped for various purposes. I hope you find them usefull
-to your project. Please report any defects. Enjoy :)
+devloped for various purposes.
+
+All modules and packages are written by me, James Mills and are
+therefore CopyRight (C) 2003-2005 by James Mills.
+This library is released under the GPL license which is
+included with this distribution. Please read it.
+
+I hope you will find this libary usefull in some way, I use it
+in all my Python Software Projects. For a list of projects
+implemented using this library and Python please see:
+	http://shortcircuit.net.au/~prologic/ and follow the links.
+
+Please report any defects you find with this library or any of
+the parts therein. There is a defect tracking tool on the url
+shown above. Please follow the links to the pymills project
+page.
+
+cheers
+JamesMills
 """
 
 __name__ = "pymills"
@@ -17,4 +37,5 @@ __author__ = "James Mills"
 __email__ = "%s <prologic@shortcircuit.net.au>" % __author__
 __url__ = "http://shortcircuit.net.au/~prologic/"
 __copyright__ = "CopyRight (C) 2005 by %s" % __author__
+__license__ = "GPL"
 __str__ = "%s-%s" % (__name__, __version__)
