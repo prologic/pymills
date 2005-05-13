@@ -2,9 +2,9 @@
 # Module:   __init__
 # Date:     04th August 2004
 # Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate: 2005-05-11 00:00:26 +1000 (Wed, 11 May 2005) $
-# $Author: prologic $
-# $Id: db.py 1926 2005-05-10 14:00:26Z prologic $
+# $LastChangedDate$
+# $Author$
+# $Id$
 
 """James Mills Python Library
 
@@ -32,7 +32,7 @@ JamesMills
 
 __name__ = "pymills"
 __desc__ = "James Mills Python Library"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "James Mills"
 __email__ = "%s <prologic@shortcircuit.net.au>" % __author__
 __url__ = "http://shortcircuit.net.au/~prologic/"
