@@ -2,9 +2,9 @@
 # Module:   adt
 # Date:     04th August 2004
 # Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate: 2005-04-08 21:16:31 +1000 (Fri, 08 Apr 2005) $
-# $Author: prologic $
-# $Id: adt.py 1572 2005-04-08 11:16:31Z prologic $
+# $LastChangedDate$
+# $Author$
+# $Id$
 
 """Abstract Data Types module."""
 

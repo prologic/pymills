@@ -2,9 +2,9 @@
 # Module:   db
 # Date:     04th August 2004
 # Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate: 2005-05-11 00:00:26 +1000 (Wed, 11 May 2005) $
-# $Author: prologic $
-# $Id: db.py 1926 2005-05-10 14:00:26Z prologic $
+# $LastChangedDate$
+# $Author$
+# $Id$
 
 """Database Module"""
 

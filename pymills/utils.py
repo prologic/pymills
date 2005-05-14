@@ -2,9 +2,9 @@
 # Module:   utils
 # Date:     04th August 2004
 # Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate: 2005-04-24 14:23:46 +1000 (Sun, 24 Apr 2005) $
-# $Author: prologic $
-# $Id: utils.py 1759 2005-04-24 04:23:46Z prologic $
+# $LastChangedDate$
+# $Author$
+# $Id$
 
 """Utilities Module"""
 
