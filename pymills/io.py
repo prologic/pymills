@@ -30,8 +30,8 @@ class Command:
 		
 	def process(self):
 		input = Input(True)
-		s = input.read(self.prompt, [], True)
-		while  not s == '':
+		s = input.read(self.prompt)
+		while  s is not None:
 			tokens = Tokenizer(s)
 			command = tokens.next()
 			args = tokens.rest()
@@ -51,45 +51,35 @@ class Command:
 			else:
 				print 'ERROR: Invalid Command'
 
-			s = input.read(self.prompt, [], True)
+			s = input.read(self.prompt)
 
 class Input:
 
-	def __init__(self, ExitOnEOF = False):
-		self.ExitOnEOF = ExitOnEOF
+	def __init__(self, exitOnEOF=False):
+		self._exitOnEOF = exitOnEOF
 	
-	def read(self, prompt = None, default = "", expected = [], NullOk = False):
+	def read(self, prompt=None, default=None, expected=None):
 		try:
-			if prompt:
-				if default:
-					prompt = prompt + " [" + default + "] "
+			if prompt is not None:
+				if default is not None:
+					prompt = "%s [%s] " % (prompt, default)
 				input = raw_input(prompt)
 			else:
 				input = raw_input()
 
-			if not expected == []:
+			if expected is not None:
 				if input in expected:
 					return input
 				else:
-					if not NullOk:
-						return None
-					elif input == '':
-						return input
-					else:
-						return None
-			else:
-				if input == '' and NullOk:
 					return default
-				elif not NullOk:
-					if not input == '':
-						return input
-					else:
-						return None
+			else:
+				if input == "":
+					return default
 				else:
 					return input
 
 		except EOFError:
-			if self.ExitOnEOF:
+			if self._exitOnEOF:
 				sys.exit(0)
 
 class SelectInput:
@@ -125,11 +115,11 @@ class Table:
 
 	def _convert(self, header, value):
 		if header[2] == -1:
-			return value.ljust(header[1])
+			return str(value).ljust(header[1])
 		elif header[2] == 0:
-			return value.center(header[1])
+			return str(value).center(header[1])
 		elif header[2] == 1:
-			return value.rjust(header[1])
+			return str(value).rjust(header[1])
 		
 	def printHeader(self):
 		print self.header
@@ -139,3 +129,46 @@ class Table:
 		
 	def printRow(self, row):
 		print string.join(map(self._convert, self.headers, row), '')
+
+def test():
+	"""Test function to perform a self-test on this module
+
+	To run, type: python io.py
+	"""
+
+	headers = [
+		('id', 4, -1),
+		('Name', 10, -1),
+		('Age', 3, -1)]
+	table = Table(headers)
+	table.printHeader()
+	table.printRule()
+	table.printRow([0, 'James', 21])
+	table.printRule()
+
+	help = "Help me! I'm stupid!"
+
+	commands = []
+	commands.append(('quit', Command.QUIT))
+	commands.append(('help', Command.HELP))
+	commands.append(('hello', hello))
+	commands.append(('world', world))
+
+	prompt = 'Command: '
+
+	command = Command(help, prompt, commands)
+	command.process()
+
+def hello(args):
+	print 'Hello'
+	print args
+
+class world:
+	def __init__(self, args):
+		self.args = args
+	def run(self):
+		print 'World'
+		print self.args
+
+if __name__ == '__main__':
+	test()
