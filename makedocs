@@ -30,7 +30,8 @@ def main():
 	sys.path.append(package)
 	processPackage(package)
 	os.system("mv *.html %s" % docsDir)
-	os.symlink("%s.html" % package, "%s/index.html" % docsDir)
+	if not os.path.isfile("%s/index.html" % docsDir):
+		os.symlink("%s.html" % package, "%s/index.html" % docsDir)
 
 if __name__ == "__main__":
 	main()
