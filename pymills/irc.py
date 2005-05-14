@@ -140,11 +140,10 @@ class Client(TCPClient):
 	def onRAW(self, data):
 		tokens = Tokenizer(data)
 
-		if tokens.tokens[1] == 'PRIVMSG':
-			source = _parseSource(_strip(tokens.tokens[0]))
-			target = tokens.tokens[2]
-			tokens.delete(3)
-			message = _strip(tokens.rest())
+		if tokens[1] == 'PRIVMSG':
+			source = _parseSource(_strip(tokens[0]))
+			target = tokens[2]
+			message = _strip(tokens.copy(3))
 
 			if not message == '':
 				if message[0] == '':
@@ -157,24 +156,22 @@ class Client(TCPClient):
 			else:
 				self.onMESSAGE(source, target, message)
 
-		elif tokens.tokens[1] == 'NOTICE':
-			source = _parseSource(_strip(tokens.tokens[0]))
-			target = tokens.tokens[2]
-			tokens.delete(3)
-			message = _strip(tokens.rest())
+		elif tokens[1] == 'NOTICE':
+			source = _parseSource(_strip(tokens[0]))
+			target = tokens[2]
+			message = _strip(tokens.copy(3))
 			self.onNOTICE(source, target, message)
-		elif tokens.tokens[1] == 'JOIN':
-			source = _parseSource(_strip(tokens.tokens[0]))
-			channel = _strip(tokens.tokens[2])
+		elif tokens[1] == 'JOIN':
+			source = _parseSource(_strip(tokens[0]))
+			channel = _strip(tokens[2])
 			self.onJOIN(source, channel)
-		elif tokens.tokens[1] == 'PART':
-			source = _parseSource(_strip(tokens.tokens[0]))
-			channel = _strip(tokens.tokens[2])
-			tokens.delete(3)
-			message = _strip(tokens.rest())
+		elif tokens[1] == 'PART':
+			source = _parseSource(_strip(tokens[0]))
+			channel = _strip(tokens[2])
+			message = _strip(tokens.copy(3))
 			self.onPART(source, channel, message)
-		elif tokens.tokens[0] == 'PING':
-			server = _strip(tokens.tokens[1])
+		elif tokens[0] == 'PING':
+			server = _strip(tokens[1])
 			self.onPING(server)
 	
 	# IRC Events
@@ -217,5 +214,3 @@ class Client(TCPClient):
 	
 	def onKICK(self, source, channel, nick, reason):
 		pass
-	
-# vim: tabstop=3 nocindent autoindent
