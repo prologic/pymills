@@ -257,7 +257,7 @@ class Tokenizer(list):
 		                  the string (optional)
 		"""
 
-		self._delim - delim
+		self._delim = delim
 		tokens = string.split(str, delim)
 		list.__init__(self, tokens)
 
@@ -310,25 +310,31 @@ class Tokenizer(list):
 		else:
 			return None
 	
-	def copy(self, s, e):
+	def copy(self, s, e=None):
 		"""Copy a set of tokens
 
 		Given s and e this will return those tokens joined
 		together with the original delimiter.
 
-		@params = s, e
 		Args:
 		   s : int -> 0 <= s < len(self)
 		      (Starting position)
-			
-		   None
+		   e : int -> 0 <= e < len(self)
+		      (Ending position) - optional
 
 		Returns:
-		   string or None
+		   string
 		"""
 
-		return self[s:e]
+		if e is not None:
+			return string.join(self[s:e], self._delim)
+		else:
+			return string.join(self[s:], self._delim)
 
+	def delete(self, n):
+		if 0 <= n < len(self):
+			del self[n]
+	
 	def has(self, token):
 		return token in self
 
