@@ -11,6 +11,5 @@ setup(name = "pymills",
 		author_email = pymills.__email__,
 		url = pymills.__url__,
 		packages = [
-			"pymills",
-			"pymills.ircbot"]
+			"pymills"]
 		)
