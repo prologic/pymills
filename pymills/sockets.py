@@ -9,11 +9,11 @@
 """Sockets Module"""
 
 import re
-import sys
-import time
 import socket
 import select
-import string
+
+class Error(Exception):
+	pass
 
 class _Traffic:
 
@@ -55,8 +55,6 @@ class TCPClient:
 			self.sock.connect((self.host, self.port))
 		except socket.error, e:
 			self.onERROR(e)
-			sys.stderr.write("*** ERROR: %s\n" % str(e))
-			sys.stderr.flush()
 			return False
 
 		self.sock.setblocking(False)
@@ -105,8 +103,6 @@ class TCPClient:
 		except socket.error, e:
 			data = None
 			self.onERROR(e)
-			sys.stderr.write("*** ERROR: %s\n" % str(e))
-			sys.stderr.flush()
 
 		if not data:
 			self.connected = False
@@ -127,17 +123,13 @@ class TCPClient:
 		try:
 			bytes = self.sock.send(data)
 			if bytes < len(data):
-				sys.stdout.write("*** ERROR: Didn't write all data!\n")
+				raise Error("Didn't write all data!")
 			self._traffic._update(data, 1)
-			sys.stdout.write("O: %s" % data)
-			sys.stdout.write("%s\n" % str(map(ord, data)))
-			sys.stdout.flush()
 		except socket.error, e:
 			if e[0] == 32:
 				self.connected = False
 			else:
-				sys.stderr.write("*** ERROR: %s\n" % str(e))
-				sys.stderr.flush()
+				self.onERROR(e)
 	
 	# Run
 
@@ -151,13 +143,13 @@ class TCPClient:
 		pass
 	
 	def onCONNECT(self, host, port):
-		sys.stdout.write("Connected to %s:%s\n" % (host, port))
+		pass
 
 	def onDISCONNECT(self):
-		sys.stdout.write("Disconnected\n")
+		pass
 	
 	def onREAD(self, line):
-		sys.stdout.write("[%s]: %s" % (time.strftime("%H:%M:%S"), line))
+		pass
 
 class TCPServer:
 
@@ -233,8 +225,7 @@ class TCPServer:
 		try:
 			sock.send(data)
 		except socket.error, e:
-			sys.stderr.write("*** ERROR: %s\n" % str(e))
-			sys.stderr.flush()
+			self.onERROR(e)
 	
 	def broadcast(self, data):
 		for sock in self.sockets:
@@ -249,16 +240,13 @@ class TCPServer:
 	# Events
 
 	def onCONNECT(self, sock, host, port):
-		sys.stdout.write("Connection from %s:%s\n" % (host, port))
-		sys.stdout.flush()
+		pass
 
 	def onDISCONNECT(self, sock, host, port):
-		sys.stdout.write("Disconnection from %s:%s\n" % (host, port))
-		sys.stdout.flush()
+		pass
 	
 	def onREAD(self, sock, line):
-		sys.stdout.write("I: %s" % line)
-		sys.stdout.flush()
+		pass
 
 class _Client:
 
@@ -273,8 +261,6 @@ class _Client:
 			data = self.sock.recv(bufsize)
 		except socket.error, e:
 			self.onERROR(e)
-			sys.stderr.write("*** ERROR: %s\n" % str(e))
-			sys.stderr.flush()
 
 		if not data:
 			return False
