@@ -17,6 +17,3 @@ __email__ = "James Mills <prologic@shortcircuit.net.au>"
 __url__ = "http://shortcircuit.net.au/~prologic/"
 __copyright__ = "CopyRight (C) 2005 by James Mills"
 __str__ = "%s-%s" % (__name__, __version__)
-
-from ircbot import core
-from ircbot import timers
