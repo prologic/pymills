@@ -34,4 +34,4 @@ def duration(seconds):
 	mins = int((seconds / 60))
 	seconds = int((seconds) % (60))
 
-	return "%dd %dh %dm %ds" % (days, hours, mins, secs)
+	return "%dd %dh %dm %ds" % (days, hours, mins, seconds)
