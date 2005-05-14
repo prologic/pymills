@@ -14,7 +14,7 @@ import signal
 import inspect
 import traceback
 
-import irc
+from pymills import irc
 
 import timers
 
@@ -196,7 +196,8 @@ class Plugin:
 			target = source[0]
 		else:
 			if len(message) > len(self.bot.getNick()):
-				if message[0:len(self.bot.getNick())] == self.bot.getNick():
+				if message[0:len(self.bot.getNick())].lower() \
+						== self.bot.getNick().lower():
 					addressed = True
 					i = len(self.bot.getNick()) + 1
 					if not i == len(message):
