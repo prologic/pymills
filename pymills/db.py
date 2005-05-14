@@ -43,7 +43,7 @@ class SQLite:
 				query = "SELECT %s FROM %s;" % (string.join(fields, ", "), table)
 
 		rows = self.query(query)
-		records = _Records()
+		records = Records()
 		if not rows == None:
 			for row in rows:
 				record = {}
@@ -71,7 +71,7 @@ class SQLite:
 		except sqlite.Error, e:
 			raise Error("Error while executing query \"%s\": %s" % (sql, e))
 
-class _Records:
+class Records:
 
 	def __init__(self):
 		self._records = []
