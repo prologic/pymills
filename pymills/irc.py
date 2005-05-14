@@ -3,13 +3,7 @@
 # Date:     04th August 2004
 # Author:   James Mills <prologic@shortcircuit.net.au>
 
-"""IRC
-
-IRC Library
-
-* Client
-* Server
-"""
+"""IRC Module"""
 
 import sys
 import time
@@ -19,7 +13,7 @@ from utils import Tokenizer
 from sockets import TCPClient
 from sockets import TCPServer
 
-#Supporting Functions
+# Supporting Functions
 
 def _strip(str):
 	if len(str) > 0:
@@ -43,8 +37,6 @@ def _parseSource(source):
 class Client(TCPClient):
 
 	def __init__(self):
-		"Initialize Class"
-
 		TCPClient.__init__(self)
 		self.me = {}
 	
