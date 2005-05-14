@@ -15,6 +15,13 @@ drwxr-xr-x	root/root	usr/lib/python2.4/site-packages/pymills/
 -rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/io.pyc
 -rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/irc.py
 -rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/irc.pyc
+drwxr-xr-x	root/root	usr/lib/python2.4/site-packages/pymills/ircbot/
+-rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/ircbot/__init__.py
+-rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/ircbot/__init__.pyc
+-rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/ircbot/core.py
+-rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/ircbot/core.pyc
+-rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/ircbot/timers.py
+-rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/ircbot/timers.pyc
 -rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/misc.py
 -rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/misc.pyc
 -rw-r--r--	root/root	usr/lib/python2.4/site-packages/pymills/sockets.py
