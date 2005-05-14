@@ -1,10 +1,12 @@
 #!/bin/sh
 
 if [ ! -f dist/pymills-`getver`.tar.gz ]; then
-	python setup.py sdist && ./clean
+	python setup.py sdist
 	svn add dist/pymills-`getver`.tar.gz
 	svn ci -m "Added" dist/pymills-`getver`.tar.gz
 	cd dist && ./sync && cd ..
 else
 	echo "Nothing to do"
 fi
+
+./clean
