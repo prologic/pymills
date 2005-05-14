@@ -82,12 +82,9 @@ class Bot(irc.Client):
 		return plugins
 
 	def loadPlugins(self, path, plugins):
-		print "Plugin path: %s" % path
-		print "Plugin list: %s" % repr(plugins)
 		if not path in sys.path:
 			sys.path.append(path)
 		available_plugins = self.getPlugins(path)
-		print "Available Plugins: %s" % repr(available_plugins)
 		for plugin in plugins:
 
 			if plugin in available_plugins:
@@ -98,15 +95,12 @@ class Bot(irc.Client):
 
 				pluginClass = None
 
-				print "Checking classes of %s" % repr(module)
 				for name, value in inspect.getmembers(module, inspect.isclass):
 					if issubclass(value, Plugin):
-						print "Found Plugin class!"
 						pluginClass = value
 						break
 
 				if pluginClass is not None:
-					print "pluginClass = %s" % repr(pluginClass)
 
 					self.addPlugin(pluginClass)
 	
@@ -122,16 +116,9 @@ class Bot(irc.Client):
 	# Main Event Handler
 
 	def handleEvent(self, type, *args):
-		print "Event: %s" % type
-		print repr(args)
 		for plugin in self.plugins:
 			method = "on%s" % type
-			print "method: %s.%s" % (repr(plugin), method)
-			try:
-				print "attr: %s" % repr(getattr(plugin, method))
-			except: pass
 			if hasattr(plugin, method) and callable(getattr(plugin, method)):
-				print "Calling..."
 				getattr(plugin, method)(*args)
 	
 	# Run
