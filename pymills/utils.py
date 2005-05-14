@@ -6,49 +6,19 @@
 # $Author: prologic $
 # $Id: utils.py 1759 2005-04-24 04:23:46Z prologic $
 
-"""Utility Module
-
-This module contains various utility functions and classes to
-help make writing certain aspects of a program easier.
-"""
+"""Utilities Module"""
 
 import os
 import sys
 import string
 
 class Error(Exception):
-	"""Error Class
-
-	Used to raise exceptions upon erors
-	"""
-
 	pass
 
 def getProgName():
-	"""Returns the current name of the running program
-	
-	Args:
-	   None
-	
-	Returns:
-	   string (containing the name of the runnning program)
-	"""
-
 	return os.path.splitext(os.path.basename(sys.argv[0]))[0]
 
 def writePID(file):
-	"""Writes the pid of current process to a file
-	
-	Given file, this will write the current PID (process id) of
-	the currently running program into the file given by file.
-	
-	Args:
-	   file : string of the filename to write to
-	
-	Returns:
-	   None
-	"""
-
 	try:
 		fd = open(file, "w")
 		fd.write(str(os.getpid()))
@@ -57,19 +27,6 @@ def writePID(file):
 		raise Error("Error writing pid to %s: %s" % (file, e))
 
 def loadConfig():
-	"""Load the program's configuration
-
-	Given an environment, this will attempt to look for a
-	configuration file (usually conf.py) in some standard
-	locations and load it.
-
-	Args:
-	   None
-
-	Returns:
-	   True or False
-	"""
-
 	curDir = os.getcwd()
 	homeDir = os.path.expanduser("~") 
 	etcDir = "/etc/"
@@ -152,26 +109,8 @@ def daemonize(stdin="/dev/null", stdout="/dev/null", stderr="/dev/null"):
 	os.dup2(se.fileno(), sys.stderr.fileno())
 
 class State:
-	"""Class to maintain the the state of something
-
-	Example:
-	>>> from pymills import utils
-	>>> state = utils.State()
-	>>> state
-
-	>>> state.set("START")
-	>>> state
-	START
-	>>> state.set("S1")
-	>>> state
-	S1
-	>>> state == "S1"    
-	True
-	"""
 
 	def __init__(self):
-		"""Initialize"""
-
 		self._states = {}
 		self._nextValue = 0
 
@@ -203,19 +142,6 @@ class State:
 		self._nextValue = self._nextValue + 1
 	
 	def set(self, state):
-		"""Set the state
-
-		Given a new state, set the state if such a state exists
-		in the set of possible states, otherwise add it first,
-		then set the state.
-
-		Args:
-		   state : string to set the state to
-
-		Returns:
-		   None
-		"""
-
 		if self._states.has_key(state):
 			self._state = state
 		else:
@@ -223,109 +149,31 @@ class State:
 			self._state = state
 
 class Tokenizer(list):
-	"""Tokenizer Class
-
-	Class to split a string into tokens with many different
-	supporting methods such as: index, last, peek, more, next
-	and more...
-
-	Example:
-	>>> from pymills import utils
-	>>> tokens = utils.Tokenizer("foo bar 1 2 3")
-	>>> tokens[0]
-	'foo'
-	>>> tokens.last()
-	'3'
-	>>> tokens.peek()
-	'foo'
-	>>> tokens.next()
-	'foo'
-	>>> tokens.more()
-	True
-	"""
 
 	def __init__(self, str, delim=" "):
-		"""Initialize class
-
-		Given a string str and an optional delim setup this
-		class. The delim parameter is optional and is by default
-		set to " ", ie: a string of tokens seperated with spaces.
-
-		Args:
-		   str : string of the string to be tokenized
-		   delim : string of the delimiter of the tokens in
-		                  the string (optional)
-		"""
-
 		self._delim = delim
 		tokens = string.split(str, delim)
 		list.__init__(self, tokens)
 
 	def peek(self, n=0):
-		"""Return the next token but don't remove it
-
-		This function given n will return the n'th token in the
-		list but will not remove it.
-
-		Args:
-		   n : int -> 0 <= n < len(self)
-			(The n'th token)
-
-		Returns:
-		   string or None
-		"""
-
 		if not self == [] and (0 <= n < len(self)):
 			return self[n]
 		else:
 			return None
 
 	def next(self):
-		"""Return the next token and remove it
-
-		Args:
-		   None
-
-		Returns:
-		   string or None
-		"""
-
 		if not self == []:
 			return self.pop(0)
 		else:
 			return None
 	
 	def last(self):
-		"""Return the last token and remove it
-
-		Args:
-		   None
-
-		Returns:
-		   string or None
-		"""
-
 		if not self == []:
 			return self.pop()
 		else:
 			return None
 	
 	def copy(self, s, e=None):
-		"""Copy a set of tokens
-
-		Given s and e this will return those tokens joined
-		together with the original delimiter.
-
-		Args:
-		   s : int -> 0 <= s < len(self)
-		      (Starting position)
-		   e : int -> 0 <= e < len(self)
-		      (Ending position) - optional
-
-		Returns:
-		   string
-		"""
-
 		if e is not None:
 			return string.join(self[s:e], self._delim)
 		else:
