@@ -1,17 +1,12 @@
-#!/usr/bin/env python
-
 # Filename: Sockets.py
 # Module:   Sockets
 # Date:     04th August 2004
 # Author:   James Mills <prologic@shortcircuit.net.au>
+# $LastChangedDate: 2005-04-08 21:16:31 +1000 (Fri, 08 Apr 2005) $
+# $Author: prologic $
+# $Id: Math.py 1572 2005-04-08 11:16:31Z prologic $
 
-"""Sockets module
-
-Sockets module:
-
-* TCPClient
-* TCPServer
-"""
+"""Sockets Module"""
 
 import re
 import sys
@@ -20,7 +15,7 @@ import socket
 import select
 import string
 
-class Traffic:
+class _Traffic:
 
 	def __init__(self):
 		self._in = 0
@@ -32,30 +27,25 @@ class Traffic:
 		elif direction == -1:
 			self._in += len(data)
 	
-	def get(self):
+	def _get(self):
 		return (self._in, self._out)
 	
 class TCPClient:
-	"TCP Client Class"
 
 	def __init__(self):
-		"Initialize Class"
-
 		self.connected = False
 		self.linesep = re.compile("\r?\n")
 		self.buffer = ""
 
-		self._traffic = Traffic()
+		self._traffic = _Traffic()
 
 	def __del__(self):
 		self.close()
 	
 	def getTraffic(self):
-		return self._traffic.get()
+		return self._traffic._get()
 
 	def open(self, host, port):
-		"Open connection to remote host"
-
 		self.host = host
 		self.port = port
 
@@ -106,7 +96,6 @@ class TCPClient:
 		return read != []
 	
 	def process(self):
-
 		if self._poll():
 			self._read()
 	
@@ -173,8 +162,6 @@ class TCPClient:
 class TCPServer:
 
 	def __init__(self, port, address = ''):
-		"Initialize Class"
-
 		self.port = port
 		self.address = address
 
@@ -225,7 +212,7 @@ class TCPServer:
 					(newsock, host) = self.sock.accept()
 					self.sockets.append(newsock)
 					(host, port) = host
-					self.clients.append(Client(newsock, self))
+					self.clients.append(_Client(newsock, self))
 					self.onCONNECT(newsock, host, port)
 				else:
 					# Socket has data
@@ -273,7 +260,7 @@ class TCPServer:
 		sys.stdout.write("I: %s" % line)
 		sys.stdout.flush()
 
-class Client:
+class _Client:
 
 	def __init__(self, sock, server):
 		self.sock = sock
