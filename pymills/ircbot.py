@@ -29,6 +29,13 @@ class Bot(irc.Client):
 			signal.signal(signal.SIGHUP, self.rehash)
 			signal.signal(signal.SIGTERM, self.term)
 
+	def __del__(self):
+		print "destroying ircbot core ..."
+		for plugin in self.plugins:
+			if hasattr(plugin, "__del__"):
+				if callable(getattr(plugin, "__del__")):
+					plugin.__del__()
+	
 	# Service Commands
 
 	def term(self, signal = 0, stack = 0):
