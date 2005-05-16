@@ -27,6 +27,13 @@ class SQLite:
 		self.__cu.close()
 		self.__cx.close()
 	
+	def _quote(self, s):
+		x = s.replace("\"", "\"\"")
+		return x
+
+	def _quoteAll(self, list):
+		return map(self._quote, list)
+
 	def select(self, fields, table, condition=None, limit=None):
 		if not condition == None:
 			if not limit == None:
@@ -56,6 +63,7 @@ class SQLite:
 		return records
 
 	def insert(self, table, fields, values):
+		values = self._quoteAll(values)
 		query = "INSERT INTO %s (%s) VALUES (\"%s\");" % \
 				(table, string.join(fields, ", "), string.join(values, "\", \""))
 		self.query(query)
