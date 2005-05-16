@@ -121,7 +121,10 @@ class Bot(irc.Client):
 		for plugin in self.plugins:
 			method = "on%s" % type
 			if hasattr(plugin, method) and callable(getattr(plugin, method)):
-				getattr(plugin, method)(*args)
+				stop = getattr(plugin, method)(*args)
+				if stop is not None:
+					if stop:
+						break
 	
 	# Run
 
