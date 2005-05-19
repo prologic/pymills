@@ -17,8 +17,7 @@ class Error(Exception):
 
 class CmdOpt:
 
-	def __init__(self, short, long, usage, allowEmpty=True):
-		self._usage = usage
+	def __init__(self, short, long):
 		self._options = []
 		self._arguments = []
 
@@ -28,16 +27,8 @@ class CmdOpt:
 		except getopt.GetoptError, e:
 			raise Error("Could not read options!")
 
-		if not allowEmpty and self.empty():
-			self.displayUsage()
-			sys.exit(0)
-
 	def empty(self):
 		return self._options == [] and self._arguments == []
-	
-	def displayUsage(self):
-		sys.stdout.write("%s\n" % self._usage)
-		sys.stdout.flush()
 	
 	def getOptions(self):
 		return _Options(self._options)
