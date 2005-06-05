@@ -39,17 +39,20 @@ class CmdOpt:
 class _Options:
 
 	def __init__(self, options):
-		self._options = []
+		self._options = {}
 
-		for short, long in options:
-			if not short == "":
-				self._options.append(short)
-			if not long == "":
-				self._options.append(long)
+		for option, value in options:
+			self._options[option] = value
 
 	def __contains__(self, option):
 		short, long = option
 		return short in self._options or long in self._options
 
-	def __getitem__(self, n):
-		return self._options[n]
+	def __getitem__(self, option):
+		short, long = option
+		if short in self._options:
+			return self._options[short]
+		elif long in self._options:
+			return self._options[long]
+		else:
+			raise Error("OptionError: '%s' is not an option.")
