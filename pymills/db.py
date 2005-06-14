@@ -9,7 +9,7 @@
 """Database Module"""
 
 import string
-import sqlite
+import pysqlite2
 
 class Error(Exception):
 	pass
@@ -18,9 +18,9 @@ class SQLite:
 
 	def __init__(self, database):
 		try:
-			self.__cx = sqlite.connect(database, autocommit=True)
+			self.__cx = pysqlite2.connect(database, autocommit=True)
 			self.__cu = self.__cx.cursor()
-		except sqlite.Error, e:
+		except pysqlite2.Error, e:
 			raise Error("Could not open database -> %s" % e)
 		
 	def __del__(self):
@@ -76,7 +76,7 @@ class SQLite:
 		try:
 			self.__cu.execute(sql)
 			return self.__cu.fetchall()
-		except sqlite.Error, e:
+		except pysqlite2.Error, e:
 			raise Error("Error while executing query \"%s\": %s" % (sql, e))
 
 class Records:
