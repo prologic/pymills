@@ -24,6 +24,7 @@ class SQLite:
 			raise Error("Could not open database -> %s" % e)
 		
 	def __del__(self):
+		self.__cx.commit()
 		self.__cu.close()
 		self.__cx.close()
 	
