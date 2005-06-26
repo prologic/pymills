@@ -15,7 +15,7 @@ from sockets import TCPServer
 
 # Supporting Functions
 
-def _strip(str):
+def strip(str):
 	if len(str) > 0:
 		if str[0] == ':':
 			return str[1:len(str)]
@@ -23,7 +23,7 @@ def _strip(str):
 	else:
 		return ''
 	
-def _parseSource(source):
+def parseSource(source):
 	ex = string.find(source, '!')
 	at = string.find(source, '@')
 
@@ -133,9 +133,9 @@ class Client(TCPClient):
 		tokens = Tokenizer(data)
 
 		if tokens[1] == 'PRIVMSG':
-			source = _parseSource(_strip(tokens[0]))
+			source = parseSource(strip(tokens[0]))
 			target = tokens[2]
-			message = _strip(tokens.copy(3))
+			message = strip(tokens.copy(3))
 
 			if not message == '':
 				if message[0] == '':
@@ -149,21 +149,21 @@ class Client(TCPClient):
 				self.onMESSAGE(source, target, message)
 
 		elif tokens[1] == 'NOTICE':
-			source = _parseSource(_strip(tokens[0]))
+			source = parseSource(strip(tokens[0]))
 			target = tokens[2]
-			message = _strip(tokens.copy(3))
+			message = strip(tokens.copy(3))
 			self.onNOTICE(source, target, message)
 		elif tokens[1] == 'JOIN':
-			source = _parseSource(_strip(tokens[0]))
-			channel = _strip(tokens[2])
+			source = parseSource(strip(tokens[0]))
+			channel = strip(tokens[2])
 			self.onJOIN(source, channel)
 		elif tokens[1] == 'PART':
-			source = _parseSource(_strip(tokens[0]))
-			channel = _strip(tokens[2])
-			message = _strip(tokens.copy(3))
+			source = parseSource(strip(tokens[0]))
+			channel = strip(tokens[2])
+			message = strip(tokens.copy(3))
 			self.onPART(source, channel, message)
 		elif tokens[0] == 'PING':
-			server = _strip(tokens[1])
+			server = strip(tokens[1])
 			self.onPING(server)
 	
 	# IRC Events
