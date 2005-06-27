@@ -15,13 +15,12 @@ from sockets import TCPServer
 
 # Supporting Functions
 
-def strip(str):
-	if len(str) > 0:
-		if str[0] == ':':
-			return str[1:len(str)]
-		return str
-	else:
-		return ''
+def strip(s, color=False):
+	s = s.lstrip(":")
+	if color:
+		s = s.replace("\x01", "")
+		s = s.replace("\x02", "")
+	return s
 	
 def parseSource(source):
 	ex = string.find(source, '!')
