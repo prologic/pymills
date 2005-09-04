@@ -75,6 +75,7 @@ class SQLite:
 
 	def query(self, sql):
 		try:
+			sql = sql.replace('"', '\"')
 			self.__cu.execute(sql)
 			return self.__cu.fetchall()
 		except sqlite.Error, e:
