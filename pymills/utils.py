@@ -9,6 +9,7 @@
 """Utilities Module"""
 
 import os
+import re
 import sys
 import string
 
@@ -191,3 +192,15 @@ class Tokenizer(list):
 
 	def rest(self):
 		return string.join(self, self._delim)
+
+def getFiles(path, tests=[os.path.isfile], pattern=".*"):
+	files = os.listdir(path)
+	list = []
+	for file in files:
+		if reduce(lambda x, y: x and y, tests[1:], tests[0]) and \
+				re.match(pattern, file):
+					list.append(file)
+	return list
+	
+def isReadable(file):
+	return os.access(file, os.R_OK)
