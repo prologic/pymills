@@ -11,6 +11,7 @@
 Create an internal representation of the system's Ports Tree
 """
 
+import re
 import os
 import StringIO
 
