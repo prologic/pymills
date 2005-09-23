@@ -15,6 +15,7 @@ import sys
 import string
 import urllib2
 import urlparse
+import collections
 from BeautifulSoup import BeautifulSoup
 
 try:
@@ -36,14 +37,31 @@ class Node:
 
 class Crawler:
 
-	def __init__(self, url, depth, lock=True):
-		self._url = url
-		self._depth = depth
+	def __init__(self, root, urls, maxLinks, lock=True):
+		self._root = root
+		self._urls = urls
+		self._maxLinks = maxLinks
 		self._lock = lock
-		self._host = urlparse.urlparse(url)[1]
+		self._host = urlparse.urlparse(root)[1]
 	
 	def crawl(self):
-		pass
+
+		urls = collections.deque(self._urls[:])
+		n = 0
+		done = False
+
+		while not done:
+			n += 1
+			url = urls.popleft()
+			print "Following: %s" % url
+			page = Fetcher(url)
+			page.fetch()
+			for i, url in enumerate(page):
+				if not url in urls:
+					urls.append(url)
+					print "New: %s" % url
+			if n > self._maxLinks:
+				done = True
 
 class Fetcher:
 
@@ -56,6 +74,9 @@ class Fetcher:
 	def __getitem__(self, y):
 		return self._urls[y]
 
+	def getURLS(self):
+		return self._urls
+
 	def open(self):
 		url = self._url
 		try:
@@ -65,24 +86,32 @@ class Fetcher:
 		return handle
 
 	def fetch(self):
-		host = urlparse.urlparse(self._url)[1]
 		handle = self.open()
-		soup = BeautifulSoup()
-		soup.feed(handle.read())
-		tags = soup('a')
-		for tag in tags:
-			try:
-				url = urlparse.urljoin(self._url, tag['href'])
-			except KeyError:
-				continue
-			self._urls.append(url)
+		if handle is not None:
+			soup = BeautifulSoup()
+			soup.feed(handle.read())
+			tags = soup('a')
+			for tag in tags:
+				try:
+					url = urlparse.urljoin(self._url, tag['href'])
+				except KeyError:
+					continue
+				self._urls.append(url)
 	
-def test():
+def testFetcher():
 	url = sys.argv[1]
 	page = Fetcher(url)
 	page.fetch()
 	for i, url in enumerate(page):
 		print "%d. %s" % (i, url)
 
+def testCrawler():
+	url = sys.argv[1]
+	maxLinks = int(sys.argv[2])
+	page = Fetcher(url)
+	page.fetch()
+	crawler = Crawler(url, page.getURLS(), maxLinks)
+	crawler.crawl()
+
 if __name__ == "__main__":
-	test()
+	testCrawler()
