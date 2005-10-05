@@ -16,7 +16,8 @@ class Error(Exception):
 
 class SQLite:
 
-	def __init__(self, database):
+	def __init__(self, database, debug=False):
+		self._debug = debug
 		try:
 			self.__cx = sqlite.connect(database)
 			self.__cu = self.__cx.cursor()
@@ -29,26 +30,21 @@ class SQLite:
 		self.__cx.close()
 	
 	def _quote(self, s):
-		x = s.replace("\"", "\"\"")
-		return x
+		return s.replace('"', '\"')
 
 	def _quoteAll(self, list):
 		return map(self._quote, list)
 
-	def select(self, fields, table, condition=None, limit=None):
-		if not condition == None:
-			if not limit == None:
-				query = "SELECT %s FROM %s WHERE %s LIMIT %d;" % \
-						(string.join(fields, ", "), table, condition, limit)
-			else:
-				query = "SELECT %s FROM %s WHERE %s;" % \
-						(string.join(fields, ", "), table, condition)
-		else:
-			if not limit == None:
-				query = "SELECT %s FROM %s LIMIT %d;" % \
-						(string.join(fields, ", "), table, limit)
-			else:
-				query = "SELECT %s FROM %s;" % (string.join(fields, ", "), table)
+	def select(self, fields, table, condition=None, order=None, limit=None):
+		query = "SELECT %s FROM %s" % \
+				(string.join(fields, ", "), table)
+		if condition is not None:
+			query = "%s WHERE %s" % (query, condition)
+		if order is not None:
+			query = "%s ORDER BY %s" % (query, order)
+		if limit is not None:
+			query = "%s LIMIT %d" % (query, limit)
+		query = "%s;" % query
 
 		rows = self.query(query)
 		records = Records()
@@ -74,9 +70,11 @@ class SQLite:
 		self.query(query)
 
 	def query(self, sql):
+		if self._debug:
+			print "Query: %s" % sql
 		try:
 			sql = sql.replace('"', '\"')
-			self.__cu.execute(sql)
+			self.__cu.execute(self._quote(sql))
 			return self.__cu.fetchall()
 		except sqlite.Error, e:
 			raise Error("Error while executing query \"%s\": %s" % (sql, e))
