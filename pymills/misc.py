@@ -1,12 +1,14 @@
 # Filename: misc.py
-# Module:   misc
-# Date:     04th August 2004
-# Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate$
-# $Author$
+# Module:	misc
+# Date:		04th August 2004
+# Author:	James Mills <prologic@shortcircuit.net.au>
 # $Id$
 
-"""Miscellaneous Module"""
+"""Miscellaneous
+
+Various miscellaneous functions that don't fit
+Use as documented.
+"""
 
 def addPercent(value, percentage):
 	return float(value) * ((float(percentage) / 100.0) + 1.0)

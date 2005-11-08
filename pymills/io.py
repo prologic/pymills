@@ -1,14 +1,22 @@
 # Filename: io.py
-# Module:   io
-# Date:     04th August 2004
-# Author:   James Mills <prologic@shortcircuit.net.au>
+# Module:	io
+# Date:		04th August 2004
+# Author:	James Mills <prologic@shortcircuit.net.au>
+# $Id$
 
-"""Input/Output Module"""
+"""Advanced IO
+
+This module contains various classes for advanced IO.
+For instance, the Command class, used to make writing
+command-style programs easier. (ie: programs that prompt for
+input and accept commands and react to them)
+"""
 
 import sys
 import string
 import inspect
 import readline
+from select import select
 
 from utils import Tokenizer
 
@@ -31,7 +39,7 @@ class Command:
 	def process(self):
 		input = Input(True)
 		s = input.read(self.prompt)
-		while  s is not None:
+		while s is not None:
 			tokens = Tokenizer(s)
 			command = tokens.next()
 			args = tokens.rest()

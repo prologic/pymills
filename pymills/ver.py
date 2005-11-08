@@ -1,9 +1,14 @@
 # Filename: ver.py
-# Module:   ver
-# Date:     07th June 2005
-# Author:   James Mills <prologic@shortcircuit.net.au>
+# Module:	ver
+# Date:		07th June 2005
+# Author:	James Mills <prologic@shortcircuit.net.au>
+# $Id$
 
-"""Version Module"""
+"""Version Library
+
+This module contains a class to deal with version strings
+and is capable of comparing versions in various formats
+"""
 
 import re
 import string
@@ -39,11 +44,11 @@ class Version:
 				release, self._build)
 
 	def __eq__(self, y):
-		c1 =  reduce(lambda a, b: a and b, \
+		c1 = reduce(lambda a, b: a and b, \
 				map(lambda a, b: a == b, self._version, y._version))
 		c2 = self._release == y._release
-		c4 = self._build == y._build
-		return c1 and c2 and c3 and c4
+		c3 = self._build == y._build
+		return c1 and c2 and c3
 	
 	def __ne__(self, y):
 		return not self == y
@@ -90,13 +95,10 @@ class Version:
 			self._version = [int(x) for x in version.split("_")]
 
 	def __parse(self, s):
-		#print "Parsing: %s" % s
 		try:
 			for i, format in enumerate(FORMATS):
-				#print "Trying format: %s" % format
 				m = re.match(format, s)
 				if m is not None:
-					#print "Match! (%d)" % i
 					self.__convert(i, m)
 		except Exception, e:
 			raise Error("Cannot parse '%s' (%s)" % (s, e))

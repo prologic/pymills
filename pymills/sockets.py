@@ -1,12 +1,15 @@
-# Filename: Sockets.py
-# Module:   Sockets
-# Date:     04th August 2004
-# Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate$
-# $Author$
+# Filename: sockets.py
+# Module:	sockets
+# Date:		04th August 2004
+# Author:	James Mills <prologic@shortcircuit.net.au>
 # $Id$
 
-"""Sockets Module"""
+"""TCP/IP and UDP Sockets
+
+This module contains classes for TCP/IP and UDP sockets for
+both servers and clients.
+All classes are non-blocking.
+"""
 
 import re
 import socket
@@ -226,6 +229,9 @@ class TCPServer:
 			sock.send(data)
 		except socket.error, e:
 			self.onERROR(e)
+	
+	def writeline(self, sock, line):
+		self.write(sock, "%s\n" % line)
 	
 	def broadcast(self, data):
 		for sock in self.sockets:

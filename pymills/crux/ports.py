@@ -2,29 +2,28 @@
 # Module:	ports
 # Date:		15th June 2005
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate$
-# $Author$
 # $Id$
 
-"""Ports System module
+"""Ports System
 
-Create an internal representation of the system's Ports Tree
+This module contains classes to represent the Ports Tree and
+to assist in reading individual Ports and manipulate them.
 """
 
 import re
 import os
 import StringIO
 
-from pymills import utils
+from pymills.utils import getFiles
 
 FILEFORMAT = \
 """# $Id$
 # Description: %(Description)s
-# URL:         %(URL)s
-# Packager:    %(Packager)s
-# Maintainer:  %(Maintainer)s
+# URL:			%(URL)s
+# Maintainer:	%(Maintainer)s
+# Packager:		%(Packager)s
 #
-# Depends on: %(depsStr)s
+# Depends on:	%(depsStr)s
 
 name=%(name)s
 version=%(version)s
@@ -38,7 +37,7 @@ build () {
 # vim: syntax=sh\n"""
 
 STRFORMAT = \
-"""Name:         %(name)s
+"""Name:      %(name)s
 Path:         %(path)s
 Version:      %(version)s
 Release:      %(release)s
@@ -81,7 +80,7 @@ class PortsTree:
 		return output
 
 	def buildTree(self):
-		dirs = utils.getFiles(self._path, [os.path.isdir], "^[^.].*")
+		dirs = getFiles(self._path, [os.path.isdir], "^[^.].*")
 		
 		for dir in dirs:
 			repo = Repository(self._path, dir)
@@ -109,7 +108,7 @@ class Repository:
 
 	def buildList(self):
 		path = os.path.join(self._root, self._name)
-		dirs = utils.getFiles(path, [os.path.isdir], "^[^.].*")
+		dirs = getFiles(path, [os.path.isdir], "^[^.].*")
 		
 		for dir in dirs:
 			port = Port(path, dir)

@@ -1,23 +1,25 @@
 # Filename: utils.py
-# Module:   utils
-# Date:     04th August 2004
-# Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate$
-# $Author$
+# Module:	utils
+# Date:		04th August 2004
+# Author:	James Mills <prologic@shortcircuit.net.au>
 # $Id$
 
-"""Utilities Module"""
+"""Utilities
+
+Various utility classes and functions
+"""
 
 import os
 import re
 import sys
 import string
+import random
 
 class Error(Exception):
 	pass
 
 def getProgName():
-	return os.path.splitext(os.path.basename(sys.argv[0]))[0]
+	return os.path.basename(sys.argv[0])
 
 def writePID(file):
 	try:
@@ -27,25 +29,15 @@ def writePID(file):
 	except Exception, e:
 		raise Error("Error writing pid to %s: %s" % (file, e))
 
-def loadConfig():
-	curDir = os.getcwd()
-	homeDir = os.path.expanduser("~") 
-	etcDir = "/etc/"
-
-	paths = [
-		curDir,
-		"%s/.%s" % (homeDir, getProgName()),
-		"%s/%s" % (etcDir, getProgName())]
-
-	for path in paths:
-		if os.path.isdir(path):
-			sys.path.append(path)
-			if __import__("conf", dict) is not None:
-				return True
-			else:
-				sys.path.remove(path)
-
-	return False
+def loadConfig(filename, paths=[]):
+	from ConfigParser import ConfigParser
+	conf = ConfigParser()
+	conf.read([
+		"/etc/%s" % filename,
+		"%s/%s" % (os.getcwd(), filename),
+		os.path.expanduser("~/.%s" % filename)] +
+		["%s/%s" % (path, filename) for path in paths])
+	return conf
 
 def daemonize(stdin="/dev/null", stdout="/dev/null", stderr="/dev/null"):
 	"""This forks the current process into a daemon.
@@ -55,14 +47,14 @@ def daemonize(stdin="/dev/null", stdout="/dev/null", stderr="/dev/null"):
 	in sys.stdin, sys.stdout, and sys.stderr.
 
 	Example:
-	   if __name__ == "__main__":
-	      daemonize('/dev/null','/tmp/daemon.log','/tmp/daemon.log')
-	      main()
+		if __name__ == "__main__":
+			daemonize('/dev/null','/tmp/daemon.log','/tmp/daemon.log')
+			main()
 
 	Args:
-	   stdin : file to write standard input to
-	   stdout : file to write standard output to
-	   stderr : file to write standard error to
+		stdin : file to write standard input to
+		stdout : file to write standard output to
+		stderr : file to write standard error to
 	
 	These arguments are optional and default to /dev/null.
 
@@ -71,7 +63,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null", stderr="/dev/null"):
 	may not appear in the order that you expect.
 	
 	Returns:
-	   None
+		None
 	"""
 
 	# Do first fork.
@@ -100,7 +92,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null", stderr="/dev/null"):
 		sys.exit(1)
 
 	# Now I am a daemon!
-    
+
 	# Redirect standard file descriptors.
 	si = open(stdin, 'r')
 	so = open(stdout, 'a+')
@@ -153,8 +145,7 @@ class Tokenizer(list):
 
 	def __init__(self, str, delim=" "):
 		self._delim = delim
-		tokens = string.split(str, delim)
-		list.__init__(self, tokens)
+		list.__init__(self, str.split(delim))
 
 	def peek(self, n=0):
 		if not self == [] and (0 <= n < len(self)):
@@ -176,9 +167,9 @@ class Tokenizer(list):
 	
 	def copy(self, s, e=None):
 		if e is not None:
-			return string.join(self[s:e], self._delim)
-		else:
 			return string.join(self[s:], self._delim)
+		else:
+			return string.join(self[s:e], self._delim)
 
 	def delete(self, n):
 		if 0 <= n < len(self):
@@ -204,3 +195,27 @@ def getFiles(path, tests=[os.path.isfile], pattern=".*"):
 	
 def isReadable(file):
 	return os.access(file, os.R_OK)
+
+def mkpasswd(n):
+	validCharacters = string.ascii_lowercase + string.digits
+	validCharacters = validCharacters.strip("oO0")
+	return string.join(
+			[random.choice(validCharacters)
+				for x in range(n)], "")
+
+def caller(n=1):
+	from traceback import extract_stack
+	stack = extract_stack()
+	return stack[-n-2][2]
+
+def sendEmail(fromEmail, toEmail, subject, message):
+	import smtplib
+	from email.MIMEText import MIMEText
+	msg = MIMEText(message)
+	msg['Subject'] = subject
+	msg["From"] = fromEmail
+	msg["To"] = toEmail
+	s = smtplib.SMTP()
+	s.connect()
+	s.sendmail(fromEmail, toEmail, msg.as_string())
+	s.close()

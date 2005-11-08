@@ -1,18 +1,22 @@
 # Filename: ircbot.py
-# Module:   ircbot
-# Date:     04th August 2004
-# Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate$
-# $Author$
+# Module:	ircbot
+# Date:		04th August 2004
+# Author:	James Mills <prologic@shortcircuit.net.au>
 # $Id$
 
-"""IRC Bot Module"""
+"""IRC Bot
+
+This module makes writing more complex IRC bots easier.
+This implements a very _basic_ IRC Bot that can be extended.
+Simply write your program as an extension of this class.
+
+Plugins are also supported.
+"""
 
 import os
 import sys
 import signal
 import inspect
-import traceback
 
 import irc
 import timers

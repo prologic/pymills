@@ -1,12 +1,14 @@
 # Filename: adt.py
-# Module:   adt
-# Date:     04th August 2004
-# Author:   James Mills <prologic@shortcircuit.net.au>
-# $LastChangedDate$
-# $Author$
+# Module:	adt
+# Date:		04th August 2004
+# Author:	James Mills <prologic@shortcircuit.net.au>
 # $Id$
 
-"""Abstract Data Types module."""
+"""Abstract Data Types
+
+This modules contains some commonoly used ADTs that can be used
+in your program. More will be implemented later...
+"""
 
 class Stack:
 
@@ -65,3 +67,67 @@ class Queue:
 	
 	def empty(self):
 		return self._queue == []
+
+class CaselessList(list):
+
+#	def __new__(self):
+#		pass
+
+#	def update(self):
+#		pass
+
+#	def setdefault(self):
+#		pass
+	
+	def __contains__(self, y):
+		return list.__contains__(self, y.lower())
+
+	def __delitem__(self, y):
+		list.__delitem__(self, y.lower())
+	
+	def __setitem__(self, y):
+		list.__setitem__(self, y.lower())
+
+	def __getitem__(self, y):
+		return list.__getitem__(self, y)
+
+	def append(self, obj):
+		if type(obj) is list:
+			for y in obj:
+				list.append(self, y.lower())
+		elif type(obj) is str:
+			list.append(self, obj.lower())
+		else:
+			list.append(self, y)
+	
+	def remove(self, value):
+		if type(value) is str:
+			list.remove(self, value.lower())
+		else:
+			list.remove(self, value)
+
+class CaselessDict(dict):
+
+#	def __new__(self):
+#		pass
+
+#	def update(self):
+#		pass
+
+#	def setdefault(self):
+#		pass
+	
+	def __delitem__(self, key):
+		dict.__delitem__(self, key.lower())
+	
+	def __setitem__(self, key, value):
+		dict.__setitem__(self, key.lower(), value)
+
+	def __getitem__(self, key):
+		return dict.__getitem__(self, key.lower())
+
+	def get(self, key, default=None):
+		return dict.get(self, key.lower())
+
+	def has_key(self, key):
+		return dict.has_key(self, key.lower())
