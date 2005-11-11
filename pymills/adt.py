@@ -117,9 +117,6 @@ class CaselessDict(dict):
 #	def setdefault(self):
 #		pass
 	
-	def __contains__(self, value):
-		dict.__contains__(self, value.lower())
-
 	def __delitem__(self, key):
 		dict.__delitem__(self, key.lower())
 	
