@@ -155,13 +155,22 @@ class Server(TCPClient):
 			newnick = strip(tokens[2])
 			ctime = strip(tokens[3])
 			self.onNICK(source, newnick, ctime)
+		elif tokens[1] == "TOPIC":
+			source = sourceSplit(strip(tokens[0]))
+			channel, whoset, whenset = tokens[2:5]
+			topic = strip(tokens.copy(5))
+			self.onTOPIC(channel, whoset, whenset, topic)
 		elif tokens[0] == "PING":
 			server = strip(tokens[1])
 			self.onPING(server)
 		elif tokens[0] == "NICK":
 			del tokens[0]
-			print "Tokens: %s" % tokens
 			self.onNEWNICK(*tokens)
+		elif tokens[0] == "TOPIC":
+			del tokens[0]
+			channel, whoset, whenset = tokens[:3]
+			topic = strip(tokens.copy(3))
+			self.onTOPIC(channel, whoset, whenset, topic)
 	
 	# IRC Events
 	
@@ -191,6 +200,9 @@ class Server(TCPClient):
 		pass
 
 	def onCTCP(self, source, target, type, message):
+		pass
+	
+	def onTOPIC(self, channel, whoset, whenset, topic):
 		pass
 	
 class Client(TCPClient):

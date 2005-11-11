@@ -250,9 +250,18 @@ class Records:
 		self._db.update(condition, [value], None, [field])
 		record[field] = value
 
-	def get(self, field, row=0):
+	def get(self, fields=None, row=0):
 		if (not self.empty()) and (0 <= row < len(self._records)):
 			record = self._records[row]
-			return record[field]
+			if fields is None:
+				return record.values()
+			else:
+				if type(fields) is list:
+					 return map(
+							 lambda x: x[1], filter(
+								 lambda x: x[0] in fields, 
+								 [x for x in record.iteritems()]))
+				else:
+					return record[fields]
 		else:
 			return Null()
