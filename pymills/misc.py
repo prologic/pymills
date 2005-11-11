@@ -36,3 +36,12 @@ def duration(seconds):
 	mins = int((seconds / 60))
 	seconds = int((seconds) % (60))
 	return (days, hours, mins, seconds)
+
+def backMerge(l, n, t=" "):
+	"""Merge the last n items in list l joining with tokens t
+
+	l - list
+	n - merge last n items from l
+	t - token (default: " ")
+	"""
+	return l[:-n] + [t.join(l[-n:])]
