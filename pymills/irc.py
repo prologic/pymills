@@ -27,10 +27,19 @@ def sourceJoin(source):
 	return "%s!%s@%s" % source
 
 def sourceSplit(source):
+	"""Split the given source into it's parts.
+
+	source must be of the form:
+		nick!ident@host
+	
+	Example:
+		nick, ident, host, = sourceSplit("Joe!Blogs@localhost")
+	"""
+
 	if "!" in source and "@" in source:
-		print "Source: %s" % source
-		tmp = source.split("!")
-		return tmp + tmp[1].split("@")
+		nick, tmp = tuple(source.strip().split("!"))
+		ident, host = tmp.split("@")
+		return (nick, ident, host)
 	else:
 		return source
 	
