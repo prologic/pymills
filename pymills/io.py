@@ -13,7 +13,6 @@ input and accept commands and react to them)
 """
 
 import sys
-import string
 import inspect
 import readline
 from select import select
@@ -108,35 +107,86 @@ class SelectInput:
 		return line
 	
 class Table:
+	"""Class to print nicely formatted tables
+
+	This class will allow you to print nice pretty
+	tabl-like outputs to stdout. You give it a header
+	and add a bunch of rows, then print it.
+	"""
 
 	def __init__(self, headers):
-		self.headers = headers
+		"""Initialize Table Object
 
-		self.header = ''
-		for header in headers:
-			if header[2] == -1:
-				self.header = self.header + header[0].ljust(header[1])
-			elif header[2] == 0:
-				self.header = self.header + header[0].center(header[1])
-			elif header[2] == 1:
-				self.header = self.header + header[0].rjust(header[1])
+		Syntax of headers (list of tuples):
+		(title, length, justify)
+		"""
+
+		self._headers = headers
+		self._header = ""
+		self._rows = []
+
+		for title, length, justify in headers:
+			if justify == LJUSTIFY:
+				self._header += title.ljust(length)
+			elif justify == CENTER:
+				self._header += title.center(length)
+			elif justify == RJUSTIFY:
+				self._header += title.rjust(length)
+			else:
+				self._header += title.ljust(length)
+
+	def __str__(self):
+
+		import string
+		from StringIO import StringIO
+
+		s = StringIO()
+		s.write("%s\n" % self._header)
+		s.write("-" * len(self._header))
+		s.write("\n")
+
+		for row in self._rows:
+			s.write("%s\n" % string.join(
+				map(self._convert, self._headers, 
+					map(str, row)), ""))
+
+		s.write("-" * len(self._header))
+		s.write("\n")
+
+		try:
+			return s.getvalue()
+		finally:
+			s.close()
 
 	def _convert(self, header, value):
-		if header[2] == -1:
-			return str(value).ljust(header[1])
-		elif header[2] == 0:
-			return str(value).center(header[1])
-		elif header[2] == 1:
-			return str(value).rjust(header[1])
+		length, justify = header[1:]
+		if justify == LJUSTIFY:
+			return value.ljust(length)
+		elif justify == CENTER:
+			return value.center(length)
+		elif justify == RJUSTIFY:
+			return value.rjust(length)
 		
-	def printHeader(self):
-		print self.header
-	
-	def printRule(self):
-		print '-' * len(self.header)
-		
-	def printRow(self, row):
-		print string.join(map(self._convert, self.headers, row), '')
+	def add(self, row):
+		"""Adds a new row to the table
+
+		row - list of values to print
+		"""
+
+		self._rows.append(row)
+
+##
+## Constants
+##
+
+# Table
+LJUSTIFY = -1
+CENTER = 0
+RJUSTIFY = 1
+
+##
+## Tests
+##
 
 def test():
 	"""Test function to perform a self-test on this module
@@ -145,14 +195,12 @@ def test():
 	"""
 
 	headers = [
-		('id', 4, -1),
-		('Name', 10, -1),
-		('Age', 3, -1)]
+		('id', 4, LJUSTIFY),
+		('Name', 10, LJUSTIFY),
+		('Age', 3, LJUSTIFY)]
 	table = Table(headers)
-	table.printHeader()
-	table.printRule()
-	table.printRow([0, 'James', 21])
-	table.printRule()
+	table.add([0, "James", 21])
+	print table
 
 	help = "Help me! I'm stupid!"
 
