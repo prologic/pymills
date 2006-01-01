@@ -66,7 +66,7 @@ class SQLObject:
 
 	def _quote(self, s):
 		if type(s) is str:
-			return s.replace('"', '\"')
+			return s.replace('"', '\\"')
 		else:
 			return s
 
@@ -196,8 +196,7 @@ class SQLObject:
 		self._conn.update()
 
 	def query(self, sql):
-		sql = sql.replace('"', '\"')
-		return self._conn.execute(self._quote(sql))
+		return self._conn.execute(sql)
 
 class Null:
 
@@ -257,10 +256,25 @@ class Records:
 				return record.values()
 			else:
 				if type(fields) is list:
-					 return map(
-							 lambda x: x[1], filter(
-								 lambda x: x[0] in fields, 
-								 [x for x in record.iteritems()]))
+
+					print fields
+					values = []
+					for k in fields:
+						print k
+						if record.has_key(k):
+							values.append(record[k])
+					print values
+					return values
+
+# This one doesn't either ...
+#					return [x[1] for x in record.iteritems() if x[0] in fields]
+
+# THis one doesn't return the list of values in the
+# same order as the fields given.
+#					 return map(
+#							 lambda x: x[1], filter(
+#								 lambda x: x[0] in fields, 
+#								 [x for x in record.iteritems()]))
 				else:
 					return record[fields]
 		else:
