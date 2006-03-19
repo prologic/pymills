@@ -13,7 +13,7 @@ mechanisms, for example: The package management system (pkgutils).
 
 __name__ = "crux"
 __desc__ = "James Mills Python Library - CRUX Package"
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __author__ = "James Mills"
 __email__ = "%s <prologic@shortcircuit.net.au>" % __author__
 __url__ = "http://shortcircuit.net.au/~prologic/"

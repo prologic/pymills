@@ -74,7 +74,9 @@ class PortsTree:
 		f.write("Ports Tree: %s\n" % self._path)
 		f.write("-----------\n\n")
 		f.writelines(self._repos)
-		f.write("Total ports: %d" % len(self._repos))
+		f.write("Collections: %d\n" % len(self._repos))
+		f.write("Ports:       %d" % sum(
+			map(lambda x: len(x._ports), self._repos)))
 		output = f.getvalue()
 		f.close()
 		return output
