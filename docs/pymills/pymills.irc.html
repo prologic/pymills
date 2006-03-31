@@ -9,18 +9,13 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.irc</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/irc.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/irc.py</a></font></td></tr></table>
-    <p><tt>IRC&nbsp;Module</tt></p>
+    <p><tt>Internet&nbsp;Relay&nbsp;Chat<br>
+&nbsp;<br>
+This&nbsp;is&nbsp;a&nbsp;Internet&nbsp;Relay&nbsp;Chat&nbsp;module&nbsp;containing&nbsp;classes&nbsp;that<br>
+aid&nbsp;in&nbsp;the&nbsp;creation&nbsp;of&nbsp;IRC&nbsp;clients&nbsp;and&nbsp;servers.<br>
+Simply&nbsp;write&nbsp;your&nbsp;program&nbsp;as&nbsp;an&nbsp;extension&nbsp;of&nbsp;one&nbsp;or&nbsp;more&nbsp;of<br>
+these&nbsp;classes.</tt></p>
 <p>
-<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#aa55cc">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
-    
-<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="string.html">string</a><br>
-</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
-</td><td width="25%" valign=top><a href="time.html">time</a><br>
-</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -32,6 +27,7 @@
 </font></dt><dd>
 <dl>
 <dt><font face="helvetica, arial"><a href="pymills.irc.html#Client">Client</a>
+</font></dt><dt><font face="helvetica, arial"><a href="pymills.irc.html#Server">Server</a>
 </font></dt></dl>
 </dd>
 </dl>
@@ -137,6 +133,94 @@ Methods inherited from <a href="pymills.sockets.html#TCPClient">pymills.sockets.
 
 <dl><dt><a name="Client-write"><strong>write</strong></a>(self, data)</dt></dl>
 
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Server">class <strong>Server</strong></a>(<a href="pymills.sockets.html#TCPClient">pymills.sockets.TCPClient</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Server-__del__"><strong>__del__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Server-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Server-ircCTCP"><strong>ircCTCP</strong></a>(self, source, target, type, message)</dt></dl>
+
+<dl><dt><a name="Server-ircCTCPREPLY"><strong>ircCTCPREPLY</strong></a>(self, source, target, type, message)</dt></dl>
+
+<dl><dt><a name="Server-ircINVITE"><strong>ircINVITE</strong></a>(self, source, target, channel)</dt></dl>
+
+<dl><dt><a name="Server-ircJOIN"><strong>ircJOIN</strong></a>(self, nick, channel)</dt></dl>
+
+<dl><dt><a name="Server-ircKICK"><strong>ircKICK</strong></a>(self, source, channel, target, message)</dt></dl>
+
+<dl><dt><a name="Server-ircMODE"><strong>ircMODE</strong></a>(self, source, target, modes)</dt></dl>
+
+<dl><dt><a name="Server-ircNICK"><strong>ircNICK</strong></a>(self, nick, idle, signon, ident, host, server, hops, name)</dt></dl>
+
+<dl><dt><a name="Server-ircNOTICE"><strong>ircNOTICE</strong></a>(self, source, target, message)</dt></dl>
+
+<dl><dt><a name="Server-ircPART"><strong>ircPART</strong></a>(self, nick, channel)</dt></dl>
+
+<dl><dt><a name="Server-ircPASS"><strong>ircPASS</strong></a>(self, password)</dt></dl>
+
+<dl><dt><a name="Server-ircPONG"><strong>ircPONG</strong></a>(self, daemon)</dt></dl>
+
+<dl><dt><a name="Server-ircPRIVMSG"><strong>ircPRIVMSG</strong></a>(self, source, target, message)</dt></dl>
+
+<dl><dt><a name="Server-ircQUIT"><strong>ircQUIT</strong></a>(self, nick<font color="#909090">=None</font>, message<font color="#909090">=''</font>)</dt></dl>
+
+<dl><dt><a name="Server-ircRAW"><strong>ircRAW</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="Server-ircSERVER"><strong>ircSERVER</strong></a>(self, server, hops, token, description)</dt></dl>
+
+<dl><dt><a name="Server-ircTOPIC"><strong>ircTOPIC</strong></a>(self, nick, channel, topic, whoset<font color="#909090">=None</font>, whenset<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="Server-onCTCP"><strong>onCTCP</strong></a>(self, source, target, type, message)</dt></dl>
+
+<dl><dt><a name="Server-onJOIN"><strong>onJOIN</strong></a>(self, source, channel)</dt></dl>
+
+<dl><dt><a name="Server-onMESSAGE"><strong>onMESSAGE</strong></a>(self, source, target, message)</dt></dl>
+
+<dl><dt><a name="Server-onNEWNICK"><strong>onNEWNICK</strong></a>(self, nick, hops, signon, ident, host, server, unused, *name)</dt></dl>
+
+<dl><dt><a name="Server-onNICK"><strong>onNICK</strong></a>(self, source, newnick, ctime)</dt></dl>
+
+<dl><dt><a name="Server-onNOTICE"><strong>onNOTICE</strong></a>(self, source, target, message)</dt></dl>
+
+<dl><dt><a name="Server-onPART"><strong>onPART</strong></a>(self, source, channel, message)</dt></dl>
+
+<dl><dt><a name="Server-onPING"><strong>onPING</strong></a>(self, server)</dt></dl>
+
+<dl><dt><a name="Server-onQUIT"><strong>onQUIT</strong></a>(self, nick, message)</dt></dl>
+
+<dl><dt><a name="Server-onRAW"><strong>onRAW</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="Server-onREAD"><strong>onREAD</strong></a>(self, line)</dt></dl>
+
+<dl><dt><a name="Server-onTOPIC"><strong>onTOPIC</strong></a>(self, channel, whoset, whenset, topic)</dt></dl>
+
+<hr>
+Methods inherited from <a href="pymills.sockets.html#TCPClient">pymills.sockets.TCPClient</a>:<br>
+<dl><dt><a name="Server-close"><strong>close</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Server-getTraffic"><strong>getTraffic</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Server-onCONNECT"><strong>onCONNECT</strong></a>(self, host, port)</dt></dl>
+
+<dl><dt><a name="Server-onDISCONNECT"><strong>onDISCONNECT</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Server-onERROR"><strong>onERROR</strong></a>(self, error)</dt></dl>
+
+<dl><dt><a name="Server-open"><strong>open</strong></a>(self, host, port)</dt></dl>
+
+<dl><dt><a name="Server-process"><strong>process</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Server-run"><strong>run</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Server-write"><strong>write</strong></a>(self, data)</dt></dl>
+
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#eeaa77">
@@ -144,7 +228,14 @@ Methods inherited from <a href="pymills.sockets.html#TCPClient">pymills.sockets.
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-parseSource"><strong>parseSource</strong></a>(source)</dt></dl>
+<td width="100%"><dl><dt><a name="-sourceJoin"><strong>sourceJoin</strong></a>(source)</dt></dl>
+ <dl><dt><a name="-sourceSplit"><strong>sourceSplit</strong></a>(source)</dt><dd><tt>Split&nbsp;the&nbsp;given&nbsp;source&nbsp;into&nbsp;it's&nbsp;parts.<br>
+&nbsp;<br>
+source&nbsp;must&nbsp;be&nbsp;of&nbsp;the&nbsp;form:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nick!ident@host<br>
+&nbsp;<br>
+Example:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nick,&nbsp;ident,&nbsp;host,&nbsp;=&nbsp;<a href="#-sourceSplit">sourceSplit</a>("Joe!Blogs@localhost")</tt></dd></dl>
  <dl><dt><a name="-strip"><strong>strip</strong></a>(s, color<font color="#909090">=False</font>)</dt></dl>
 </td></tr></table>
 </body></html>

@@ -1,0 +1,329 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module pymills.optparsex</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.optparsex</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/optparsex.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/optparsex.py</a></font></td></tr></table>
+    <p><tt><a href="#Option">Option</a>&nbsp;Parser&nbsp;Extended<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;extends&nbsp;python's&nbsp;standard&nbsp;optarse&nbsp;module.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="optparse.html">optparse</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="optparse.html#Option">optparse.Option</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="pymills.optparsex.html#Option">Option</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="optparse.html#OptionParser">optparse.OptionParser</a>(<a href="optparse.html#OptionContainer">optparse.OptionContainer</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="pymills.optparsex.html#CaselessOptionParser">CaselessOptionParser</a>
+</font></dt><dt><font face="helvetica, arial"><a href="pymills.optparsex.html#OptionParser">OptionParser</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="CaselessOptionParser">class <strong>CaselessOptionParser</strong></a>(<a href="optparse.html#OptionParser">optparse.OptionParser</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="pymills.optparsex.html#CaselessOptionParser">CaselessOptionParser</a></dd>
+<dd><a href="optparse.html#OptionParser">optparse.OptionParser</a></dd>
+<dd><a href="optparse.html#OptionContainer">optparse.OptionContainer</a></dd>
+</dl>
+<hr>
+Methods inherited from <a href="optparse.html#OptionParser">optparse.OptionParser</a>:<br>
+<dl><dt><a name="CaselessOptionParser-__init__"><strong>__init__</strong></a>(self, usage<font color="#909090">=None</font>, option_list<font color="#909090">=None</font>, option_class<font color="#909090">=&lt;class optparse.Option&gt;</font>, version<font color="#909090">=None</font>, conflict_handler<font color="#909090">='error'</font>, description<font color="#909090">=None</font>, formatter<font color="#909090">=None</font>, add_help_option<font color="#909090">=True</font>, prog<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-add_option_group"><strong>add_option_group</strong></a>(self, *args, **kwargs)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-check_values"><strong>check_values</strong></a>(self, values, args)</dt><dd><tt><a href="#CaselessOptionParser-check_values">check_values</a>(values&nbsp;:&nbsp;Values,&nbsp;args&nbsp;:&nbsp;[string])<br>
+-&gt;&nbsp;(values&nbsp;:&nbsp;Values,&nbsp;args&nbsp;:&nbsp;[string])<br>
+&nbsp;<br>
+Check&nbsp;that&nbsp;the&nbsp;supplied&nbsp;option&nbsp;values&nbsp;and&nbsp;leftover&nbsp;arguments&nbsp;are<br>
+valid.&nbsp;&nbsp;Returns&nbsp;the&nbsp;option&nbsp;values&nbsp;and&nbsp;leftover&nbsp;arguments<br>
+(possibly&nbsp;adjusted,&nbsp;possibly&nbsp;completely&nbsp;new&nbsp;--&nbsp;whatever&nbsp;you<br>
+like).&nbsp;&nbsp;Default&nbsp;implementation&nbsp;just&nbsp;returns&nbsp;the&nbsp;passed-in<br>
+values;&nbsp;subclasses&nbsp;may&nbsp;override&nbsp;as&nbsp;desired.</tt></dd></dl>
+
+<dl><dt><a name="CaselessOptionParser-disable_interspersed_args"><strong>disable_interspersed_args</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-enable_interspersed_args"><strong>enable_interspersed_args</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-error"><strong>error</strong></a>(self, msg)</dt><dd><tt><a href="#CaselessOptionParser-error">error</a>(msg&nbsp;:&nbsp;string)<br>
+&nbsp;<br>
+Print&nbsp;a&nbsp;usage&nbsp;message&nbsp;incorporating&nbsp;'msg'&nbsp;to&nbsp;stderr&nbsp;and&nbsp;exit.<br>
+If&nbsp;you&nbsp;override&nbsp;this&nbsp;in&nbsp;a&nbsp;subclass,&nbsp;it&nbsp;should&nbsp;not&nbsp;return&nbsp;--&nbsp;it<br>
+should&nbsp;either&nbsp;exit&nbsp;or&nbsp;raise&nbsp;an&nbsp;exception.</tt></dd></dl>
+
+<dl><dt><a name="CaselessOptionParser-exit"><strong>exit</strong></a>(self, status<font color="#909090">=0</font>, msg<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-expand_prog_name"><strong>expand_prog_name</strong></a>(self, s)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-format_help"><strong>format_help</strong></a>(self, formatter<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-format_option_help"><strong>format_option_help</strong></a>(self, formatter<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-get_default_values"><strong>get_default_values</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-get_description"><strong>get_description</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-get_option_group"><strong>get_option_group</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-get_prog_name"><strong>get_prog_name</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-get_usage"><strong>get_usage</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-get_version"><strong>get_version</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-parse_args"><strong>parse_args</strong></a>(self, args<font color="#909090">=None</font>, values<font color="#909090">=None</font>)</dt><dd><tt><a href="#CaselessOptionParser-parse_args">parse_args</a>(args&nbsp;:&nbsp;[string]&nbsp;=&nbsp;sys.argv[1:],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;values&nbsp;:&nbsp;Values&nbsp;=&nbsp;None)<br>
+-&gt;&nbsp;(values&nbsp;:&nbsp;Values,&nbsp;args&nbsp;:&nbsp;[string])<br>
+&nbsp;<br>
+Parse&nbsp;the&nbsp;command-line&nbsp;options&nbsp;found&nbsp;in&nbsp;'args'&nbsp;(default:<br>
+sys.argv[1:]).&nbsp;&nbsp;Any&nbsp;errors&nbsp;result&nbsp;in&nbsp;a&nbsp;call&nbsp;to&nbsp;'<a href="#CaselessOptionParser-error">error</a>()',&nbsp;which<br>
+by&nbsp;default&nbsp;prints&nbsp;the&nbsp;usage&nbsp;message&nbsp;to&nbsp;stderr&nbsp;and&nbsp;calls<br>
+sys.<a href="#CaselessOptionParser-exit">exit</a>()&nbsp;with&nbsp;an&nbsp;error&nbsp;message.&nbsp;&nbsp;On&nbsp;success&nbsp;returns&nbsp;a&nbsp;pair<br>
+(values,&nbsp;args)&nbsp;where&nbsp;'values'&nbsp;is&nbsp;an&nbsp;Values&nbsp;instance&nbsp;(with&nbsp;all<br>
+your&nbsp;option&nbsp;values)&nbsp;and&nbsp;'args'&nbsp;is&nbsp;the&nbsp;list&nbsp;of&nbsp;arguments&nbsp;left<br>
+over&nbsp;after&nbsp;parsing&nbsp;options.</tt></dd></dl>
+
+<dl><dt><a name="CaselessOptionParser-print_help"><strong>print_help</strong></a>(self, file<font color="#909090">=None</font>)</dt><dd><tt><a href="#CaselessOptionParser-print_help">print_help</a>(file&nbsp;:&nbsp;file&nbsp;=&nbsp;stdout)<br>
+&nbsp;<br>
+Print&nbsp;an&nbsp;extended&nbsp;help&nbsp;message,&nbsp;listing&nbsp;all&nbsp;options&nbsp;and&nbsp;any<br>
+help&nbsp;text&nbsp;provided&nbsp;with&nbsp;them,&nbsp;to&nbsp;'file'&nbsp;(default&nbsp;stdout).</tt></dd></dl>
+
+<dl><dt><a name="CaselessOptionParser-print_usage"><strong>print_usage</strong></a>(self, file<font color="#909090">=None</font>)</dt><dd><tt><a href="#CaselessOptionParser-print_usage">print_usage</a>(file&nbsp;:&nbsp;file&nbsp;=&nbsp;stdout)<br>
+&nbsp;<br>
+Print&nbsp;the&nbsp;usage&nbsp;message&nbsp;for&nbsp;the&nbsp;current&nbsp;program&nbsp;(self.<strong>usage</strong>)&nbsp;to<br>
+'file'&nbsp;(default&nbsp;stdout).&nbsp;&nbsp;Any&nbsp;occurence&nbsp;of&nbsp;the&nbsp;string&nbsp;"%prog"&nbsp;in<br>
+self.<strong>usage</strong>&nbsp;is&nbsp;replaced&nbsp;with&nbsp;the&nbsp;name&nbsp;of&nbsp;the&nbsp;current&nbsp;program<br>
+(basename&nbsp;of&nbsp;sys.argv[0]).&nbsp;&nbsp;Does&nbsp;nothing&nbsp;if&nbsp;self.<strong>usage</strong>&nbsp;is&nbsp;empty<br>
+or&nbsp;not&nbsp;defined.</tt></dd></dl>
+
+<dl><dt><a name="CaselessOptionParser-print_version"><strong>print_version</strong></a>(self, file<font color="#909090">=None</font>)</dt><dd><tt><a href="#CaselessOptionParser-print_version">print_version</a>(file&nbsp;:&nbsp;file&nbsp;=&nbsp;stdout)<br>
+&nbsp;<br>
+Print&nbsp;the&nbsp;version&nbsp;message&nbsp;for&nbsp;this&nbsp;program&nbsp;(self.<strong>version</strong>)&nbsp;to<br>
+'file'&nbsp;(default&nbsp;stdout).&nbsp;&nbsp;As&nbsp;with&nbsp;<a href="#CaselessOptionParser-print_usage">print_usage</a>(),&nbsp;any&nbsp;occurence<br>
+of&nbsp;"%prog"&nbsp;in&nbsp;self.<strong>version</strong>&nbsp;is&nbsp;replaced&nbsp;by&nbsp;the&nbsp;current&nbsp;program's<br>
+name.&nbsp;&nbsp;Does&nbsp;nothing&nbsp;if&nbsp;self.<strong>version</strong>&nbsp;is&nbsp;empty&nbsp;or&nbsp;undefined.</tt></dd></dl>
+
+<dl><dt><a name="CaselessOptionParser-set_default"><strong>set_default</strong></a>(self, dest, value)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-set_defaults"><strong>set_defaults</strong></a>(self, **kwargs)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-set_process_default_values"><strong>set_process_default_values</strong></a>(self, process)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-set_usage"><strong>set_usage</strong></a>(self, usage)</dt></dl>
+
+<hr>
+Data and other attributes inherited from <a href="optparse.html#OptionParser">optparse.OptionParser</a>:<br>
+<dl><dt><strong>standard_option_list</strong> = []</dl>
+
+<hr>
+Methods inherited from <a href="optparse.html#OptionContainer">optparse.OptionContainer</a>:<br>
+<dl><dt><a name="CaselessOptionParser-add_option"><strong>add_option</strong></a>(self, *args, **kwargs)</dt><dd><tt><a href="#CaselessOptionParser-add_option">add_option</a>(<a href="#Option">Option</a>)<br>
+<a href="#CaselessOptionParser-add_option">add_option</a>(opt_str,&nbsp;...,&nbsp;kwarg=val,&nbsp;...)</tt></dd></dl>
+
+<dl><dt><a name="CaselessOptionParser-add_options"><strong>add_options</strong></a>(self, option_list)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-format_description"><strong>format_description</strong></a>(self, formatter)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-get_option"><strong>get_option</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-has_option"><strong>has_option</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-remove_option"><strong>remove_option</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-set_conflict_handler"><strong>set_conflict_handler</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="CaselessOptionParser-set_description"><strong>set_description</strong></a>(self, description)</dt></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Option">class <strong>Option</strong></a>(<a href="optparse.html#Option">optparse.Option</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Option-process"><strong>process</strong></a>(self, opt, value, values, parser)</dt></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>ATTRS</strong> = ['action', 'type', 'dest', 'default', 'nargs', 'const', 'choices', 'callback', 'callback_args', 'callback_kwargs', 'help', 'metavar', 'required']</dl>
+
+<dl><dt><strong>CHECK_METHODS</strong> = [&lt;function _check_action&gt;, &lt;function _check_type&gt;, &lt;function _check_choice&gt;, &lt;function _check_dest&gt;, &lt;function _check_const&gt;, &lt;function _check_nargs&gt;, &lt;function _check_callback&gt;, &lt;function _check_required&gt;]</dl>
+
+<hr>
+Methods inherited from <a href="optparse.html#Option">optparse.Option</a>:<br>
+<dl><dt><a name="Option-__init__"><strong>__init__</strong></a>(self, *opts, **attrs)</dt></dl>
+
+<dl><dt><a name="Option-__repr__"><strong>__repr__</strong></a> = _repr(self)</dt></dl>
+
+<dl><dt><a name="Option-__str__"><strong>__str__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Option-check_value"><strong>check_value</strong></a>(self, opt, value)</dt></dl>
+
+<dl><dt><a name="Option-convert_value"><strong>convert_value</strong></a>(self, opt, value)</dt></dl>
+
+<dl><dt><a name="Option-get_opt_string"><strong>get_opt_string</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Option-take_action"><strong>take_action</strong></a>(self, action, dest, opt, value, values, parser)</dt></dl>
+
+<dl><dt><a name="Option-takes_value"><strong>takes_value</strong></a>(self)</dt></dl>
+
+<hr>
+Data and other attributes inherited from <a href="optparse.html#Option">optparse.Option</a>:<br>
+<dl><dt><strong>ACTIONS</strong> = ('store', 'store_const', 'store_true', 'store_false', 'append', 'count', 'callback', 'help', 'version')</dl>
+
+<dl><dt><strong>ALWAYS_TYPED_ACTIONS</strong> = ('store', 'append')</dl>
+
+<dl><dt><strong>STORE_ACTIONS</strong> = ('store', 'store_const', 'store_true', 'store_false', 'append', 'count')</dl>
+
+<dl><dt><strong>TYPED_ACTIONS</strong> = ('store', 'append', 'callback')</dl>
+
+<dl><dt><strong>TYPES</strong> = ('string', 'int', 'long', 'float', 'complex', 'choice')</dl>
+
+<dl><dt><strong>TYPE_CHECKER</strong> = {'choice': &lt;function check_choice&gt;, 'complex': &lt;function check_builtin&gt;, 'float': &lt;function check_builtin&gt;, 'int': &lt;function check_builtin&gt;, 'long': &lt;function check_builtin&gt;}</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="OptionParser">class <strong>OptionParser</strong></a>(<a href="optparse.html#OptionParser">optparse.OptionParser</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="pymills.optparsex.html#OptionParser">OptionParser</a></dd>
+<dd><a href="optparse.html#OptionParser">optparse.OptionParser</a></dd>
+<dd><a href="optparse.html#OptionContainer">optparse.OptionContainer</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="OptionParser-check_values"><strong>check_values</strong></a>(self, values, args)</dt></dl>
+
+<hr>
+Methods inherited from <a href="optparse.html#OptionParser">optparse.OptionParser</a>:<br>
+<dl><dt><a name="OptionParser-__init__"><strong>__init__</strong></a>(self, usage<font color="#909090">=None</font>, option_list<font color="#909090">=None</font>, option_class<font color="#909090">=&lt;class optparse.Option&gt;</font>, version<font color="#909090">=None</font>, conflict_handler<font color="#909090">='error'</font>, description<font color="#909090">=None</font>, formatter<font color="#909090">=None</font>, add_help_option<font color="#909090">=True</font>, prog<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="OptionParser-add_option_group"><strong>add_option_group</strong></a>(self, *args, **kwargs)</dt></dl>
+
+<dl><dt><a name="OptionParser-disable_interspersed_args"><strong>disable_interspersed_args</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="OptionParser-enable_interspersed_args"><strong>enable_interspersed_args</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="OptionParser-error"><strong>error</strong></a>(self, msg)</dt><dd><tt><a href="#OptionParser-error">error</a>(msg&nbsp;:&nbsp;string)<br>
+&nbsp;<br>
+Print&nbsp;a&nbsp;usage&nbsp;message&nbsp;incorporating&nbsp;'msg'&nbsp;to&nbsp;stderr&nbsp;and&nbsp;exit.<br>
+If&nbsp;you&nbsp;override&nbsp;this&nbsp;in&nbsp;a&nbsp;subclass,&nbsp;it&nbsp;should&nbsp;not&nbsp;return&nbsp;--&nbsp;it<br>
+should&nbsp;either&nbsp;exit&nbsp;or&nbsp;raise&nbsp;an&nbsp;exception.</tt></dd></dl>
+
+<dl><dt><a name="OptionParser-exit"><strong>exit</strong></a>(self, status<font color="#909090">=0</font>, msg<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="OptionParser-expand_prog_name"><strong>expand_prog_name</strong></a>(self, s)</dt></dl>
+
+<dl><dt><a name="OptionParser-format_help"><strong>format_help</strong></a>(self, formatter<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="OptionParser-format_option_help"><strong>format_option_help</strong></a>(self, formatter<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="OptionParser-get_default_values"><strong>get_default_values</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="OptionParser-get_description"><strong>get_description</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="OptionParser-get_option_group"><strong>get_option_group</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="OptionParser-get_prog_name"><strong>get_prog_name</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="OptionParser-get_usage"><strong>get_usage</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="OptionParser-get_version"><strong>get_version</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="OptionParser-parse_args"><strong>parse_args</strong></a>(self, args<font color="#909090">=None</font>, values<font color="#909090">=None</font>)</dt><dd><tt><a href="#OptionParser-parse_args">parse_args</a>(args&nbsp;:&nbsp;[string]&nbsp;=&nbsp;sys.argv[1:],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;values&nbsp;:&nbsp;Values&nbsp;=&nbsp;None)<br>
+-&gt;&nbsp;(values&nbsp;:&nbsp;Values,&nbsp;args&nbsp;:&nbsp;[string])<br>
+&nbsp;<br>
+Parse&nbsp;the&nbsp;command-line&nbsp;options&nbsp;found&nbsp;in&nbsp;'args'&nbsp;(default:<br>
+sys.argv[1:]).&nbsp;&nbsp;Any&nbsp;errors&nbsp;result&nbsp;in&nbsp;a&nbsp;call&nbsp;to&nbsp;'<a href="#OptionParser-error">error</a>()',&nbsp;which<br>
+by&nbsp;default&nbsp;prints&nbsp;the&nbsp;usage&nbsp;message&nbsp;to&nbsp;stderr&nbsp;and&nbsp;calls<br>
+sys.<a href="#OptionParser-exit">exit</a>()&nbsp;with&nbsp;an&nbsp;error&nbsp;message.&nbsp;&nbsp;On&nbsp;success&nbsp;returns&nbsp;a&nbsp;pair<br>
+(values,&nbsp;args)&nbsp;where&nbsp;'values'&nbsp;is&nbsp;an&nbsp;Values&nbsp;instance&nbsp;(with&nbsp;all<br>
+your&nbsp;option&nbsp;values)&nbsp;and&nbsp;'args'&nbsp;is&nbsp;the&nbsp;list&nbsp;of&nbsp;arguments&nbsp;left<br>
+over&nbsp;after&nbsp;parsing&nbsp;options.</tt></dd></dl>
+
+<dl><dt><a name="OptionParser-print_help"><strong>print_help</strong></a>(self, file<font color="#909090">=None</font>)</dt><dd><tt><a href="#OptionParser-print_help">print_help</a>(file&nbsp;:&nbsp;file&nbsp;=&nbsp;stdout)<br>
+&nbsp;<br>
+Print&nbsp;an&nbsp;extended&nbsp;help&nbsp;message,&nbsp;listing&nbsp;all&nbsp;options&nbsp;and&nbsp;any<br>
+help&nbsp;text&nbsp;provided&nbsp;with&nbsp;them,&nbsp;to&nbsp;'file'&nbsp;(default&nbsp;stdout).</tt></dd></dl>
+
+<dl><dt><a name="OptionParser-print_usage"><strong>print_usage</strong></a>(self, file<font color="#909090">=None</font>)</dt><dd><tt><a href="#OptionParser-print_usage">print_usage</a>(file&nbsp;:&nbsp;file&nbsp;=&nbsp;stdout)<br>
+&nbsp;<br>
+Print&nbsp;the&nbsp;usage&nbsp;message&nbsp;for&nbsp;the&nbsp;current&nbsp;program&nbsp;(self.<strong>usage</strong>)&nbsp;to<br>
+'file'&nbsp;(default&nbsp;stdout).&nbsp;&nbsp;Any&nbsp;occurence&nbsp;of&nbsp;the&nbsp;string&nbsp;"%prog"&nbsp;in<br>
+self.<strong>usage</strong>&nbsp;is&nbsp;replaced&nbsp;with&nbsp;the&nbsp;name&nbsp;of&nbsp;the&nbsp;current&nbsp;program<br>
+(basename&nbsp;of&nbsp;sys.argv[0]).&nbsp;&nbsp;Does&nbsp;nothing&nbsp;if&nbsp;self.<strong>usage</strong>&nbsp;is&nbsp;empty<br>
+or&nbsp;not&nbsp;defined.</tt></dd></dl>
+
+<dl><dt><a name="OptionParser-print_version"><strong>print_version</strong></a>(self, file<font color="#909090">=None</font>)</dt><dd><tt><a href="#OptionParser-print_version">print_version</a>(file&nbsp;:&nbsp;file&nbsp;=&nbsp;stdout)<br>
+&nbsp;<br>
+Print&nbsp;the&nbsp;version&nbsp;message&nbsp;for&nbsp;this&nbsp;program&nbsp;(self.<strong>version</strong>)&nbsp;to<br>
+'file'&nbsp;(default&nbsp;stdout).&nbsp;&nbsp;As&nbsp;with&nbsp;<a href="#OptionParser-print_usage">print_usage</a>(),&nbsp;any&nbsp;occurence<br>
+of&nbsp;"%prog"&nbsp;in&nbsp;self.<strong>version</strong>&nbsp;is&nbsp;replaced&nbsp;by&nbsp;the&nbsp;current&nbsp;program's<br>
+name.&nbsp;&nbsp;Does&nbsp;nothing&nbsp;if&nbsp;self.<strong>version</strong>&nbsp;is&nbsp;empty&nbsp;or&nbsp;undefined.</tt></dd></dl>
+
+<dl><dt><a name="OptionParser-set_default"><strong>set_default</strong></a>(self, dest, value)</dt></dl>
+
+<dl><dt><a name="OptionParser-set_defaults"><strong>set_defaults</strong></a>(self, **kwargs)</dt></dl>
+
+<dl><dt><a name="OptionParser-set_process_default_values"><strong>set_process_default_values</strong></a>(self, process)</dt></dl>
+
+<dl><dt><a name="OptionParser-set_usage"><strong>set_usage</strong></a>(self, usage)</dt></dl>
+
+<hr>
+Data and other attributes inherited from <a href="optparse.html#OptionParser">optparse.OptionParser</a>:<br>
+<dl><dt><strong>standard_option_list</strong> = []</dl>
+
+<hr>
+Methods inherited from <a href="optparse.html#OptionContainer">optparse.OptionContainer</a>:<br>
+<dl><dt><a name="OptionParser-add_option"><strong>add_option</strong></a>(self, *args, **kwargs)</dt><dd><tt><a href="#OptionParser-add_option">add_option</a>(<a href="#Option">Option</a>)<br>
+<a href="#OptionParser-add_option">add_option</a>(opt_str,&nbsp;...,&nbsp;kwarg=val,&nbsp;...)</tt></dd></dl>
+
+<dl><dt><a name="OptionParser-add_options"><strong>add_options</strong></a>(self, option_list)</dt></dl>
+
+<dl><dt><a name="OptionParser-format_description"><strong>format_description</strong></a>(self, formatter)</dt></dl>
+
+<dl><dt><a name="OptionParser-get_option"><strong>get_option</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="OptionParser-has_option"><strong>has_option</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="OptionParser-remove_option"><strong>remove_option</strong></a>(self, opt_str)</dt></dl>
+
+<dl><dt><a name="OptionParser-set_conflict_handler"><strong>set_conflict_handler</strong></a>(self, handler)</dt></dl>
+
+<dl><dt><a name="OptionParser-set_description"><strong>set_description</strong></a>(self, description)</dt></dl>
+
+</td></tr></table></td></tr></table>
+</body></html>

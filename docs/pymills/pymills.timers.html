@@ -9,7 +9,22 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.timers</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/timers.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/timers.py</a></font></td></tr></table>
-    <p><tt><a href="#Timers">Timers</a>&nbsp;Module</tt></p>
+    <p><tt><a href="#Timers">Timers</a><br>
+&nbsp;<br>
+This&nbsp;is&nbsp;a&nbsp;module&nbsp;that&nbsp;allows&nbsp;you&nbsp;to&nbsp;implement&nbsp;timed-events<br>
+in&nbsp;your&nbsp;running&nbsp;application/process.<br>
+&nbsp;<br>
+Example:<br>
+from&nbsp;pymills.timers&nbsp;import&nbsp;<a href="#Timers">Timers</a><br>
+&nbsp;<br>
+def&nbsp;hello(name,&nbsp;length,&nbsp;args):<br>
+&nbsp;&nbsp;&nbsp;print&nbsp;"Hello&nbsp;World"<br>
+&nbsp;<br>
+timers&nbsp;=&nbsp;<a href="#Timers">Timers</a>()<br>
+timers.add("hello",&nbsp;5,&nbsp;hello)<br>
+&nbsp;<br>
+while&nbsp;True:<br>
+&nbsp;&nbsp;&nbsp;timers.run()</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -38,7 +53,7 @@
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="Timers-__init__"><strong>__init__</strong></a>(self)</dt></dl>
 
-<dl><dt><a name="Timers-add"><strong>add</strong></a>(self, name, length, function, *args)</dt></dl>
+<dl><dt><a name="Timers-add"><strong>add</strong></a>(self, name, length, function, forever<font color="#909090">=False</font>, *args)</dt></dl>
 
 <dl><dt><a name="Timers-run"><strong>run</strong></a>(self)</dt></dl>
 

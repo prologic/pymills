@@ -1,0 +1,162 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module pymills.spider</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.spider</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/spider.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/spider.py</a></font></td></tr></table>
+    <p><tt>Web&nbsp;<a href="#Crawler">Crawler</a>/Spider<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;implements&nbsp;a&nbsp;web&nbsp;crawler.&nbsp;This&nbsp;is&nbsp;very&nbsp;_basic_&nbsp;only<br>
+and&nbsp;needs&nbsp;to&nbsp;be&nbsp;extended&nbsp;to&nbsp;do&nbsp;anything&nbsp;usefull&nbsp;with&nbsp;the<br>
+traversed&nbsp;pages.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="collections.html">collections</a><br>
+<a href="psyco.html">psyco</a><br>
+<a href="pymills.html">pymills</a><br>
+</td><td width="25%" valign=top><a href="re.html">re</a><br>
+<a href="pymills.spider.html">pymills.spider</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+<a href="urllib2.html">urllib2</a><br>
+<a href="urlparse.html">urlparse</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="psyco.html#compact">psyco.compact</a>(<a href="__builtin__.html#object">__builtin__.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="pymills.spider.html#Crawler">Crawler</a>
+</font></dt><dt><font face="helvetica, arial"><a href="pymills.spider.html#Fetcher">Fetcher</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Crawler">class <strong>Crawler</strong></a>(<a href="psyco.html#compact">psyco.compact</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="pymills.spider.html#Crawler">Crawler</a></dd>
+<dd><a href="psyco.html#compact">psyco.compact</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="Crawler-__init__"><strong>__init__</strong></a>(*args, **kwargs)</dt></dl>
+
+<dl><dt><a name="Crawler-crawl"><strong>crawl</strong></a>(*args, **kwargs)</dt></dl>
+
+<dl><dt><a name="Crawler-getStats"><strong>getStats</strong></a>(*args, **kwargs)</dt></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__slots__</strong> = ()</dl>
+
+<hr>
+Methods inherited from <a href="psyco.html#compact">psyco.compact</a>:<br>
+<dl><dt><a name="Crawler-__delattr__"><strong>__delattr__</strong></a>(...)</dt><dd><tt>x.<a href="#Crawler-__delattr__">__delattr__</a>('name')&nbsp;&lt;==&gt;&nbsp;del&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="Crawler-__delslot__"><strong>__delslot__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="Crawler-__getattribute__"><strong>__getattribute__</strong></a>(...)</dt><dd><tt>x.<a href="#Crawler-__getattribute__">__getattribute__</a>('name')&nbsp;&lt;==&gt;&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="Crawler-__getslot__"><strong>__getslot__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="Crawler-__setattr__"><strong>__setattr__</strong></a>(...)</dt><dd><tt>x.<a href="#Crawler-__setattr__">__setattr__</a>('name',&nbsp;value)&nbsp;&lt;==&gt;&nbsp;x.name&nbsp;=&nbsp;value</tt></dd></dl>
+
+<dl><dt><a name="Crawler-__setslot__"><strong>__setslot__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from <a href="psyco.html#compact">psyco.compact</a>:<br>
+<dl><dt><strong>__dict__</strong> = &lt;dictproxy object&gt;</dl>
+
+<dl><dt><strong>__members__</strong> = &lt;attribute '__members__' of 'psyco.compact' objects&gt;</dl>
+
+<dl><dt><strong>__new__</strong> = &lt;built-in method __new__ of psyco.compacttype object&gt;<dd><tt>T.<a href="#Crawler-__new__">__new__</a>(S,&nbsp;...)&nbsp;-&gt;&nbsp;a&nbsp;new&nbsp;object&nbsp;with&nbsp;type&nbsp;S,&nbsp;a&nbsp;subtype&nbsp;of&nbsp;T</tt></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Fetcher">class <strong>Fetcher</strong></a>(<a href="psyco.html#compact">psyco.compact</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="pymills.spider.html#Fetcher">Fetcher</a></dd>
+<dd><a href="psyco.html#compact">psyco.compact</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="Fetcher-__getitem__"><strong>__getitem__</strong></a>(*args, **kwargs)</dt></dl>
+
+<dl><dt><a name="Fetcher-__init__"><strong>__init__</strong></a>(*args, **kwargs)</dt></dl>
+
+<dl><dt><a name="Fetcher-fetch"><strong>fetch</strong></a>(*args, **kwargs)</dt></dl>
+
+<dl><dt><a name="Fetcher-getURLS"><strong>getURLS</strong></a>(*args, **kwargs)</dt></dl>
+
+<dl><dt><a name="Fetcher-open"><strong>open</strong></a>(*args, **kwargs)</dt></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__slots__</strong> = ()</dl>
+
+<hr>
+Methods inherited from <a href="psyco.html#compact">psyco.compact</a>:<br>
+<dl><dt><a name="Fetcher-__delattr__"><strong>__delattr__</strong></a>(...)</dt><dd><tt>x.<a href="#Fetcher-__delattr__">__delattr__</a>('name')&nbsp;&lt;==&gt;&nbsp;del&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="Fetcher-__delslot__"><strong>__delslot__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="Fetcher-__getattribute__"><strong>__getattribute__</strong></a>(...)</dt><dd><tt>x.<a href="#Fetcher-__getattribute__">__getattribute__</a>('name')&nbsp;&lt;==&gt;&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="Fetcher-__getslot__"><strong>__getslot__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="Fetcher-__setattr__"><strong>__setattr__</strong></a>(...)</dt><dd><tt>x.<a href="#Fetcher-__setattr__">__setattr__</a>('name',&nbsp;value)&nbsp;&lt;==&gt;&nbsp;x.name&nbsp;=&nbsp;value</tt></dd></dl>
+
+<dl><dt><a name="Fetcher-__setslot__"><strong>__setslot__</strong></a>(...)</dt></dl>
+
+<hr>
+Data and other attributes inherited from <a href="psyco.html#compact">psyco.compact</a>:<br>
+<dl><dt><strong>__dict__</strong> = &lt;dictproxy object&gt;</dl>
+
+<dl><dt><strong>__members__</strong> = &lt;attribute '__members__' of 'psyco.compact' objects&gt;</dl>
+
+<dl><dt><strong>__new__</strong> = &lt;built-in method __new__ of psyco.compacttype object&gt;<dd><tt>T.<a href="#Fetcher-__new__">__new__</a>(S,&nbsp;...)&nbsp;-&gt;&nbsp;a&nbsp;new&nbsp;object&nbsp;with&nbsp;type&nbsp;S,&nbsp;a&nbsp;subtype&nbsp;of&nbsp;T</tt></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-testCrawler"><strong>testCrawler</strong></a>()</dt></dl>
+ <dl><dt><a name="-testFetcher"><strong>testFetcher</strong></a>()</dt></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>AGENT</strong> = 'pymills-pymills.spider/1.0.0'</td></tr></table>
+</body></html>

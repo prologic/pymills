@@ -9,7 +9,15 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.db</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/db.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/db.py</a></font></td></tr></table>
-    <p><tt>Database&nbsp;Module</tt></p>
+    <p><tt>OO&nbsp;SQL&nbsp;RDBM&nbsp;Layer<br>
+&nbsp;<br>
+This&nbsp;is&nbsp;an&nbsp;Object&nbsp;Oriented&nbsp;SQL&nbsp;RDBM&nbsp;Layer&nbsp;to&nbsp;make&nbsp;the&nbsp;use&nbsp;of<br>
+SQL&nbsp;RDBMs&nbsp;such&nbsp;as&nbsp;MySQL,&nbsp;<a href="#SQLite">SQLite</a>&nbsp;easier&nbsp;to&nbsp;use.<br>
+&nbsp;<br>
+Supports&nbsp;RDBMs:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#SQLite">SQLite</a><br>
+&nbsp;<br>
+More&nbsp;to&nbsp;come&nbsp;soon...</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -17,9 +25,10 @@
 <font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="pysqlite2.dbapi2.html">pysqlite2.dbapi2</a><br>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="pysqlite2.dbapi2.html">pysqlite2.dbapi2</a><br>
 </td><td width="25%" valign=top><a href="string.html">string</a><br>
-</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -34,6 +43,7 @@
 </font></dt></dl>
 </dd>
 <dt><font face="helvetica, arial"><a href="pymills.db.html#Records">Records</a>
+</font></dt><dt><font face="helvetica, arial"><a href="pymills.db.html#SQLObject">SQLObject</a>
 </font></dt><dt><font face="helvetica, arial"><a href="pymills.db.html#SQLite">SQLite</a>
 </font></dt></dl>
  <p>
@@ -60,15 +70,45 @@
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="Records-__getitem__"><strong>__getitem__</strong></a>(self, n)</dt></dl>
 
-<dl><dt><a name="Records-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+<dl><dt><a name="Records-__init__"><strong>__init__</strong></a>(self, db)</dt></dl>
 
-<dl><dt><a name="Records-__setitem__"><strong>__setitem__</strong></a>(self, record)</dt></dl>
+<dl><dt><a name="Records-__len__"><strong>__len__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Records-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Records-__setitem__"><strong>__setitem__</strong></a>(self, x)</dt></dl>
 
 <dl><dt><a name="Records-append"><strong>append</strong></a>(self, record)</dt></dl>
 
 <dl><dt><a name="Records-empty"><strong>empty</strong></a>(self)</dt></dl>
 
-<dl><dt><a name="Records-get"><strong>get</strong></a>(self, field, row<font color="#909090">=0</font>)</dt></dl>
+<dl><dt><a name="Records-get"><strong>get</strong></a>(self, fields<font color="#909090">=None</font>, row<font color="#909090">=0</font>)</dt></dl>
+
+<dl><dt><a name="Records-set"><strong>set</strong></a>(self, field, value, row<font color="#909090">=0</font>)</dt></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SQLObject">class <strong>SQLObject</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SQLObject-__init__"><strong>__init__</strong></a>(self, conn, table<font color="#909090">=None</font>, fields<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="SQLObject-delete"><strong>delete</strong></a>(self, condition, table<font color="#909090">=None</font>, fields<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="SQLObject-insert"><strong>insert</strong></a>(self, values, table<font color="#909090">=None</font>, fields<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="SQLObject-query"><strong>query</strong></a>(self, sql)</dt></dl>
+
+<dl><dt><a name="SQLObject-select"><strong>select</strong></a>(self, condition<font color="#909090">=None</font>, order<font color="#909090">=None</font>, limit<font color="#909090">=None</font>, table<font color="#909090">=None</font>, fields<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="SQLObject-setFields"><strong>setFields</strong></a>(self, fields)</dt></dl>
+
+<dl><dt><a name="SQLObject-setTable"><strong>setTable</strong></a>(self, table)</dt></dl>
+
+<dl><dt><a name="SQLObject-update"><strong>update</strong></a>(self, condition, values, table<font color="#909090">=None</font>, fields<font color="#909090">=None</font>)</dt></dl>
 
 </td></tr></table> <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -80,15 +120,11 @@
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="SQLite-__del__"><strong>__del__</strong></a>(self)</dt></dl>
 
-<dl><dt><a name="SQLite-__init__"><strong>__init__</strong></a>(self, database)</dt></dl>
+<dl><dt><a name="SQLite-__init__"><strong>__init__</strong></a>(self, conn, debug<font color="#909090">=False</font>)</dt></dl>
 
-<dl><dt><a name="SQLite-delete"><strong>delete</strong></a>(self, table, condition)</dt></dl>
+<dl><dt><a name="SQLite-execute"><strong>execute</strong></a>(self, sql)</dt></dl>
 
-<dl><dt><a name="SQLite-insert"><strong>insert</strong></a>(self, table, fields, values)</dt></dl>
-
-<dl><dt><a name="SQLite-query"><strong>query</strong></a>(self, sql)</dt></dl>
-
-<dl><dt><a name="SQLite-select"><strong>select</strong></a>(self, fields, table, condition<font color="#909090">=None</font>, limit<font color="#909090">=None</font>)</dt></dl>
+<dl><dt><a name="SQLite-update"><strong>update</strong></a>(self)</dt></dl>
 
 </td></tr></table></td></tr></table>
 </body></html>

@@ -9,7 +9,9 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.utils</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/utils.py">/home/prologic/var/cwd/local/projects/pymills/trunk/pymills/utils.py</a></font></td></tr></table>
-    <p><tt>Utilities&nbsp;Module</tt></p>
+    <p><tt>Utilities<br>
+&nbsp;<br>
+Various&nbsp;utility&nbsp;classes&nbsp;and&nbsp;functions</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -18,7 +20,9 @@
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="os.html">os</a><br>
-</td><td width="25%" valign=top><a href="string.html">string</a><br>
+<a href="random.html">random</a><br>
+</td><td width="25%" valign=top><a href="re.html">re</a><br>
+<a href="string.html">string</a><br>
 </td><td width="25%" valign=top><a href="sys.html">sys</a><br>
 </td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -198,21 +202,22 @@ Data and other attributes inherited from <a href="__builtin__.html#list">__built
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-daemonize"><strong>daemonize</strong></a>(stdin<font color="#909090">='/dev/null'</font>, stdout<font color="#909090">='/dev/null'</font>, stderr<font color="#909090">='/dev/null'</font>)</dt><dd><tt>This&nbsp;forks&nbsp;the&nbsp;current&nbsp;process&nbsp;into&nbsp;a&nbsp;daemon.<br>
+<td width="100%"><dl><dt><a name="-caller"><strong>caller</strong></a>(n<font color="#909090">=1</font>)</dt></dl>
+ <dl><dt><a name="-daemonize"><strong>daemonize</strong></a>(stdin<font color="#909090">='/dev/null'</font>, stdout<font color="#909090">='/dev/null'</font>, stderr<font color="#909090">='/dev/null'</font>)</dt><dd><tt>This&nbsp;forks&nbsp;the&nbsp;current&nbsp;process&nbsp;into&nbsp;a&nbsp;daemon.<br>
 &nbsp;<br>
 The&nbsp;stdin,&nbsp;stdout,&nbsp;and&nbsp;stderr&nbsp;arguments&nbsp;are&nbsp;file&nbsp;names&nbsp;that<br>
 will&nbsp;be&nbsp;opened&nbsp;and&nbsp;be&nbsp;used&nbsp;to&nbsp;replace&nbsp;the&nbsp;standard&nbsp;file&nbsp;descriptors<br>
 in&nbsp;sys.stdin,&nbsp;sys.stdout,&nbsp;and&nbsp;sys.stderr.<br>
 &nbsp;<br>
 Example:<br>
-&nbsp;&nbsp;&nbsp;if&nbsp;__name__&nbsp;==&nbsp;"__main__":<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#-daemonize">daemonize</a>('/dev/null','/tmp/daemon.log','/tmp/daemon.log')<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;main()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;__name__&nbsp;==&nbsp;"__main__":<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#-daemonize">daemonize</a>('/dev/null','/tmp/daemon.log','/tmp/daemon.log')<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;main()<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;stdin&nbsp;:&nbsp;file&nbsp;to&nbsp;write&nbsp;standard&nbsp;input&nbsp;to<br>
-&nbsp;&nbsp;&nbsp;stdout&nbsp;:&nbsp;file&nbsp;to&nbsp;write&nbsp;standard&nbsp;output&nbsp;to<br>
-&nbsp;&nbsp;&nbsp;stderr&nbsp;:&nbsp;file&nbsp;to&nbsp;write&nbsp;standard&nbsp;error&nbsp;to<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stdin&nbsp;:&nbsp;file&nbsp;to&nbsp;write&nbsp;standard&nbsp;input&nbsp;to<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stdout&nbsp;:&nbsp;file&nbsp;to&nbsp;write&nbsp;standard&nbsp;output&nbsp;to<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stderr&nbsp;:&nbsp;file&nbsp;to&nbsp;write&nbsp;standard&nbsp;error&nbsp;to<br>
 &nbsp;<br>
 These&nbsp;arguments&nbsp;are&nbsp;optional&nbsp;and&nbsp;default&nbsp;to&nbsp;/dev/null.<br>
 &nbsp;<br>
@@ -221,9 +226,13 @@ if&nbsp;it&nbsp;shares&nbsp;a&nbsp;file&nbsp;with&nbsp;stdout&nbsp;then&nbsp;int
 may&nbsp;not&nbsp;appear&nbsp;in&nbsp;the&nbsp;order&nbsp;that&nbsp;you&nbsp;expect.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;None</tt></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;None</tt></dd></dl>
+ <dl><dt><a name="-getFiles"><strong>getFiles</strong></a>(path, tests<font color="#909090">=[&lt;function isfile&gt;]</font>, pattern<font color="#909090">='.*'</font>)</dt></dl>
  <dl><dt><a name="-getProgName"><strong>getProgName</strong></a>()</dt></dl>
- <dl><dt><a name="-loadConfig"><strong>loadConfig</strong></a>()</dt></dl>
+ <dl><dt><a name="-isReadable"><strong>isReadable</strong></a>(file)</dt></dl>
+ <dl><dt><a name="-loadConfig"><strong>loadConfig</strong></a>(filename, paths<font color="#909090">=[]</font>)</dt></dl>
+ <dl><dt><a name="-mkpasswd"><strong>mkpasswd</strong></a>(n)</dt></dl>
+ <dl><dt><a name="-sendEmail"><strong>sendEmail</strong></a>(fromEmail, toEmail, subject, message)</dt></dl>
  <dl><dt><a name="-writePID"><strong>writePID</strong></a>(file)</dt></dl>
 </td></tr></table>
 </body></html>
