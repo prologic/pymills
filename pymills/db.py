@@ -113,7 +113,7 @@ class SQLObject:
 					if len(tokens) == 3:
 						field = tokens[2]
 					if row[i] is None:
-						record[field] = Null()
+						record[field] = None
 					else:
 						record[field] = row[i]
 				records.append(record)
@@ -156,7 +156,7 @@ class SQLObject:
 			pass
 		else:
 			raise Error("No fields given")
-		
+
 		query = "DELETE FROM %s WHERE %s;" % (table, condition)
 		self.query(query)
 		self._conn.update()
@@ -197,14 +197,6 @@ class SQLObject:
 
 	def query(self, sql):
 		return self._conn.execute(sql)
-
-class Null:
-
-	def __str__(self):
-		return "NULL"
-
-	def __repr__(self):
-		return "NULL"
 
 class Records:
 
@@ -278,4 +270,4 @@ class Records:
 				else:
 					return record[fields]
 		else:
-			return Null()
+			return None
