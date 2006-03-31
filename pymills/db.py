@@ -4,270 +4,210 @@
 # Author:	James Mills <prologic@shortcircuit.net.au>
 # $Id$
 
-"""OO SQL RDBM Layer
+"""Database Library
 
-This is an Object Oriented SQL RDBM Layer to make the use of
-SQL RDBMs such as MySQL, SQLite easier to use.
+Library to assist in the creation of applications that
+require access to Relational Database Management Systems
+such as MySQL and SQLite.
 
-Supports RDBMs:
-	SQLite
+NOTE: This library is not an Object Relational Mapper, it is
+simply a library that hides some of the interfaces of the 
+Python DB API and gives you nicer access to results
+with multiple access interfaces. (See example below)
 
-More to come soon...
+Supprted:
+* SQLite
+
+Example Usage:
+>>> import db
+>>> conn = db.Connection("sqlite://test.db")
+>>> conn.execute("create table names (firstname, lastname)")
+[]
+>>> conn.execute("insert into names values ('James', 'Mills')")
+[]
+>>> conn.execute("insert into names values ('Danny', 'Rawlins')")
+[]
+>>> conn.execute("select firstname, lastname from names")
+[{'lastname': u'Mills', 'firstname': u'James'}, {'lastname': u'Rawlins', 'firstname': u'Danny'}]
+>>> rows = conn.execute("select firstname, lastname from names")
+>>> rows[0]
+{'lastname': u'Mills', 'firstname': u'James'}
+>>> rows[0]["firstname"]
+u'James'
+>>> rows[0].lastname    
+u'Mills'
 """
 
 import os
-import string
-from pysqlite2 import dbapi2 as sqlite
+import re
+from datatypes import OrderedDict
 
-class Error(Exception):
+try:
+	from pysqlite2 import dbapi2 as sqlite
+except ImportError:
 	pass
 
-class SQLite:
+try:
+	from MySQLdb import dbapi2 as mysql
+except ImportError:
+	pass
 
-	def __init__(self, conn, debug=False):
-		self._debug = debug
+def parseURI(uri):
+	"""uri -> {"schema": ..., "username": ..., ...}
 
-		try:
-			self._cx = sqlite.connect(
-					os.path.abspath(
-						os.path.expanduser(
-							conn)))
-			self._cu = self._cx.cursor()
+	Parse a Connection URI into it's parts returning
+	a dictionary of schema, username, password and location.
+	If this fails, {} is returned.
+	"""
 
-		except sqlite.Error, e:
-			raise Error("Could not open connection -> %s" % e)
-		
+	m = re.match("(?P<schema>mysql|sqlite)://"
+			"((?P<username>.*?):(?P<password>.*?)@)?"
+			"(?P<location>.*)",
+			uri, re.IGNORECASE)
+	if m is not None:
+		return m.groupdict()
+	else:
+		return {}
+
+class DBError(Exception):
+	"""Database Error Occured"""
+
+	pass
+
+class Connection:
+	"""Connection(uri) -> new connection
+
+	Create a new connection object to the database specified
+	by the uri.
+	"""
+
+	def __init__(self, uri):
+		"initializes x; see x.__class__.__doc__ for signature"
+
+		self._cx = None
+		self._cu = None
+
+		for k, v in parseURI(uri).iteritems():
+			setattr(self, "_%s" % k, v)
+
+		if self._schema.lower() == "mysql":
+			raise NotImplemented
+
+		elif self._schema.lower() == "sqlite":
+			try:
+				self._cx = sqlite.connect(
+						os.path.abspath(
+							os.path.expanduser(self._location)))
+				self._cu = self._cx.cursor()
+			except sqlite.Error, e:
+				raise DBError("Could not open connection -> %s" % e)
+
 	def __del__(self):
+		"""uninitializes x
+
+		Perform a last commit and close the connection to the
+		database.
+		"""
+
 		try:
 			self._cx.commit()
 			self._cu.close()
 			self._cx.close()
 		except:
 			pass
+
+	def _getFields(self, sql):
+		"""sql -> ["...", ...]
+
+		Parses the given sql statement extracting the fields
+		used in a SELECT statement returning these fields
+		as a list. If no fields are found, an empty list is
+		returned.
+		"""
+
+		m = re.match("SELECT *(.*) *FROM.*", sql, re.IGNORECASE)
+		if m is not None:
+			return map(lambda s: s.strip(), m.group(1).strip().split(","))
+		else:
+			return []
 	
-	def update(self):
-		self._cx.commit()
+	def _buildResult(self, fields):
+		"""C.__buildResult(fields) -> list of rows from cursor
+
+		Build a list of rows where each row is an instance
+		of Record. The rows returned are retrieved from the
+		last transaction executed and stored in the cursor.
+		"""
+
+		return [Record(zip(fields, row)) for row in self._cu.fetchall()]
+	
+	def setAutoCommit(self, autocommit=True):
+		"""C.setAutoCommit(autocommit) -> None
+
+		Set the autocommit flag of the connection.
+		If enabled (autocommit=True), then a commit will occur
+		each time a transaction is executed. This can hamper
+		performance a little.
+		"""
+
+		self.cx.autocommit = autocommit
+
+	def commit(self):
+		"""C.commit() -> None
+
+		Perform a manual commit.
+		"""
+
+		self.cx.commit()
 	
 	def execute(self, sql):
-		if self._debug:
-			print "Query: %s" % sql
+		"""C.execute(sql) -> list of rows, or []
+
+		Execute the given SQL statement in sql and return
+		a list of rows (if appropiate) or return an empty list.
+		If this fails, a DBError exception will be thrown.
+		"""
+
+		sql = sql.strip()
+
+		if re.match("SELECT.*", sql, re.IGNORECASE) is not None:
+			fields = self._getFields(sql)
+		else:
+			fields = []
+
+		print "fields = %s" % fields
+
 		try:
 			self._cu.execute(sql)
-			return self._cu.fetchall()
+			if not fields == []:
+				return self._buildResult(fields)
+			else:
+				return []
 		except sqlite.Error, e:
-			raise Error("Error while executing query \"%s\": %s" % (sql, e))
+			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
-class SQLObject:
+	def do(self, *args):
+		"""Synonym of execute"""
 
-	def __init__(self, conn, table=None, fields=None):
-		self._conn = conn
-		self._table = table
-		self._fields = fields
+		self.execute(args)
 
-	def _quote(self, s):
-		if type(s) is str:
-			return s.replace('"', '\\"')
-		else:
-			return s
+class Record(OrderedDict):
+	"""Recird(row) -> a new multi-access row
 
-	def setTable(self, table):
-		self._table = table
-	
-	def setFields(self, fields):
-		self._fields = fields
+	Create a new multi-access row given a list of 2-pair
+	tuplies containing the field and value for that row.
+	Each row created can be access any number of ways.
 
-	def select(self, condition=None, order=None, limit=None,
-			table=None, fields=None):
+	Example:
+	>>> row = db.Record([("a", 1), ("b", 2), ("c", 3)])
+	>>> row.a
+	1
+	>>> row["a"]
+	1
+	"""
 
-		if table is None and (self._table is not None):
-			table = self._table
-		elif table is not None:
-			pass
-		else:
-			raise Error("No table given")
-
-		if fields is None and (self._fields is not None):
-			fields = self._fields
-		elif fields is not None:
-			pass
-		else:
-			raise Error("No fields given")
-		
-		query = "SELECT %s FROM %s" % \
-				(string.join(fields, ", "), table)
-		if condition is not None:
-			query = "%s WHERE %s" % (query, condition)
-		if order is not None:
-			query = "%s ORDER BY %s" % (query, order)
-		if limit is not None:
-			query = "%s LIMIT %d" % (query, limit)
-		query = "%s;" % query
-
-		rows = self.query(query)
-		records = Records(self)
-		if not rows == None:
-			for row in rows:
-				record = {}
-				for i, field in enumerate(fields):
-					tokens = field.split(" ")
-					if len(tokens) == 3:
-						field = tokens[2]
-					if row[i] is None:
-						record[field] = None
-					else:
-						record[field] = row[i]
-				records.append(record)
-		return records
-
-	def insert(self, values, table=None, fields=None):
-
-		if table is None and (self._table is not None):
-			table = self._table
-		elif table is not None:
-			pass
-		else:
-			raise Error("No table given")
-
-		if fields is None and (self._fields is not None):
-			fields = self._fields
-		elif fields is not None:
-			pass
-		else:
-			raise Error("No fields given")
-		
-		values = map(self._quote, map(str, values))
-		query = "INSERT INTO %s (%s) VALUES (\"%s\");" % \
-				(table, string.join(fields, ", "), string.join(values, "\", \""))
-		self.query(query)
-		self._conn.update()
-	
-	def delete(self, condition, table=None, fields=None):
-
-		if table is None and (self._table is not None):
-			table = self._table
-		elif table is not None:
-			pass
-		else:
-			raise Error("No table given")
-
-		if fields is None and (self._fields is not None):
-			fields = self._fields
-		elif fields is not None:
-			pass
-		else:
-			raise Error("No fields given")
-
-		query = "DELETE FROM %s WHERE %s;" % (table, condition)
-		self.query(query)
-		self._conn.update()
-
-	def update(self, condition, values, 
-			table=None, fields=None):
-
-		if table is None and (self._table is not None):
-			table = self._table
-		elif table is not None:
-			pass
-		else:
-			raise Error("No table given")
-
-		if fields is None and (self._fields is not None):
-			fields = self._fields
-		elif fields is not None:
-			pass
-		else:
-			raise Error("No fields given")
-
-		if not len(fields) == len(values):
-			raise Error("Number of fields and values don't match!")
-	
-		tmp = ""
-		for i, field in enumerate(fields):
-			if i < (len(fields) - 1):
-				tmp += "%s=\"%s\", " % (field, values[i])
-			else:
-				tmp += "%s=\"%s\"" % (field, values[i])
-
-		query = "UPDATE %s SET %s " % (table, tmp)
-		if condition is not None:
-			query += " WHERE %s" % condition
-		
-		self.query(query)
-		self._conn.update()
-
-	def query(self, sql):
-		return self._conn.execute(sql)
-
-class Records:
-
-	def __init__(self, db):
-		self._db = db
-		self._records = []
-	
-	def __repr__(self):
-		from StringIO import StringIO
-		f = StringIO()
-		for i, record in enumerate(self._records):
-			f.write("Record: %d\n" % i)
-			for key, value in record.iteritems():
-				f.write("   %s = %s\n" % (key, value))
-		output = f.getvalue()
-		f.close()
-		return output
-			
-	def __len__(self):
-		return len(self._records)
-
-	def __getitem__(self, n):
-		return self._records[n]
-
-	def __setitem__(self, x):
-		pass
-	
-	def append(self, record):
-		self._records.append(record)
-	
-	def empty(self):
-		return self._records == []
-
-	def set(self, field, value, row=0):
-		record = self._records[row]
-		condition = ""
-		for i, (k, v) in enumerate(record.iteritems()):
-			if i < (len(record) - 1):
-				condition += "%s = \"%s\" AND " % (k, v)
-			else:
-				condition += "%s = \"%s\"" % (k, v)
-		self._db.update(condition, [value], None, [field])
-		record[field] = value
-
-	def get(self, fields=None, row=0):
-		if (not self.empty()) and (0 <= row < len(self._records)):
-			record = self._records[row]
-			if fields is None:
-				return record.values()
-			else:
-				if type(fields) is list:
-
-					print fields
-					values = []
-					for k in fields:
-						print k
-						if record.has_key(k):
-							values.append(record[k])
-					print values
-					return values
-
-# This one doesn't either ...
-#					return [x[1] for x in record.iteritems() if x[0] in fields]
-
-# THis one doesn't return the list of values in the
-# same order as the fields given.
-#					 return map(
-#							 lambda x: x[1], filter(
-#								 lambda x: x[0] in fields, 
-#								 [x for x in record.iteritems()]))
-				else:
-					return record[fields]
-		else:
-			return None
+	def __init__(self, row):
+		OrderedDict.__init__(self)
+		for k, v in row:
+			self[k] = v
+			setattr(self, k, v)
