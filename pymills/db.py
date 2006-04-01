@@ -175,8 +175,6 @@ class Connection:
 		else:
 			fields = []
 
-		print "fields = %s" % fields
-
 		try:
 			self._cu.execute(sql)
 			if not fields == []:
@@ -186,10 +184,10 @@ class Connection:
 		except sqlite.Error, e:
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
-	def do(self, *args):
+	def do(self, sql):
 		"""Synonym of execute"""
 
-		self.execute(args)
+		self.execute(sql)
 
 class Record(OrderedDict):
 	"""Recird(row) -> a new multi-access row
