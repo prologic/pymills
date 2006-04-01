@@ -94,13 +94,13 @@ class Connection:
 			raise NotImplemented
 
 		elif self._schema.lower() == "sqlite":
+			filename = os.path.abspath(
+					os.path.expanduser(self._location))
 			try:
-				self._cx = sqlite.connect(
-						os.path.abspath(
-							os.path.expanduser(self._location)))
+				self._cx = sqlite.connect(filename)
 				self._cu = self._cx.cursor()
 			except sqlite.Error, e:
-				raise DBError("Could not open connection -> %s" % e)
+				raise DBError("Could not open database '%s' -> %s" % (filename, e))
 
 	def __del__(self):
 		"""uninitializes x
