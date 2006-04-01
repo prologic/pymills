@@ -1,0 +1,95 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module pymills.semnet</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="pymills.html"><font color="#ffffff">pymills</font></a>.semnet</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/prologic/var/cwd/local/projects/pymills/branches/pymills-ng/pymills/semnet.py">/home/prologic/var/cwd/local/projects/pymills/branches/pymills-ng/pymills/semnet.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;Semantic&nbsp;Network&nbsp;stuff</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="pymills.semnet.html#Entity">Entity</a>
+</font></dt><dt><font face="helvetica, arial"><a href="pymills.semnet.html#Fact">Fact</a>
+</font></dt><dt><font face="helvetica, arial"><a href="pymills.semnet.html#Relation">Relation</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Entity">class <strong>Entity</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Entity-__init__"><strong>__init__</strong></a>(self, id)</dt></dl>
+
+<dl><dt><a name="Entity-__str__"><strong>__str__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Entity-agents"><strong>agents</strong></a>(self, relation)</dt></dl>
+
+<dl><dt><a name="Entity-getAgents"><strong>getAgents</strong></a>(self, relation)</dt><dd><tt>#&nbsp;Get&nbsp;all&nbsp;the&nbsp;agents&nbsp;of&nbsp;a&nbsp;particular&nbsp;relation,<br>
+#&nbsp;where&nbsp;this&nbsp;(self)&nbsp;is&nbsp;the&nbsp;object.&nbsp;&nbsp;These&nbsp;are&nbsp;cumulative.</tt></dd></dl>
+
+<dl><dt><a name="Entity-getObjects"><strong>getObjects</strong></a>(self, relation)</dt><dd><tt>#&nbsp;Get&nbsp;all&nbsp;the&nbsp;objects&nbsp;of&nbsp;a&nbsp;particular&nbsp;relation,<br>
+#&nbsp;where&nbsp;this&nbsp;(self)&nbsp;is&nbsp;the&nbsp;agent.&nbsp;&nbsp;These&nbsp;are&nbsp;cumulative.<br>
+#&nbsp;Note&nbsp;that&nbsp;there&nbsp;is&nbsp;no&nbsp;way&nbsp;currently&nbsp;for&nbsp;a&nbsp;subclass&nbsp;to<br>
+#&nbsp;override&nbsp;a&nbsp;base&nbsp;class;&nbsp;it&nbsp;can&nbsp;only&nbsp;extend&nbsp;it.</tt></dd></dl>
+
+<dl><dt><a name="Entity-objects"><strong>objects</strong></a>(self, relation)</dt></dl>
+
+<dl><dt><a name="Entity-storeAgent"><strong>storeAgent</strong></a>(self, relation, agent)</dt></dl>
+
+<dl><dt><a name="Entity-storeObject"><strong>storeObject</strong></a>(self, relation, object)</dt></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Fact">class <strong>Fact</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Fact-__init__"><strong>__init__</strong></a>(self, agent, relation, object)</dt></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Relation">class <strong>Relation</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Relation-__call__"><strong>__call__</strong></a>(self, agent, object<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="Relation-__init__"><strong>__init__</strong></a>(self, id, transitive<font color="#909090">=1</font>, inverse<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="Relation-__str__"><strong>__str__</strong></a>(self)</dt></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-GetExampleOf"><strong>GetExampleOf</strong></a>()</dt></dl>
+ <dl><dt><a name="-GetIsA"><strong>GetIsA</strong></a>()</dt><dd><tt>#&nbsp;functions&nbsp;to&nbsp;allow&nbsp;outside&nbsp;access&nbsp;to&nbsp;these&nbsp;objects&nbsp;more&nbsp;easily:</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>EXAMPLE_OF</strong> = &lt;pymills.semnet.Relation instance&gt;<br>
+<strong>IS_A</strong> = &lt;pymills.semnet.Relation instance&gt;</td></tr></table>
+</body></html>
