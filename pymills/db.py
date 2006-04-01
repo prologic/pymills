@@ -158,7 +158,7 @@ class Connection:
 		Perform a manual commit.
 		"""
 
-		self.cx.commit()
+		self._cx.commit()
 	
 	def execute(self, sql):
 		"""C.execute(sql) -> list of rows, or []
