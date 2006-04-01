@@ -187,7 +187,7 @@ class Connection:
 	def do(self, sql):
 		"""Synonym of execute"""
 
-		self.execute(sql)
+		return self.execute(sql)
 
 class Record(OrderedDict):
 	"""Recird(row) -> a new multi-access row
