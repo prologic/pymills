@@ -67,7 +67,7 @@ def main():
 
 			eventManager.sendEvent(event, "adder")
 
-		eventManager.flushEvenets()
+		eventManager.flushEvents()
 
 		sleep(0.5)
 

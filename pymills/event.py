@@ -47,7 +47,7 @@ class EventManager:
 
 		queue.append((event, channel, source))
 	
-	def flushEvenets(self):
+	def flushEvents(self):
 
 		queue = self._queue
 
