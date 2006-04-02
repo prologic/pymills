@@ -197,7 +197,7 @@ class Record(OrderedDict):
 	Each row created can be access any number of ways.
 
 	Example:
-	>>> row = db.Record([("a", 1), ("b", 2), ("c", 3)])
+	>>> row = Record([("a", 1), ("b", 2), ("c", 3)])
 	>>> row.a
 	1
 	>>> row["a"]
@@ -209,3 +209,10 @@ class Record(OrderedDict):
 		for k, v in row:
 			self[k] = v
 			setattr(self, k, v)
+
+def _test():
+	import doctest
+	doctest.testmod()
+
+if __name__ == "__main__":
+	_test()
