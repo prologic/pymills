@@ -97,7 +97,7 @@ database.</tt></dd></dl>
 &nbsp;<br>
 Perform&nbsp;a&nbsp;manual&nbsp;commit.</tt></dd></dl>
 
-<dl><dt><a name="Connection-do"><strong>do</strong></a>(self, *args)</dt><dd><tt>Synonym&nbsp;of&nbsp;execute</tt></dd></dl>
+<dl><dt><a name="Connection-do"><strong>do</strong></a>(self, sql)</dt><dd><tt>Synonym&nbsp;of&nbsp;execute</tt></dd></dl>
 
 <dl><dt><a name="Connection-execute"><strong>execute</strong></a>(self, sql)</dt><dd><tt>C.<a href="#Connection-execute">execute</a>(sql)&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;rows,&nbsp;or&nbsp;[]<br>
 &nbsp;<br>
@@ -142,7 +142,7 @@ tuplies&nbsp;containing&nbsp;the&nbsp;field&nbsp;and&nbsp;value&nbsp;for&nbsp;th
 Each&nbsp;row&nbsp;created&nbsp;can&nbsp;be&nbsp;access&nbsp;any&nbsp;number&nbsp;of&nbsp;ways.<br>
 &nbsp;<br>
 Example:<br>
-&gt;&gt;&gt;&nbsp;row&nbsp;=&nbsp;db.<a href="#Record">Record</a>([("a",&nbsp;1),&nbsp;("b",&nbsp;2),&nbsp;("c",&nbsp;3)])<br>
+&gt;&gt;&gt;&nbsp;row&nbsp;=&nbsp;<a href="#Record">Record</a>([("a",&nbsp;1),&nbsp;("b",&nbsp;2),&nbsp;("c",&nbsp;3)])<br>
 &gt;&gt;&gt;&nbsp;row.a<br>
 1<br>
 &gt;&gt;&gt;&nbsp;row["a"]<br>
