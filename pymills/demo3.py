@@ -1,5 +1,5 @@
 
-from time import sleep
+from time import time, sleep
 from random import choice, random
 
 from event import Event
@@ -31,16 +31,25 @@ def listenerB(event):
 
 	print " %0.2f %s %0.2f = %0.2f" % (x, op, y, r)
 
+def listenerC(event):
+
+	tick = getattr(event, "tick", ".")
+	print tick
+
 def main():
 
 	eventManager = EventManager()
 
 	eventManager.addListener(listenerA, "test")
 	eventManager.addListener(listenerB, "adder")
+	eventManager.addListener(listenerC, "main")
 
 	while True:
 
-		print "."
+		event = Event()
+		event.tick = time()
+
+		eventManager.pushEvent(event, "main")
 
 		if choice(range(0, 4)) == 0:
 
@@ -57,6 +66,8 @@ def main():
 			event.y = choice(range(0, 100)) * random()
 
 			eventManager.sendEvent(event, "adder")
+
+		eventManager.flushEvenets()
 
 		sleep(0.5)
 

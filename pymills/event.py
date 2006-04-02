@@ -8,6 +8,7 @@
 
 ....
 """
+
 class Event:
 
 	def __init__(self, **kwargs):
@@ -17,6 +18,7 @@ class EventManager:
 
 	def __init__(self):
 		self._listeners = {}
+		self._queue = []
 
 	def addListener(self, listener, *channels):
 
@@ -38,6 +40,19 @@ class EventManager:
 
 		for channel in keys:
 			listeners[channel].remove(listener)
+	
+	def pushEvent(self, event, channel, source=None):
+
+		queue = self._queue
+
+		queue.append((event, channel, source))
+	
+	def flushEvenets(self):
+
+		queue = self._queue
+
+		for event, channel, source in queue:
+			self.sendEvent(event, channel, source)
 	
 	def sendEvent(self, event, channel, source=None):
 
