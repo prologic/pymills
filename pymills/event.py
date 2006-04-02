@@ -78,11 +78,15 @@ class EventManager:
 			self._allFilters.remove(filter)
 		self._remove(self._filters, filter, channels)
 	
+	def push(self, event, channel, source=None):
+		self.pushEvent(event, channel, source)
+
 	def pushEvent(self, event, channel, source=None):
-
 		queue = self._queue
-
 		queue.append((event, channel, source))
+	
+	def flush(self):
+		self.flushEvents()
 	
 	def flushEvents(self):
 
@@ -92,6 +96,9 @@ class EventManager:
 			self.sendEvent(event, channel, source)
 			queue.remove((event, channel, source))
 
+	def send(self, event, channel, source=None):
+		self.sendEvent(event, channel, source)
+	
 	def sendEvent(self, event, channel, source=None):
 
 		event.source = source
