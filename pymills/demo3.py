@@ -1,7 +1,8 @@
 
 from time import time, sleep
-from random import choice, random
+from random import choice, random, seed
 
+import event
 from event import Event
 from event import EventManager
 
@@ -66,7 +67,20 @@ class Tester:
 				event.quit = True
 				self.pushEvent(event, "main")
 		
+def foo(evt):
+	print "foo"
+#	return event.DISCARD
+	if choice(range(0, 2)) == 0:
+		return event.DISCARD
+	else:
+		evt.foo = "..."
+
+def bar(event):
+	print "bar"
+
 def main():
+
+	seed()
 
 	eventManager = EventManager()
 
@@ -77,6 +91,9 @@ def main():
 	eventManager.addListener(listenerC, "main")
 
 	eventManager.addListener(tester.handleEvent, "calc")
+
+	eventManager.addFilter(foo, "test")
+	eventManager.addListener(bar, "test")
 
 	while True:
 

@@ -9,6 +9,8 @@
 ....
 """
 
+DISCARD = 1
+
 class Event:
 
 	def __init__(self, **kwargs):
@@ -17,32 +19,42 @@ class Event:
 class EventManager:
 
 	def __init__(self):
+		self._filters = {}
 		self._listeners = {}
 		self._queue = []
 
-	def addListener(self, listener, *channels):
-
-		listeners = self._listeners
-
-		if not callable(listener):
-			raise ValueError("listener must be callable")
-
+	def _add(self, container, callable, channels):
 		for channel in channels:
-			if not listeners.has_key(channel):
-				listeners[channel] = []
-			listeners[channel].append(listener)
+			if not container.has_key(channel):
+				container[channel] = []
+			container[channel].append(callable)
 	
-	def removeListener(self, listener, *channels):
-
-		listeners = self._listeners
-
+	def _remove(self, container, callable, channels):
 		if len(channels) == 0:
-			keys = listeners.keys()
+			keys = container.keys()
 		else:
 			keys = channels
 
 		for channel in keys:
-			listeners[channel].remove(listener)
+			container[channel].remove(callable)
+
+	def addListener(self, listener, *channels):
+		if callable(listener):
+			self._add(self._listeners, listener, channels)
+		else:
+			raise ValueError("listener must be callable")
+
+	def addFilter(self, filter, *channels):
+		if callable(filter):
+			self._add(self._filters, filter, channels)
+		else:
+			raise ValueError("filter must be callable")
+	
+	def removeListener(self, listener, *channels):
+		self._remove(self._listeners, listener, channels)
+
+	def removeFilter(self, filter, *channels):
+		self._remove(self._filters, filter, channels)
 	
 	def pushEvent(self, event, channel, source=None):
 
@@ -61,7 +73,22 @@ class EventManager:
 	def sendEvent(self, event, channel, source=None):
 
 		event.source = source
-
+		filters = self._filters.get(channel, [])
 		listeners = self._listeners.get(channel, [])
+
+		for filter in filters:
+
+			action = filter(event)
+
+			if action == DISCARD:
+				return
+
 		for listener in listeners:
 			listener(event)
+
+def _test():
+	import doctest
+	doctest.testmod()
+
+if __name__ == "__main__":
+	_test()
