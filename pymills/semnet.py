@@ -1,7 +1,17 @@
-# Semantic Network stuff
+# Filename: semnet.py
+# Module:	semnet
+# Date:		2nd April 2006
+# Author:	James Mills <prologic@shortcircuit.net.au>
+# $Id$
+
+"""Semantic Network Library
+
+....
+"""
 
 class Entity:
-	def __init__(self,id):
+
+	def __init__(self, id):
 		self.id = id
 		self.mObjects = {}
 		self.mAgents = {}
@@ -9,9 +19,13 @@ class Entity:
 	def __str__(self):
 		return self.id
 
-	def objects(self,relation):
-		try: ans = self.mObjects[relation]
-		except: ans = []
+	def objects(self, relation):
+
+		try:
+			ans = self.mObjects[relation]
+		except:
+			ans = []
+
 		if relation.transitive:
 			# if it's a transitive relation,
 			# pursue recursively
@@ -19,9 +33,13 @@ class Entity:
 				ans = ans + i.objects(relation)
 		return ans
 
-	def agents(self,relation):
-		try: ans = self.mAgents[relation]
-		except: ans = []
+	def agents(self, relation):
+
+		try:
+			ans = self.mAgents[relation]
+		except:
+			ans = []
+
 		if relation.inverse and relation.inverse.transitive:
 			# if its inverse is a transitive relation,
 			# pursue recursively
@@ -29,7 +47,7 @@ class Entity:
 				ans = ans + i.agents(relation)
 		return ans
 
-	def storeObject(self,relation,object):
+	def storeObject(self, relation, object):
 		try:
 			lst = self.mObjects[relation]
 			if object not in lst: lst.append(object)
@@ -44,7 +62,7 @@ class Entity:
 			self.mAgents[relation] = [agent]
 
 	# Get all the objects of a particular relation,
-	# where this (self) is the agent.  These are cumulative.
+	# where this (self) is the agent. These are cumulative.
 	# Note that there is no way currently for a subclass to
 	# override a base class; it can only extend it.
 	def getObjects(self,relation):
@@ -57,7 +75,7 @@ class Entity:
 		return out
 
 	# Get all the agents of a particular relation,
-	# where this (self) is the object.  These are cumulative.
+	# where this (self) is the object. These are cumulative.
 	def getAgents(self,relation):
 		out = self.agents(relation)
 		# also check type-ancestors (base classes)
