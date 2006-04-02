@@ -24,6 +24,9 @@ class EventManager:
 
 		listeners = self._listeners
 
+		if not callable(listener):
+			raise ValueError("listener must be callable")
+
 		for channel in channels:
 			if not listeners.has_key(channel):
 				listeners[channel] = []
@@ -51,9 +54,10 @@ class EventManager:
 
 		queue = self._queue
 
-		for event, channel, source in queue:
+		for event, channel, source in queue[:]:
 			self.sendEvent(event, channel, source)
-	
+			queue.remove((event, channel, source))
+
 	def sendEvent(self, event, channel, source=None):
 
 		event.source = source

@@ -36,13 +36,47 @@ def listenerC(event):
 	tick = getattr(event, "tick", ".")
 	print tick
 
+	quit = getattr(event, "quit", False)
+	if quit:
+		raise SystemExit, 0
+
+class Tester:
+
+	def __init__(self, eventMander):
+		self._eventMander = eventMander
+
+		self.x = 0.0
+	
+	def pushEvent(self, event, channel):
+		eventMander = self._eventMander
+		eventMander.pushEvent(event, channel, self)
+	
+	def handleEvent(self, event):
+
+		x = getattr(event, "x", 0.0)
+
+		if self.x < 100.0:
+			self.x += x
+
+			if self.x > 100.0:
+				event = Event()
+				event.msg = "Success!"
+				self.pushEvent(event, "test")
+				event = Event()
+				event.quit = True
+				self.pushEvent(event, "main")
+		
 def main():
 
 	eventManager = EventManager()
 
+	tester = Tester(eventManager)
+
 	eventManager.addListener(listenerA, "test")
-	eventManager.addListener(listenerB, "adder")
+	eventManager.addListener(listenerB, "calc")
 	eventManager.addListener(listenerC, "main")
+
+	eventManager.addListener(tester.handleEvent, "calc")
 
 	while True:
 
@@ -65,7 +99,8 @@ def main():
 			event.op = choice(["+", "-", "*", "/"])
 			event.y = choice(range(0, 100)) * random()
 
-			eventManager.sendEvent(event, "adder")
+			eventManager.sendEvent(event, "calc")
+			eventManager.pushEvent(event, "calc")
 
 		eventManager.flushEvents()
 
