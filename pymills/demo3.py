@@ -67,16 +67,19 @@ class Tester:
 				event.quit = True
 				self.pushEvent(event, "main")
 		
-def foo(evt):
+def foo(event):
 	print "foo"
-#	return event.DISCARD
 	if choice(range(0, 2)) == 0:
-		return event.DISCARD
+		return None
 	else:
-		evt.foo = "..."
+		event.foo = "..."
+		return event
 
 def bar(event):
 	print "bar"
+
+def logall(event):
+	print event
 
 def main():
 
@@ -85,6 +88,8 @@ def main():
 	eventManager = EventManager()
 
 	tester = Tester(eventManager)
+
+	eventManager.addListener(logall)
 
 	eventManager.addListener(listenerA, "test")
 	eventManager.addListener(listenerB, "calc")
