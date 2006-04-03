@@ -1,4 +1,6 @@
-from semnet import *
+#!/usr/bin/env python
+
+from pymills.semnet import *
 
 from tostr import tostr
 import string

@@ -1,10 +1,10 @@
+#!/usr/bin/env python
 
 from time import time, sleep
 from random import choice, random, seed
 
-import event
-from event import Event
-from event import EventManager
+from pymills.event import Event
+from pymills.event import EventManager
 
 def listenerA(event):
 

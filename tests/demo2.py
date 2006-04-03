@@ -1,7 +1,8 @@
+#!/usr/bin/env python
 
 import readline
 
-from semnet import *
+from pymills.semnet import *
 
 from tostr import tostr
 import string
