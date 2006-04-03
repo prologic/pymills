@@ -189,10 +189,10 @@ class EventManager:
 		the event object.
 
 		Filters are processed first. Any filter can either:
-		* return the event
-		* modify the event
-		* return a new event
-		* return None
+		 * return the event
+		 * modify the event
+		 * return a new event
+		 * return None
 		If a filter returns None, the event is discarded and
 		no further processing of this event will occur.
 		"""
