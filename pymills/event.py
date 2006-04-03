@@ -9,6 +9,8 @@
 ....
 """
 
+import time
+
 class Event:
 
 	def __init__(self, **kwargs):
@@ -82,6 +84,7 @@ class EventManager:
 		self.pushEvent(event, channel, source)
 
 	def pushEvent(self, event, channel, source=None):
+		event._time = time.time()
 		queue = self._queue
 		queue.append((event, channel, source))
 	
@@ -101,7 +104,10 @@ class EventManager:
 	
 	def sendEvent(self, event, channel, source=None):
 
-		event.source = source
+		event._source = source
+		if not hasattr(event, "_time"):
+			event._time = time.time()
+
 		filters = self._filters.get(channel, []) + self._allFilters
 		listeners = self._listeners.get(channel, []) + self._allListeners
 
