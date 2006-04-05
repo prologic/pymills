@@ -117,12 +117,11 @@ class Connection:
 			pass
 
 	def _getFields(self):
-		"""sql -> ["...", ...]
+		"""C._getFields() -> [field1, field2, ...]
 
-		Parses the given sql statement extracting the fields
-		used in a SELECT statement returning these fields
-		as a list. If no fields are found, an empty list is
-		returned.
+		Get a list of field names for the current result set
+		stored in the cursor's .description. If there are
+		no fields [] is returned.
 		"""
 
 		if self._cu.description is not None:
@@ -130,12 +129,6 @@ class Connection:
 		else:
 			return []
 
-		#m = re.match("SELECT *(.*) *FROM.*", sql, re.IGNORECASE)
-		#if m is not None:
-		#	return map(lambda s: s.strip(), m.group(1).strip().split(","))
-		#else:
-		#	return []
-	
 	def _buildResult(self, fields):
 		"""C.__buildResult(fields) -> list of rows from cursor
 
@@ -207,9 +200,6 @@ class Record(OrderedDict):
 
 	def __init__(self, row):
 		OrderedDict.__init__(self)
-#		if len(set(row.keys())) == 1:
-#			values = row.values()
-#			row = zip(map(lambda x: x[0], columns), values)
 		for k, v in row:
 			self[k] = v
 			setattr(self, k, v)
