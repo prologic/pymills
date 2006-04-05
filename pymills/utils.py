@@ -29,15 +29,19 @@ def writePID(file):
 	except Exception, e:
 		raise Error("Error writing pid to %s: %s" % (file, e))
 
-def loadConfig(filename, paths=[]):
+def loadConfig(filename, *paths):
 	from ConfigParser import ConfigParser
 	conf = ConfigParser()
-	conf.read([
-		"/etc/%s" % filename,
-		"%s/%s" % (os.getcwd(), filename),
-		os.path.expanduser("~/.%s" % filename)] +
-		["%s/%s" % (path, filename) for path in paths])
-	return conf
+	files = [ \
+			"/etc/%s" % filename,
+			"%s/%s" % (os.getcwd(), filename),
+			os.path.expanduser("~/.%s" % filename)]
+	files += ["%s/%s" % (path, filename) for path in paths]
+	if conf.read(files) == []:
+		raise IOError("Could not read any config files. " \
+				"Tried: %s" % files)
+	else:
+		return conf
 
 def daemonize(stdin="/dev/null", stdout="/dev/null", stderr="/dev/null"):
 	"""This forks the current process into a daemon.

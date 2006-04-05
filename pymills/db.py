@@ -116,7 +116,7 @@ class Connection:
 		except:
 			pass
 
-	def _getFields(self, sql):
+	def _getFields(self):
 		"""sql -> ["...", ...]
 
 		Parses the given sql statement extracting the fields
@@ -125,11 +125,16 @@ class Connection:
 		returned.
 		"""
 
-		m = re.match("SELECT *(.*) *FROM.*", sql, re.IGNORECASE)
-		if m is not None:
-			return map(lambda s: s.strip(), m.group(1).strip().split(","))
+		if self._cu.description is not None:
+			return map(lambda x: x[0], self._cu.description)
 		else:
 			return []
+
+		#m = re.match("SELECT *(.*) *FROM.*", sql, re.IGNORECASE)
+		#if m is not None:
+		#	return map(lambda s: s.strip(), m.group(1).strip().split(","))
+		#else:
+		#	return []
 	
 	def _buildResult(self, fields):
 		"""C.__buildResult(fields) -> list of rows from cursor
@@ -139,7 +144,9 @@ class Connection:
 		last transaction executed and stored in the cursor.
 		"""
 
-		return [Record(zip(fields, row)) for row in self._cu.fetchall()]
+		return [Record(
+				zip(fields, row)
+				) for row in self._cu.fetchall()]
 	
 	def setAutoCommit(self, autocommit=True):
 		"""C.setAutoCommit(autocommit) -> None
@@ -168,19 +175,13 @@ class Connection:
 		If this fails, a DBError exception will be thrown.
 		"""
 
-		sql = sql.strip()
-
-		if re.match("SELECT.*", sql, re.IGNORECASE) is not None:
-			fields = self._getFields(sql)
-		else:
-			fields = []
-
 		try:
 			self._cu.execute(sql)
-			if not fields == []:
-				return self._buildResult(fields)
-			else:
+			fields = self._getFields()
+			if fields == []:
 				return []
+			else:
+				return self._buildResult(fields)
 		except sqlite.Error, e:
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
@@ -206,6 +207,9 @@ class Record(OrderedDict):
 
 	def __init__(self, row):
 		OrderedDict.__init__(self)
+#		if len(set(row.keys())) == 1:
+#			values = row.values()
+#			row = zip(map(lambda x: x[0], columns), values)
 		for k, v in row:
 			self[k] = v
 			setattr(self, k, v)
