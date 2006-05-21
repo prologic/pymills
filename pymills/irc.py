@@ -17,7 +17,9 @@ from sockets import TCPClient
 # Supporting Functions
 
 def strip(s, color=False):
-	s = s.lstrip(":")
+	if len(s) > 0:
+		if s[0] == ":":
+			s = s[1:]
 	if color:
 		s = s.replace("\x01", "")
 		s = s.replace("\x02", "")
