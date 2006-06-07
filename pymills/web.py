@@ -41,3 +41,26 @@ def setupPaths(req, PYTHONPATH=None):
 	docroot = "http://%s%s" % (
 			req.hostname, os.path.dirname(req.uri))
 	return (docroot, docpath)
+
+def decodeHTMLEntities(text):
+	"""Decode HTML entitiesC &amp; &lt; &gt; and &#34;"""
+
+	if not text:
+		return ""
+	return str(text).replace("&amp;", "&") \
+			.replace("&lt;", "<") \
+			.replace("&gt;", ">") \
+			.replace("&quot;", "\"") \
+			.replace("&#039;", "'")
+
+def encodeHTMLEntities(text):
+	"""Convert & < > and \" to their relevant HTML entities."""
+
+	if not text:
+		return ""
+	return str(text).replace("&", "&amp;") \
+			.replace("<", "&lt;") \
+			.replace(">", "&gt;") \
+			.replace("\"", "&quot;") \
+			.replace("'", "&#039;")
+
