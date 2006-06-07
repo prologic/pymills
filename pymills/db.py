@@ -67,7 +67,7 @@ def parseURI(uri):
 	if m is not None:
 		return m.groupdict()
 	else:
-		return {}
+		raise DBError("Supplied URI is not valid: %s" % uri)
 
 class DBError(Exception):
 	"""Database Error Occured"""
@@ -137,9 +137,8 @@ class Connection:
 		last transaction executed and stored in the cursor.
 		"""
 
-		return [Record(
-				zip(fields, row)
-				) for row in self._cu.fetchall()]
+		return [Record(zip(fields, row))
+				for row in self._cu.fetchall()]
 	
 	def setAutoCommit(self, autocommit=True):
 		"""C.setAutoCommit(autocommit) -> None
@@ -160,7 +159,7 @@ class Connection:
 
 		self._cx.commit()
 	
-	def execute(self, sql):
+	def execute(self, sql, *args):
 		"""C.execute(sql) -> list of rows, or []
 
 		Execute the given SQL statement in sql and return
@@ -169,7 +168,7 @@ class Connection:
 		"""
 
 		try:
-			self._cu.execute(sql)
+			self._cu.execute(sql, args)
 			fields = self._getFields()
 			if fields == []:
 				return []
@@ -178,10 +177,10 @@ class Connection:
 		except sqlite.Error, e:
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
-	def do(self, sql):
+	def do(self, sql, *args):
 		"""Synonym of execute"""
 
-		return self.execute(sql)
+		return self.execute(sql, *args)
 
 class Record(OrderedDict):
 	"""Recird(row) -> a new multi-access row
