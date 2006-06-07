@@ -21,8 +21,6 @@ class OrderedDict(dict):
 
 	def __setitem__(self, key, item):
 		dict.__setitem__(self, key, item)
-		if not hasattr(self, '_keys'):
-			self._keys = [key,]
 		if key not in self._keys:
 			self._keys.append(key)
 
@@ -57,10 +55,18 @@ class OrderedDict(dict):
 				self._keys.append(key)
 		dict.update(self, d)
 
-	def values(self):
-		for i in self._keys:
-			yield self[i]
+	def iteritems(self):
+		for key in self._keys:
+			yield key, self[key]
 
+	def itervalues(self):
+		for key in self._keys:
+			yield self[key]
+
+	def iterkeys(self):
+		for key in self._keys:
+			yield key
+	
 	def index(self, key):
 		if not self.has_key(key):
 			raise KeyError(key)
