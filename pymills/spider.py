@@ -21,7 +21,6 @@ from BeautifulSoup import BeautifulSoup, Null
 
 try:
 	import psyco
-	from psyco.classes import *
 	psyco.full()
 except ImportError:
 	pass

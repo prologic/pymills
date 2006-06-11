@@ -18,13 +18,17 @@ import sys
 import signal
 import inspect
 
-import irc
 import timers
+from irc import IRC
+from sockets import TCPClient
+from event import EventManager
 
-class Bot(irc.Client):
+class IRCBot(TCPClient, IRC):
 
 	def __init__(self):
-		irc.Client.__init__(self)
+		self.event = EventManager()
+		TCPClient.__init__(self.event)
+		IRC.__init__(self.event)
 
 		self.timers = timers.Timers()
 		self.plugins = []
@@ -146,7 +150,7 @@ class Bot(irc.Client):
 		self.handleEvent("NOTICE", source, target, message)
 	
 	def onPING(self, server):
-		irc.Client.onPING(self, server)
+		IRC.onPING(self, server)
 		self.handleEvent("PING", server)
 	
 	def onJOIN(self, source, channel):

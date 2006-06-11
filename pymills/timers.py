@@ -24,30 +24,48 @@ while True:
 
 import time
 
+from event import Event
+
+__all__ = ["Timers"]
+
 class Timers:
 
-	def __init__(self):
+	def __init__(self, event=None):
 		self._timers = []
+		self._event = event
+		self._channel = self._event.getChannelID("timer")
+		if self._channel is None:
+			self._event.addChannel("timer")
+			self._channel = self._event.getChannelID("timer")
 	
-	def add(self, name, length, function, forever=False, *args):
-		self._timers.append(_Timer(name, length, function, forever, args))
+	def add(self, name, length, callable=None, forever=False,
+			*args, **kwargs):
+		self._timers.append(
+				Timer(
+					name, length, callable, forever,
+					*args, **kwargs))
 	
 	def run(self):
 		for i, timer in enumerate(self._timers[:]):
-			if timer.run():
+			done, event = timer.run()
+			if done:
+				if self._event is not None:
+					self._event.push(event, self._channel, timer)
 				if not timer.forever:
 					del self._timers[i]
 				else:
 					timer.reset()
 
-class _Timer:
+class Timer:
 
-	def __init__(self, name, length, function, forever, args):
+	def __init__(self, name, length, callable, forever=False,
+		*args, **kwargs):
 		self._name = name
 		self._length = length
-		self._function = function
 		self.forever = forever
+		self._callable = callable
 		self._args = args
+		self._kwargs = kwargs
 
 		self.reset()
 	
@@ -55,8 +73,17 @@ class _Timer:
 		self._start = time.time()
 
 	def run(self):
-		if (time.time() - self._start) >= self._length:
-			self._function(self._name, self._length, self._args)
-			return True
+		now = time.time()
+		if (now - self._start) >= self._length:
+			if callable(self._callable):
+				self._callable(self._name, self._length,
+					*self._args, **self._kwargs)
+			return True, Event(
+					name=self._name,
+					length=self._length,
+					callable=self._callable,
+					args=self._args,
+					kwargs=self._kwargs,
+					time=now)
 		else:
-			return False
+			return False, None

@@ -8,58 +8,121 @@
 
 This library contains classes for use with developing
 artificial neural networks.
+
+         InputNode   Node     OutputNode    Neuron
+Inputs:     0         1           1          many
+Outputs:   many      many       many         many
+
+Types of Neurons:
+ * Linear
+ * Step
+ * Error calc
+ * Sigmoid
 """
 
-class Neuron:
+from threading import Thread
 
-	def __init__(self):
+class SynapseError(Exception):
+	pass
+
+class LinkError(Exception):
+	pass
+
+class Synapse(Thread):
+
+	def __init__(self, source, target, weight=50.0, decay=False):
+
+		Thread.__init__(self)
+
+		if not isinstance(source, Node):
+			raise SynapseError("source must be an instance of Node")
+		if not isinstance(target, Node):
+			raise SynapseError("target must be an instance of Node")
+
+		self._source = source
+		self._target = target
+		self._weight = weight
+		self._decay = decay
+	
+	def fire(self, value=0.0):
+		self._target.fire(value * self._weight)
+
+class Node(Thread):
+
+	def __init__(self, output=0.0):
+
+		Thread.__init__(self)
+
 		self._inputs = []
-		self._weights = []
-		self._output = 0.0
-		self._threshold = 0.0
-
+		self._outputs = []
+		self._output = output
+	
 	def getOutput(self):
-		"Return the output of this Neuron"
-
 		return self._output
 
 	def setOutput(self, output):
-		"Set the output of this Neuron to output"
-
 		self._output = output
-	
-	def setThreshold(self, threshold):
-		"Set the threshhold"
 
+	def link(self, synapse):
+
+		if (synapse._target == self) and (len(self._inputs) == 1):
+			raise LinkError("Node can only have maximum of 1 inputs")
+
+		if synapse._source == self:
+			self._outputs.append(synapse)
+		if synapse._target == self:
+			self._inputs.append(synapse)
+
+	def fire(self, value=0.0):
+		self.setOutput(value)
+		for output in self._outputs:
+			output.fire(self._output)
+	
+class InputNode(Node):
+
+	def link(self, synapse):
+
+		if (synapse._target == self):
+			raise LinkError("InputNode cannot have any inputs")
+
+		if synapse._source == self:
+			self._outputs.append(synapse)
+
+	def fire(self, value=0.0):
+		Node.fire(self, value)
+
+	def run(self):
+		self.fire(self.getOutput())
+
+class OutputNode(Node):
+
+	def __init__(self, output=0.0, func=None, *args):
+		Node.__init__(self, output)
+		self._func = func
+		self._args = args
+
+	def fire(self, value=0.0):
+		if callable(self._func):
+			self._func(value, self._args)
+		Node.fire(self, value)
+	
+class Neuron(Node):
+
+	def __init__(self, _threshold):
+		Node.__init__(self)
+		self.__threshold = _threshold
+	
+	def getThreshold(self):
+		return self._threshold
+
+	def setThreshold(self, threshold):
 		self._threshold = threshold
 
-	def link(self, neuron, weight):
-		"""Adds a link to another neuron with the given weight
-
-		neuron - Neuron object
-		weight - weighting of synapse (link)
-		"""
-
-		self._inputs.append(neuron)
-		self._weights.append(weight)
-
-	def calc(self):
-		if self._inputs == []:
-			return self._output
-
-		sum = 0.0
-		for i in range(0, len(self._inputs)):
-			sum += self._inputs[i].getOutput() * self._weights[i]
-
-		self._output = self.squash(sum)
-		return self._output
-
-	def squash(self, x):
-		if x > self._threshold:
-			y = 1.0 
-		else:
-			y = 0.0
-		return y
+	def fire(self, value=0.0):
+		self.setOutput(self.getOutput() + value)
+		if self.getOutput() > self.__threshold:
+			for output in self._outputs:
+				output.fire(self._output)
 
 ##
 ## Tests

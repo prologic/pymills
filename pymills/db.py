@@ -47,11 +47,6 @@ try:
 except ImportError:
 	pass
 
-try:
-	from MySQLdb import dbapi2 as mysql
-except ImportError:
-	pass
-
 def parseURI(uri):
 	"""uri -> {"schema": ..., "username": ..., ...}
 
