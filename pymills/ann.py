@@ -16,7 +16,7 @@ Outputs:   many      many       many         many
 Types of Neurons:
  * Linear
  * Step
- * Error calc
+ * Error Calc
  * Sigmoid
 """
 
@@ -124,12 +124,9 @@ class Neuron(Node):
 			for output in self._outputs:
 				output.fire(self._output)
 
-##
-## Tests
-##
-
 def test():
-	pass
+	import doctest
+	doctest.testmod()
 
 if __name__ == "__main__":
 	test()
