@@ -9,11 +9,10 @@
 ...
 """
 
-import sys
+def newLogger(name="PyMills", logType="syslog",
+		logFile=None, level="WARNING", logID="PyMills"):
 
-def newLogger(logType="syslog", logFile=None, level="WARNING",
-		logID="PIRCSrv"):
-
+	import sys
 	import logging
 	import logging.handlers
 
@@ -33,7 +32,7 @@ def newLogger(logType="syslog", logFile=None, level="WARNING",
 	else:
 		raise ValueError
 
-	format = "PIRCSrv[%(module)s] %(levelname)s: %(message)s"
+	format = name + "[%(module)s] %(levelname)s: %(message)s"
 	if logType == "file":
 		format = "%(asctime)s " + format 
 	dateFormat = ""
