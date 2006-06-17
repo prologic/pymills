@@ -34,12 +34,10 @@ Example Usage:
 {'lastname': u'Mills', 'firstname': u'James'}
 >>> rows[0]["firstname"]
 u'James'
->>> rows[0].lastname    
+>>> rows[0].lastname
 u'Mills'
 """
 
-import os
-import re
 from datatypes import OrderedDict
 
 try:
@@ -54,6 +52,8 @@ def parseURI(uri):
 	a dictionary of schema, username, password and location.
 	If this fails, {} is returned.
 	"""
+
+	import re
 
 	m = re.match("(?P<schema>mysql|sqlite)://"
 			"((?P<username>.*?):(?P<password>.*?)@)?"
@@ -89,6 +89,7 @@ class Connection:
 			raise NotImplemented
 
 		elif self._schema.lower() == "sqlite":
+			import os
 			filename = os.path.abspath(
 					os.path.expanduser(self._location))
 			try:
@@ -198,9 +199,9 @@ class Record(OrderedDict):
 			self[k] = v
 			setattr(self, k, v)
 
-def _test():
+def test():
 	import doctest
 	doctest.testmod()
 
 if __name__ == "__main__":
-	_test()
+	test()
