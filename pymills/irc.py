@@ -3,21 +3,16 @@
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
 
-"""Internet Relay Chat
+"""Internet Relay Chat Protocol
 
-This is a Internet Relay Chat module containing classes that
-aid in the creation of IRC clients and servers.
+...
 """
 
 from event import Event
 
-__all__ = [
-		"strip", "sourceJoin", "sourceSplit",
-		"IRCClient",
-		"RawEvent"
-		]
-
-# Supporting Functions
+###
+### Supporting Functions
+###
 
 def strip(s, color=False):
 	if len(s) > 0:
@@ -47,6 +42,10 @@ def sourceSplit(source):
 		return (nick, ident, host)
 	else:
 		return source
+
+###
+### Evenets
+###
 
 class RawEvent(Event):
 
@@ -139,6 +138,10 @@ class WriteEvent(Event):
 	def __init__(self, data):
 		Event.__init__(self, type="write", data=data)
 
+###
+### Protocol Class
+###
+
 class IRC:
 
 	def __init__(self, event):
@@ -146,10 +149,6 @@ class IRC:
 		self.info = {}
 
 		self.__setupEvents__()
-
-	def __del__(self):
-		if self.connected:
-			self.ircQUIT()
 
 	def __setupEvents__(self):
 		import inspect
@@ -170,6 +169,10 @@ class IRC:
 			else:
 				self.event.addListener(handler,
 						self.event.getChannelID(event))
+
+	###
+	### Properties
+	###
 
 	def getNick(self):
 		return self.info.get("nick", None)
@@ -207,6 +210,10 @@ class IRC:
 	server = property(getServer, setServer)
 	name = property(getName, setName)
 
+	###
+	### IRC Commands
+	###
+
 	def ircRAW(self, data):
 		self.event.push(WriteEvent(data + "\r\n"),
 				self.event.getChannelID("write"),
@@ -219,9 +226,9 @@ class IRC:
 		 self.ircRAW("SERVER %s %s %s :%s" % (server, hops,
 			 token, description))
 	
-	def ircUSER(self, user, host, server, name):
+	def ircUSER(self, ident, host, server, name):
 		self.ircRAW("USER %s \"%s\" \"%s\" :%s" % (
-			user, host, server, name))
+			ident, host, server, name))
 		self.setIdent(ident)
 		self.setHost(host)
 		self.setServer(server)
@@ -250,8 +257,6 @@ class IRC:
 	def ircQUIT(self, message="", source=None):
 		if source is None:
 			self.ircRAW("QUIT :%s" % message)
-			self.close()
-			self.connected = False
 		else:
 			self.ircRAW(":%s QUIT :%s" % (source, message))
 	
@@ -344,13 +349,17 @@ class IRC:
 			self.ircRAW(":%s INVITE %s %s" % (source, target,
 				channel))
 
+	###
+	### Event Processing
+	###
+
 	def onREAD(self, event):
 		tokens = event.line.split(" ")
 
 		#TODO: Add TOPIC
 
 		if tokens[1] == "PRIVMSG":
-			source = sourceSplit(strip(tokens[0])).lower()
+			source = sourceSplit(strip(tokens[0].lower()))
 			target = tokens[2].lower()
 			message = strip(" ".join(tokens[3:]))
 
@@ -375,7 +384,7 @@ class IRC:
 						self)
 
 		elif tokens[1] == "NOTICE":
-			source = sourceSplit(strip(tokens[0])).lower()
+			source = sourceSplit(strip(tokens[0].lower()))
 			target = tokens[2].lower()
 			message = strip(" ".join(tokens[3:]))
 			self.event.push(
@@ -384,7 +393,7 @@ class IRC:
 					self)
 
 		elif tokens[1] == "JOIN":
-			source = sourceSplit(strip(tokens[0])).lower()
+			source = sourceSplit(strip(tokens[0].lower()))
 			channel = strip(tokens[2]).lower()
 			self.event.push(
 					JoinEvent(source, channel),
@@ -392,7 +401,7 @@ class IRC:
 					self)
 
 		elif tokens[1] == "PART":
-			source = sourceSplit(strip(tokens[0])).lower()
+			source = sourceSplit(strip(tokens[0].lower()))
 			channel = strip(tokens[2]).lower()
 			message = strip(" ".join(tokens[3:]))
 			self.event.push(
@@ -401,7 +410,7 @@ class IRC:
 					self)
 
 		elif tokens[1] == "QUIT":
-			source = sourceSplit(strip(tokens[0])).lower()
+			source = sourceSplit(strip(tokens[0].lower()))
 			message = strip(" ".join(tokens[2:]))
 			self.event.push(
 					QuitEvent(source, message),
@@ -409,7 +418,7 @@ class IRC:
 					self)
 
 		elif tokens[1] == "NICK":
-			source = sourceSplit(strip(tokens[0])).lower()
+			source = sourceSplit(strip(tokens[0].lower()))
 			newNick = strip(tokens[2]).lower()
 			ctime = strip(tokens[3])
 			self.event.push(
@@ -432,6 +441,10 @@ class IRC:
 						strip(" ".join(tokens[8:]))),
 					self.event.getChannelID("newnick"),
 					self)
+
+	###
+	### Default Events
+	###
 
 	def onPING(self, event):
 		self.ircPONG(event.server)
