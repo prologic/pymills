@@ -16,39 +16,76 @@ Channels must be registered by calling EventManager.addChannel
 There is one special channel:
    name=global, channel=0: The global channel.
 
-An event sent to the global channel will notify _all_ filters
-and listeners of that event. Filters and listeners of the
-global channel will recieve events first.
+An event sent to the global channel will notify '''all'''
+filters and listeners of that event. Filters and listeners
+of the global channel will recieve events first.
+
+WHen an event is sent to either a filter or listener's
+callable, the event manager will '''try''' to apply the
+event's date (args and kwargs) to that function. Tke callable
+of a filter or listener thus becomes an API which must be
+conformed to.
 
 Example Usage:
 ...
 """
 
 import time
+import inspect
 
 class EventError(Exception):
 	pass
 
+class Component(object):
+
+	instances = {}
+
+	def __new__(cls, event):
+		if cls in Component.instances:
+			return Component.instances[cls]
+		
+		self = super(
+				Component, cls).__new__(cls)
+		Component.instances[cls] = self
+
+		self.event = event
+
+		events = [(x[0][2:], x[1]) for x in inspect.getmembers(
+			self, lambda x: inspect.ismethod(x) and
+			callable(x) and x.__name__.startswith("on") and
+			(hasattr(x, "filter") or hasattr(x, "listener")))]
+
+		for event, handler in events:
+			channel = self.event.getChannelID(event)
+			if channel is None:
+				channel = self.event.addChannel(event)
+			self.event.add(handler, channel)
+
+		return self
+
 class Event:
-	"""Event(**kwargs) -> new event object
+	"""Event(*args, **kwargs) -> new event object
 
 	Create a new event object populating it with the given
-	dictionary of keyword arguments.
+	list of arguments and dictionary of keyword arguments.
 	"""
 
-	def __init__(self, **kwargs):
+	def __init__(self, *args, **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self.__dict__.update(kwargs)
+		self._args = args
+		self._kwargs = kwargs
 		self._time = time.time()
+		self.__dict__.update(kwargs)
 	
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
 
 		attrs = ((k, v) for k, v in self.__dict__.items()
-				if not k.startswith("__"))
+				if not k.startswith("_"))
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
-		return "Event(%s)" % ", ".join(attrStrings)
+		return "<Event (%s) {%s}>" % (
+				self._args, ", ".join(attrStrings))
 
 	__str__ = __repr__
 
@@ -61,50 +98,75 @@ class EventManager:
 	def __init__(self):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self._channels = {}
+		self._channels = {
+				0: "global"}
 
 		self._filters = {}
 		self._listeners = {}
 		self._queue = []
 
-		self.addChannel("global")
+	def add(self, callable, *channels):
+		"""E._add(callable, *channels) -> None
 
-	def _add(self, container, callable, *channels):
-		# x._add(container, callable, *channels) -> None
-		#
-		# For every channel in channels add the given callable
-		# to the container with channel as the key.
+		Add a new filter or listener to the event manager
+		adding it to all channels specified. if no channels
+		are given, add it to the global channel.
+		"""
 
 		if len(channels) == 0:
-			container[0].append(callable)
-		else:
-			for channel in channels:
-				if not type(channel) == int:
-					raise EventError("type(int) expected for channel")
-				try:
-					container[channel].append(callable)
-				except KeyError:
-					raise EventError("No such channel: %d" % channel)
+			channels = [0]
+
+		for channel in channels:
+
+			if type(channel) == str:
+				channel = self.getChannelID(channel)
+
+			if hasattr(callable, "filter"):
+				container = self._filters
+			elif hasattr(callable, "listener"):
+				container = self._listeners
+			else:
+				raise EventError("Given callable '%s' is" \
+						"not a filter or listener" % callable)
+
+			try:
+				container[channel].append(callable)
+			except KeyError:
+				raise EventError(
+						"Channel %d not found" % channel)
 	
-	def _remove(self, container, callable, *channels):
-		# x._remove(container, callable, *channels) -> None
-		#
-		# Remove the given callable from the container's
-		# channel. If no channels are given, _all_ callable
-		# functions are removed from the container.
+	def remove(self, callable, *channels):
+		"""E._remove(callable, *channels) -> None
+		
+		Remove the given filter or listener from the
+		event manager removing it from all channels
+		specified. If no channels are given, '''all'''
+		instnaces are removed.
+		"""
 
 		if len(channels) == 0:
-			keys = container.keys()
+			keys = self._channels.keys()
 		else:
 			keys = channels
 
 		for channel in keys:
-			if not type(channel) == int:
-				raise EventError("type(int) expected for channel")
+
+			if type(channel) == str:
+				channel = self.getChannelID(channel)
+
+			if hasattr(callable, "filter"):
+				container = self._filters
+			elif hasattr(callable, "listener"):
+				container = self._listeners
+			else:
+				raise EventError("Given callable '%s' is" \
+						"not a filter or listener" % callable)
+
 			try:
 				container[channel].remove(callable)
 			except KeyError:
-				raise EventError("No such channel: %d" % channel)
+				raise EventError(
+						"Channel %d not found" % channel)
 
 	def getChannelID(self, name):
 		return self._channels.get(name, None)
@@ -114,6 +176,7 @@ class EventManager:
 		self._channels[name] = channel
 		self._filters[channel] = []
 		self._listeners[channel] = []
+		return channel
 
 	def removeChannel(self, name):
 		channel = self.getChannelID(name)
@@ -122,60 +185,12 @@ class EventManager:
 			del self._listeners[channel]
 			del self._channels[name]
 
-	def addListener(self, listener, *channels):
-		"""E.addListener(listener, *channels) -> None
-
-		Add the listener to the given channels.
-		If no channels are given, the listener will receive
-		all events.
-		"""
-
-		if callable(listener):
-			self._add(self._listeners, listener, *channels)
-		else:
-			raise EventError("listener must be callable")
-
-	def addFilter(self, filter, *channels):
-		"""E.addFilter(filter, *channels) -> None
-
-		Add the filter to the given channels.
-		If no channels are given, the filter will receive
-		all events.
-		"""
-
-		if callable(filter):
-			self._add(self._filters, filter, *channels)
-		else:
-			raise EventError("filter must be callable")
-	
-	def removeListener(self, listener, *channels):
-		"""E.removeListener(listener, *channels) -> None
-
-		Remove the listener from the given channels.
-		If no channels are given, the listener will be removed
-		from all channels. Also the listener will be removed
-		from listening to all events.
-		"""
-
-		self._remove(self._listeners, listener, *channels)
-
-	def removeFilter(self, filter, *channels):
-		"""E.removeFilter(filter, *channels) -> None
-
-		Remove the filter from the given channels.
-		If no channels are given, the filter will be removed
-		from all channels. Also the filter will be removed
-		from listening to all events.
-		"""
-
-		self._remove(self._filters, filter, *channels)
-	
-	def push(self, event, channel, source=None):
+	def push(self, channel, source=None, event=Event()):
 		"Synonym of pushEvent"
 
-		self.pushEvent(event, channel, source)
+		self.pushEvent(channel, source, event)
 
-	def pushEvent(self, event, channel, source=None):
+	def pushEvent(self, channel, source=None, event=Event()):
 		"""E.pushEvent(event, channel, source) -> None
 
 		Push the given event onto the channel.
@@ -183,10 +198,14 @@ class EventManager:
 		by flushEvents.
 		"""
 
-		if channel == 0:
-			raise EventError("You cannot push events to the global channel")
+		if type(channel) == str:
+			channel = self.getChannelID(channel)
 
-		self._queue.append((event, channel, source))
+		if channel == 0:
+			raise EventError(
+					"You cannot push events to the global channel")
+
+		self._queue.append((channel, source, event))
 	
 	def flush(self):
 		"Synonym of flushEvents"
@@ -203,17 +222,17 @@ class EventManager:
 
 		queue = self._queue
 
-		for event, channel, source in queue[:]:
-			self.sendEvent(event, channel, source)
-			queue.remove((event, channel, source))
+		for channel, source, event in queue[:]:
+			self.sendEvent(channel, source, event)
+			queue.remove((channel, source, event))
 
-	def send(self, event, channel, source=None):
+	def send(self, channel, source=None, event=Event()):
 		"Synonym of sendEvent"
 
-		self.sendEvent(event, channel, source)
+		self.sendEvent(channel, source, event)
 	
-	def sendEvent(self, event, channel, source=None):
-		"""E.sendEvent(event, channel, source) -> None
+	def sendEvent(self, channel, source=None, event=Event()):
+		"""E.sendEvent(channel, source, event=Event()) -> None
 
 		Send the given event to listeners on the channel.
 		THe _source and _time of the event are populated in
@@ -228,10 +247,28 @@ class EventManager:
 		no further processing of this event will occur.
 		"""
 
-		if channel == 0:
-			raise EventError("You cannot send events to the global channel")
+		def call(callable, event):
+			args, vargs, kwargs, default = inspect.getargspec(
+					callable)
 
-		event._source = source
+			if len(args) > 0 and args[0] == "self":
+				args.remove("self")
+
+			if len(args) > 0 and args[0] == "event":
+				return callable(event, *event._args, **event._kwargs)
+			return callable(*event._args, **event._kwargs)
+
+		if type(channel) == str:
+			channel = self.getChannelID(channel)
+
+		if channel == 0:
+			raise EventError(
+					"You cannot send events to the global channel")
+
+		if source is not None:
+			event._source = source
+		else:
+			event._source = self
 		event._channel = channel
 		if not hasattr(event, "_time"):
 			event._time = time.time()
@@ -242,18 +279,18 @@ class EventManager:
 				self._listeners.get(channel, [])
 
 		for filter in filters:
-			halt, newEvent = filter(event)
+			halt, newEvent = call(filter, event)
 			if halt:
 				return
 			else:
 				event = newEvent
 
 		for listener in listeners:
-			listener(event)
+			call(listener, event)
 
-def _test():
+def test():
 	import doctest
 	doctest.testmod()
 
 if __name__ == "__main__":
-	_test()
+	test()
