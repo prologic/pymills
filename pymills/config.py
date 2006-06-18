@@ -2,7 +2,7 @@
 # Module:	config
 # Date:		11th June 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id: __init__.py 202 2006-05-26 18:58:45Z prologic $
+# $Id$
 
 """Config
 

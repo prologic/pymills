@@ -2,7 +2,7 @@
 # Module:	spider
 # Date:		19th September 2005
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id: __init__.py 81 2005-09-12 15:18:53Z prologic $
+# $Id$
 
 """Web Crawler/Spider
 

@@ -2,7 +2,7 @@
 # Module:	log
 # Date:		11th June 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id: cli.py 170 2006-02-23 06:24:58Z prologic $
+# $Id$
 
 """Log
 
