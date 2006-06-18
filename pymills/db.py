@@ -90,8 +90,11 @@ class Connection:
 
 		elif self._schema.lower() == "sqlite":
 			import os
-			filename = os.path.abspath(
-					os.path.expanduser(self._location))
+			if self._location.lower() == ":memory:":
+				filename = ":memory:"
+			else:
+				filename = os.path.abspath(
+						os.path.expanduser(self._location))
 			try:
 				self._cx = sqlite.connect(filename)
 				self._cu = self._cx.cursor()
