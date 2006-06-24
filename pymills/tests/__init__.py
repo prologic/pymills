@@ -10,10 +10,12 @@
 """
 import unittest
 
+from pymills.tests import event
 from pymills.tests import config
 
 def suite():
 	suite = unittest.TestSuite()
+	suite.addTest(event.suite())
 	suite.addTest(config.suite())
 	return suite
 

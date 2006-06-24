@@ -84,7 +84,7 @@ class Event:
 		attrs = ((k, v) for k, v in self.__dict__.items()
 				if not k.startswith("_"))
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
-		return "<Event (%s) {%s}>" % (
+		return "<Event %s {%s}>" % (
 				self._args, ", ".join(attrStrings))
 
 	__str__ = __repr__
@@ -99,10 +99,10 @@ class EventManager:
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self._channels = {
-				0: "global"}
+				"global": 0}
 
-		self._filters = {}
-		self._listeners = {}
+		self._filters = {0: []}
+		self._listeners = {0: []}
 		self._queue = []
 
 	def add(self, callable, *channels):
@@ -141,7 +141,9 @@ class EventManager:
 		Remove the given filter or listener from the
 		event manager removing it from all channels
 		specified. If no channels are given, '''all'''
-		instnaces are removed.
+		instnaces are removed. This will succeed even
+		if the specified callable has already been
+		removed.
 		"""
 
 		if len(channels) == 0:
@@ -163,7 +165,10 @@ class EventManager:
 						"not a filter or listener" % callable)
 
 			try:
-				container[channel].remove(callable)
+				try:
+					container[channel].remove(callable)
+				except ValueError:
+					pass
 			except KeyError:
 				raise EventError(
 						"Channel %d not found" % channel)
@@ -185,27 +190,30 @@ class EventManager:
 			del self._listeners[channel]
 			del self._channels[name]
 
-	def push(self, channel, source=None, event=Event()):
+	def push(self, event, channel, source=None):
 		"Synonym of pushEvent"
 
-		self.pushEvent(channel, source, event)
+		self.pushEvent(event, channel, source)
 
-	def pushEvent(self, channel, source=None, event=Event()):
+	def pushEvent(self, event, channel, source=None):
 		"""E.pushEvent(event, channel, source) -> None
 
-		Push the given event onto the channel.
+		Push the given event onto the given channel.
 		This will queue the event up to be processes later
-		by flushEvents.
+		by flushEvents. If a channel is given as a str
+		the appropiate channel id will be retrieved.
+		Events cannot be pushed onto the global channel,
+		doing so will raise an error.
 		"""
 
 		if type(channel) == str:
 			channel = self.getChannelID(channel)
 
-		if channel == 0:
+		if channel == self.getChannelID("global"):
 			raise EventError(
-					"You cannot push events to the global channel")
+					"You cannot push events onto the global channel")
 
-		self._queue.append((channel, source, event))
+		self._queue.append((event, channel, source))
 	
 	def flush(self):
 		"Synonym of flushEvents"
@@ -222,29 +230,29 @@ class EventManager:
 
 		queue = self._queue
 
-		for channel, source, event in queue[:]:
-			self.sendEvent(channel, source, event)
-			queue.remove((channel, source, event))
+		for event, channel, source in queue[:]:
+			self.sendEvent(event, channel, source)
+			queue.remove((event, channel, source))
 
-	def send(self, channel, source=None, event=Event()):
+	def send(self, event, channel, source=None):
 		"Synonym of sendEvent"
 
-		self.sendEvent(channel, source, event)
+		self.sendEvent(event, channel, source)
 	
-	def sendEvent(self, channel, source=None, event=Event()):
-		"""E.sendEvent(channel, source, event=Event()) -> None
+	def sendEvent(self, event, channel, source=None):
+		"""E.sendEvent(event, channel, source) -> None
 
-		Send the given event to listeners on the channel.
+		Send the given event to listeners on the given channel.
 		THe _source and _time of the event are populated in
 		the event object.
 
-		Filters are processed first. Any filter can either:
-		 * return the event
-		 * modify the event
-		 * return a new event
-		 * return None
-		If a filter returns None, the event is discarded and
-		no further processing of this event will occur.
+		Filters are processed first.
+		Filters must return a tuple (halt, event)
+		A filter may:
+		 * Return a new event
+		 * Return the same event in tact
+		If halt is True, the event is discarded and no
+		further filters or listeners can recieve this event.
 		"""
 
 		def call(callable, event):
@@ -279,7 +287,12 @@ class EventManager:
 				self._listeners.get(channel, [])
 
 		for filter in filters:
-			halt, newEvent = call(filter, event)
+			try:
+				halt, newEvent = call(filter, event)
+			except:
+				raise EventError(
+						"Filter '%s' did not return (halt, event)" %
+						filter)
 			if halt:
 				return
 			else:
@@ -287,10 +300,3 @@ class EventManager:
 
 		for listener in listeners:
 			call(listener, event)
-
-def test():
-	import doctest
-	doctest.testmod()
-
-if __name__ == "__main__":
-	test()
