@@ -16,31 +16,67 @@ Channels must be registered by calling EventManager.addChannel
 There is one special channel:
    name=global, channel=0: The global channel.
 
-An event sent to the global channel will notify '''all'''
-filters and listeners of that event. Filters and listeners
-of the global channel will recieve events first.
+Events cannot be sent to or pushed onto the global channel.
+Instead, any filters/listeners that are on this channel
+will receive '''all''' events. Any filter/listener on this
+channel has first priority.
 
 WHen an event is sent to either a filter or listener's
 callable, the event manager will '''try''' to apply the
-event's date (args and kwargs) to that function. Tke callable
+event's date (args and kwargs) to that callable. The callable
 of a filter or listener thus becomes an API which must be
 conformed to.
 
-Example Usage:
-...
+If any error occurs, an EventError is raised with the
+appropiate message.
+
+A Component is an object that holds a copy of the EventManager
+instnace and automatically sets up any filters/listeners
+found in the class. Filter/listener methods must start with
+"on" and must have the attribute "filter" or "listener"
+set to True. All components are singletons, that is they can
+only be instantiated once.
 """
 
 import time
 import inspect
 
 class EventError(Exception):
+	"Event Error Exception"
+
 	pass
 
 class Component(object):
+	"""Component(event) -> new component object
+
+	This should be sub-classed with methods defined for filters
+	and listeners. Only one instance of any component can be
+	instantiated. Further instantiation of the same component
+	results in the same instance previously instantiated.
+
+	Any filter/listeners found in the class will automatically
+	be setup and added to the event manager. If a channel is
+	requireed one will be added.
+
+	Filters and Listeners are defined like so:
+
+	{{{
+	#!python
+	def onFOO(self, event):
+		return True, event
+	onFOO.filter = True
+
+	def onBAR(self, event):
+		print event
+	onBAR.listener = True
+	}}}
+	"""
 
 	instances = {}
 
 	def __new__(cls, event):
+		"Creates x; see x.__class__.__doc__ for signature"
+
 		if cls in Component.instances:
 			return Component.instances[cls]
 		
@@ -106,7 +142,7 @@ class EventManager:
 		self._queue = []
 
 	def add(self, callable, *channels):
-		"""E._add(callable, *channels) -> None
+		"""E.add(callable, *channels) -> None
 
 		Add a new filter or listener to the event manager
 		adding it to all channels specified. if no channels
@@ -136,7 +172,7 @@ class EventManager:
 						"Channel %d not found" % channel)
 	
 	def remove(self, callable, *channels):
-		"""E._remove(callable, *channels) -> None
+		"""E.remove(callable, *channels) -> None
 		
 		Remove the given filter or listener from the
 		event manager removing it from all channels
@@ -174,9 +210,13 @@ class EventManager:
 						"Channel %d not found" % channel)
 
 	def getChannelID(self, name):
+		"Return the channel id given by name"
+
 		return self._channels.get(name, None)
 
 	def addChannel(self, name):
+		"Add a new channel with the name given"
+
 		channel = len(self._channels)
 		self._channels[name] = channel
 		self._filters[channel] = []
@@ -184,6 +224,13 @@ class EventManager:
 		return channel
 
 	def removeChannel(self, name):
+		"""Remove a channel given by name
+
+		This also clears the filters and listeners containers
+		of that channel, any filters/listeners in that channel
+		are removed.
+		"""
+
 		channel = self.getChannelID(name)
 		if channel is not None:
 			del self._filters[channel]
@@ -196,7 +243,7 @@ class EventManager:
 		self.pushEvent(event, channel, source)
 
 	def pushEvent(self, event, channel, source=None):
-		"""E.pushEvent(event, channel, source) -> None
+		"""E.pushEvent(event, channel, source=None) -> None
 
 		Push the given event onto the given channel.
 		This will queue the event up to be processes later
@@ -240,7 +287,7 @@ class EventManager:
 		self.sendEvent(event, channel, source)
 	
 	def sendEvent(self, event, channel, source=None):
-		"""E.sendEvent(event, channel, source) -> None
+		"""E.sendEvent(event, channel, source=None) -> None
 
 		Send the given event to listeners on the given channel.
 		THe _source and _time of the event are populated in
