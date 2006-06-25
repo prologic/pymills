@@ -7,19 +7,18 @@
 """TCP/IP and UDP Sockets
 
 This module contains classes for TCP/IP and UDP sockets for
-both servers and clients.
-All classes are non-blocking.
+both servers and clients. All classes are thin layers on-top
+of the standard socket library. All implementation are
+non-blocking. This module relies heavily on the event module
+and as such the implementations in this module are all
+event-driven and should be sub-classes to do something usefull.
 """
 
 import re
 import socket
 import select
 
-from event import Event
-
-__all__ = ["TCPClient", "TCPServer",
-		"SocketError", "ErrorEvent", "ConnectEvent",
-		"DisconnectEvent", "ReadEvent"]
+from event import *
 
 class SocketError(Exception):
 
@@ -29,44 +28,34 @@ class SocketError(Exception):
 class ErrorEvent(Event):
 
 	def __init__(self, error):
-		Event.__init__(self, type="error", error=error)
+		Event.__init__(self,
+				error=error)
 
 class ConnectEvent(Event):
 
 	def __init__(self, host, port):
-		Event.__init__(self, type="connect",
-				host=host, port=port)
+		Event.__init__(self,
+				host=host,
+				port=port)
 
 class DisconnectEvent(Event):
-
-	def __init__(self):
-		Event.__init__(self, type="connect")
+	pass
 
 class ReadEvent(Event):
 
 	def __init__(self, line):
-		Event.__init__(self, type="read", line=line)
+		Event.__init__(self,
+				line=line)
 
 class WriteEvent(Event):
 
 	def __init__(self, data):
-		Event.__init__(self, type="write", data=data)
+		Event.__init__(self,
+				data=data)
 
-class TCPClient:
+class TCPClient(Component):
 
-	def __init__(self, event):
-		self.event = event
-
-		self.event.addChannel("read")
-		self.event.addChannel("write")
-		self.event.addChannel("error")
-		self.event.addChannel("connect")
-		self.event.addChannel("disconnect")
-
-		# Setup a default listener for write event
-		self.event.addListener(self.__write__,
-				self.event.getChannelID("write"))
-
+	def __init__(self, *args):
 		self._linesep = re.compile("\r?\n")
 		self._buffer = ""
 
@@ -88,17 +77,23 @@ class TCPClient:
 		try:
 			data = self._sock.recv(bufsize)
 		except socket.error, e:
-			self.event.push(ErrorEvent(e), 
-					self.event.getChannelID("error"))
+			self.event.push(
+					ErrorEvent(e),
+					self.event.getChannelID("error"),
+					self)
 			self.connected = False
-			self.event.push(DisconnectEvent(), 
-					self.event.getChannelID("disconnect"))
+			self.event.push(
+					DisconnectEvent(),
+					self.event.getChannelID("disconnect"),
+					self)
 			return
 
 		if not data:
 			self.connected = False
-			self.event.push(DisconnectEvent(), 
-					self.event.getChannelID("disconnect"))
+			self.event.push(
+					DisconnectEvent(),
+					self.event.getChannelID("disconnect"),
+					self)
 			return
 
 		lines = self._linesep.split(self._buffer + data)
@@ -106,11 +101,13 @@ class TCPClient:
 		lines = lines[:-1]
 
 		for line in lines:
-			self.event.push(ReadEvent(line), 
-					self.event.getChannelID("read"))
+			self.event.push(
+					ReadEvent(line),
+					self.event.getChannelID("read"),
+					self)
 
-	def __write__(self, event):
-		data = event.data
+	@filter("write")
+	def __write__(self, event, data):
 		try:
 			bytes = self._sock.send(data)
 			if bytes < len(data):
@@ -118,11 +115,16 @@ class TCPClient:
 		except socket.error, e:
 			if e[0] == 32:
 				self.connected = False
-				self.event.push(DisconnectEvent(), 
-						self.event.getChannelID("disconnect"))
+				self.event.push(
+						DisconnectEvent(),
+						self.event.getChannelID("disconnect"),
+						self)
 			else:
-				self.event.push(ErrorEvent(e), 
-						self.event.getChannelID("error"))
+				self.event.push(
+						ErrorEvent(e),
+						self.event.getChannelID("error"),
+						self)
+		return False, event
 
 	def open(self, host, port):
 		self.host = host
@@ -133,8 +135,10 @@ class TCPClient:
 		try:
 			self._sock.connect((self.host, self.port))
 		except socket.error, e:
-			self.event.push(ErrorEvent(e), 
-					self.event.getChannelID("error"))
+			self.event.push(
+					ErrorEvent(e),
+					self.event.getChannelID("error"),
+					self)
 			return
 
 		self._sock.setblocking(False)
@@ -143,23 +147,31 @@ class TCPClient:
 			pass
 
 		self.connected = True
-		self.event.push(ConnectEvent(host, port), 
-				self.event.getChannelID("connect"))
+		self.event.push(
+				ConnectEvent(host, port),
+				self.event.getChannelID("connect"),
+				self)
 
 	def close(self):
 		try:
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, e:
-			self.event.push(ErrorEvent(e), 
-					self.event.getChannelID("error"))
+			self.event.push(
+					ErrorEvent(e),
+					self.event.getChannelID("error"),
+					self)
 		self.connected = False
-		self.event.push(DisconnectEvent(), 
-				self.event.getChannelID("disconnect"))
+		self.event.push(
+				DisconnectEvent(), 
+				self.event.getChannelID("disconnect"),
+				self)
 	
 	def write(self, data):
-		self.event.push(WriteEvent(data),
-				self.event.getChannelID("write"))
+		self.event.push(
+				WriteEvent(data),
+				self.event.getChannelID("write"),
+				self)
 
 	def process(self):
 		if self.__poll__():
@@ -169,6 +181,48 @@ class TCPClient:
 		while self.connected:
 			self.process()
 	
+	@filter()
+	def onDEBUG(self, event, *args, **kwargs):
+		"""Debug Events
+
+		This should be overridden by sub-classes that wish to
+		process all events.
+		"""
+
+		return False, event
+
+	@listener("connect")
+	def onCONNECT(self, host, port):
+		"""Connect Event
+
+		This should be overridden by sub-classes that wish to
+		do something with connection events.
+		"""
+	
+	@listener("disconnect")
+	def onDISCONNECT(self):
+		"""Disconnect Event
+
+		This should be overridden by sub-classes that wish to
+		do something with disconnection events.
+		"""
+
+	@listener("read")
+	def onREAD(self, line):
+		"""Read Event
+
+		This should be overridden by sub-classes that wish to
+		do something with read events.
+		"""
+
+	@listener("write")
+	def onWRITE(self, event, data):
+		"""Write Event
+
+		This should be overridden by sub-classes that wish to
+		do something with write events.
+		"""
+
 class TCPServer:
 
 	def __init__(self, port, address = ''):

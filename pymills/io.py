@@ -15,7 +15,7 @@ input and accept commands and react to them)
 import sys
 import inspect
 import readline
-from select import select
+import select
 
 from utils import Tokenizer
 
@@ -94,8 +94,8 @@ class SelectInput:
 	def __init__(self):
 		self._stdin = sys.stdin
 
-	def poll(self):
-		ready = select.select([self._stdin], [], [])
+	def poll(self, wait=0.01):
+		ready = select.select([self._stdin], [], [], wait)
 		read = ready[0]
 		return read != []
 	

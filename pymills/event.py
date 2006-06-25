@@ -44,7 +44,29 @@ import inspect
 class EventError(Exception):
 	"Event Error Exception"
 
-	pass
+def filter(*args):
+	"Decorator function for a filter"
+
+	def decorate(f):
+		f.filter = True
+		if len(args) == 1:
+			setattr(f, "channel", args[0])
+		else:
+			setattr(f, "channel", "global")
+		return f
+	return decorate
+
+def listener(*args):
+	"Decorator function for a listener"
+
+	def decorate(f):
+		f.listener = True
+		if len(args) == 1:
+			setattr(f, "channel", args[0])
+		else:
+			setattr(f, "channel", "global")
+		return f
+	return decorate
 
 class Component(object):
 	"""Component(event) -> new component object
@@ -62,13 +84,14 @@ class Component(object):
 
 	{{{
 	#!python
+
+	@filter()
 	def onFOO(self, event):
 		return True, event
-	onFOO.filter = True
 
+	@listener()
 	def onBAR(self, event):
 		print event
-	onBAR.listener = True
 	}}}
 	"""
 
@@ -86,15 +109,17 @@ class Component(object):
 
 		self.event = event
 
-		events = [(x[0][2:], x[1]) for x in inspect.getmembers(
+		events = [(x[0], x[1]) for x in inspect.getmembers(
 			self, lambda x: inspect.ismethod(x) and
-			callable(x) and x.__name__.startswith("on") and
+			callable(x) and
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for event, handler in events:
-			channel = self.event.getChannelID(event)
+			if not hasattr(handler, "channel"):
+				handler.channel = event
+			channel = self.event.getChannelID(handler.channel)
 			if channel is None:
-				channel = self.event.addChannel(event)
+				channel = self.event.addChannel(handler.channel)
 			self.event.add(handler, channel)
 
 		return self
@@ -309,9 +334,17 @@ class EventManager:
 			if len(args) > 0 and args[0] == "self":
 				args.remove("self")
 
-			if len(args) > 0 and args[0] == "event":
-				return callable(event, *event._args, **event._kwargs)
-			return callable(*event._args, **event._kwargs)
+			try:
+				if len(args) > 0 and args[0] == "event":
+					if len(args) == 1 and kwargs is None:
+						return callable(event)
+					return callable(event, *event._args, **event._kwargs)
+				return callable(*event._args, **event._kwargs)
+			except Exception, e:
+				raise
+				raise EventError(
+						"API Error with filter/listener '%s': %s" % (
+							callable, e))
 
 		if type(channel) == str:
 			channel = self.getChannelID(channel)
@@ -336,7 +369,8 @@ class EventManager:
 		for filter in filters:
 			try:
 				halt, newEvent = call(filter, event)
-			except:
+			except TypeError:
+				raise
 				raise EventError(
 						"Filter '%s' did not return (halt, event)" %
 						filter)

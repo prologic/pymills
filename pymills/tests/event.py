@@ -17,34 +17,34 @@ from pymills.event import *
 
 class FilterComponent(Component):
 
+	@filter("Foo")
 	def onFoo(self, event, msg=""):
 		return False, Event(msg.lower())
-	onFoo.filter = True
 
+	@filter("Bar")
 	def onBar(self, event, msg=""):
 		if msg.lower() == "hello world":
 			return True, event
 		else:
 			return False, event
-	onBar.filter = True
 	
 class ListenerComponent(Component):
 
+	@listener("Foo")
 	def onFoo(self, event, test, msg=""):
 		if msg.lower() == "start":
 			self.event.pushEvent(
 					event._channel,
 					event._source,
 					Event(msg="foo"))
-	onFoo.listener = True
 
+	@listener("Bar")
 	def onBar(self, event, test, msg=""):
 		if msg.lower() == "test":
 			self.event.pushEvent(
 					event._channel,
 					event._source,
 					Event(msg="hello world"))
-	onBar.listener = True
 
 class EventTestCase(unittest.TestCase):
 
@@ -279,13 +279,13 @@ class EventTestCase(unittest.TestCase):
 		   a specific channel
 		"""
 
+		@filter("FOO")
 		def onFOO():
 			pass
-		onFOO.filter = True
 
+		@listener("BAR")
 		def onBAR():
 			pass
-		onBAR.listener = True
 
 		def onTEST():
 			pass
@@ -374,6 +374,7 @@ class EventTestCase(unittest.TestCase):
 
 		self.flag = False
 
+		@filter()
 		def onCHECK(event, test, time):
 			#8
 			test.assertTrue(
@@ -386,15 +387,14 @@ class EventTestCase(unittest.TestCase):
 					hasattr(event, "_channel") and
 					type(event._channel) == int)
 			return False, event
-		onCHECK.filter = True
 
+		@listener("test")
 		def onTEST(test, time):
 			test.flag = True
-		onTEST.listener = True
 
+		@filter()
 		def onSTOP(event, test, time, stop=False):
 			return stop, event
-		onSTOP.filter = True
 
 		channel = self.event.addChannel("test")
 		self.event.add(onSTOP)
