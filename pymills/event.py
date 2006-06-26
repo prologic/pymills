@@ -97,7 +97,7 @@ class Component(object):
 
 	instances = {}
 
-	def __new__(cls, event):
+	def __new__(cls, event, *args, **kwargs):
 		"Creates x; see x.__class__.__doc__ for signature"
 
 		if cls in Component.instances:
@@ -145,8 +145,8 @@ class Event:
 		attrs = ((k, v) for k, v in self.__dict__.items()
 				if not k.startswith("_"))
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
-		return "<Event %s {%s}>" % (
-				self._args, ", ".join(attrStrings))
+		return "<%s %s {%s}>" % (
+				self.__class__.__name__,	self._args, ", ".join(attrStrings))
 
 	__str__ = __repr__
 
@@ -336,10 +336,14 @@ class EventManager:
 
 			try:
 				if len(args) > 0 and args[0] == "event":
-					if len(args) == 1 and kwargs is None:
-						return callable(event)
-					return callable(event, *event._args, **event._kwargs)
-				return callable(*event._args, **event._kwargs)
+					if len(args) == 1:
+						return callable(event, **event._kwargs)
+					else:
+						return callable(event, *event._args,
+								**event._kwargs)
+				else:
+					return callable(*event._args,
+							**event._kwargs)
 			except Exception, e:
 				raise
 				raise EventError(
