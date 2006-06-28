@@ -1,5 +1,0 @@
-#!/usr/bin/env python
-
-import pymills
-
-print pymills.__version__
