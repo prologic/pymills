@@ -203,7 +203,7 @@ class EventManager:
 				container[channel].append(callable)
 			except KeyError:
 				raise EventError(
-						"Channel %d not found" % channel)
+						"Channel %s not found" % channel)
 	
 	def remove(self, callable, *channels):
 		"""E.remove(callable, *channels) -> None
