@@ -8,86 +8,114 @@
 
 This is a module that allows you to implement timed-events
 in your running application/process.
-
-Example:
-from pymills.timers import Timers
-
-def hello(name, length, args):
-   print "Hello World"
-
-timers = Timers()
-timers.add("hello", 5, hello)
-
-while True:
-   timers.run()
 """
 
-import time
+from time import time as _time
 
-from event import *
+from event import Event, Component
 
 class TimerEvent(Event):
 
-	def __init__(self, name, length, callable, forever,
-			*args, **kwargs):
-		Event.__ini__(self,
-				name, length, callable, forever,
-				*args, **kwargs)
+	def __init__(self, name, length, channel, **kwargs):
+		Event.__init__(self, name, length, channel, **kwargs)
 
 class Timers(Component):
+	"""Timers(event) -> new timers component
+
+	Creates a new timer component that allows you to add
+	timed-events which will fire a "timer" event when
+	they are triggered.
+	"""
 
 	def __init__(self, *args):
+		"initializes x; see x.__class__.__doc__ for signature"
+
 		self._timers = []
 	
-	@listener("timer")
-	def onTIMER(self, event, name, length, callable, forever,
-			*args, **kwargs):
-		pass
-	
-	def add(self, name, length, callable=None, forever=False,
-			*args, **kwargs):
+	def add(self, name, length, channel="timer", forever=False,
+			**kwargs):
+		"""T.add(name, length, channel="timer", forever=False,
+		      **kwargs) -> None
+
+		Add a new event to be timed and triggered.
+
+		name    - name of the timed-event
+		length  - length of time to wait untill triggered
+		channel - channel the timer is to trigger on
+		forever - repeating timer
+
+		Any additional data can be provided by kwargs.
+		"""
+
 		self._timers.append(
-				Timer(
-					name, length, callable, forever,
-					*args, **kwargs))
+				Timer(name, length, channel, forever, **kwargs))
 	
-	def run(self):
+	def process(self):
+		"""T.process() -> None
+
+		Process all current timers. If any trigger push
+		a "timer" event onto the queue. Reset timers
+		that are marked with the forever flag.
+		"""
+
 		for i, timer in enumerate(self._timers[:]):
-			done, event = timer.run()
+			done, event, channel = timer.process()
 			if done:
-				if self._event is not None:
-					self._event.push(event, self._channel, timer)
+				self.event.push(
+						event,
+						self.event.getChannelID(channel),
+						timer)
 				if not timer.forever:
 					del self._timers[i]
-				else:
-					timer.reset()
 
 class Timer:
+	"""Timer(name, length, channel="timer", forever=False,
+	      **kwargs) -> new timer object
+	
+	Creates a new timer object which when triggered
+	will return an event to be pushed onto the event
+	queue held by the Timers container.
+	"""
 
-	def __init__(self, name, length, callable, forever=False,
-		*args, **kwargs):
+	def __init__(self, name, length, channel="timer",
+			forever=False, **kwargs):
+		"initializes x; see x.__class__.__doc__ for signature"
+
 		self._name = name
 		self._length = length
+		self._channel = channel
 		self.forever = forever
-		self._callable = callable
-		self._args = args
 		self._kwargs = kwargs
 
 		self.reset()
 	
 	def reset(self):
-		self._start = time.time()
+		"""T.reset() -> None
 
-	def run(self):
-		if (time.time() - self._start) >= self._length:
-			if callable(self._callable):
-				self._callable(self._name, self._length,
-					*self._args, **self._kwargs)
+		Reset the timer.
+		"""
+
+		self._etime = _time() + self._length
+
+	def process(self):
+		"""T.process() -> bool, TimerEvent, str
+
+		Check if this timer is ready to be triggered.
+		If so, return (True, TimerEvent, channel), otherwise
+		return (False, None, None).
+
+		If this timer has the forever flag set to True,
+		reset the timer after triggering.
+		"""
+
+		if _time() > self._etime:
+			if self.forever:
+				self.reset()
 			return True, TimerEvent(
 					self._name,
 					self._length,
-					self._callable,
-					*self._args,
-					**self._kwargs)
+					self._channel,
+					**self._kwargs), \
+							self._channel
 		else:
-			return False, None
+			return False, None, None
