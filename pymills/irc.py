@@ -8,7 +8,9 @@
 ...
 """
 
-from event import Event
+import re
+
+from event import *
 
 ###
 ### Supporting Functions
@@ -50,125 +52,92 @@ def sourceSplit(source):
 class RawEvent(Event):
 
 	def __init__(self, data):
-		Event.__init__(self, type="raw", data=data)
+		Event.__init__(self,
+				data=data)
 	
+class NumericEvent(Event):
+
+	def __init__(self, source, target, numeric, arg, message):
+		Event.__init__(self,
+				source, target, numeric, arg, message)
+
 class NewNickEvent(Event):
 
 	def __init__(self, nick, hops, signon, ident, host,
 			server, name):
-		Event.__init__(self, type="newnick", nick=nick,
-				hops=hops, signon=signon, ident=ident,
-				host=host, server=server, name=name)
+		Event.__init__(self, nick, hops, signon, ident, host,
+				server, name)
 
 class NickEvent(Event):
 
 	def __init__(self, nick, newNick, ctime):
-		Event.__init__(self, type="nick", nick=nick,
-				newNick=newNick, ctime=ctime)
+		Event.__init__(self, nick, newNick, ctime)
 
 class QuitEvent(Event):
 
 	def __init__(self, nick, message):
-		Event.__init__(self, type="quit", nick=nick,
-				message=message)
+		Event.__init__(self, nick, message)
 
 class MessageEvent(Event):
 
 	def __init__(self, source, target, message):
-		Event.__init__(self, type="message", source=source,
-				target=target, message=message)
+		Event.__init__(self, source, target, message)
 
 class NoticeEvent(Event):
 
 	def __init__(self, source, target, message):
-		Event.__init__(self, type="notice", source=source,
-				target=target, message=message)
+		Event.__init__(self, source, target, message)
 
 class PingEvent(Event):
 
 	def __init__(self, server):
-		Event.__init__(self, type="ping", server=server)
+		Event.__init__(self, server)
 
 class JoinEvent(Event):
 
 	def __init__(self, nick, channel):
-		Event.__init__(self, type="join", nick=nick,
-				channel=channel)
+		Event.__init__(self, nick, channel)
 
 class PartEvent(Event):
 
 	def __init__(self, nick, channel, message):
-		Event.__init__(self, type="part", nick=nick,
-				channel=channel, message=message)
+		Event.__init__(self, nick, channel, message)
 
 class CtcpEvent(Event):
 
 	def __init__(self, source, target, ctcpType, message):
-		Event.__init__(self, type="ctcp", source=source,
-				target=target, ctcpType=ctcpType, message=message)
+		Event.__init__(self, source, target, ctcpType, message)
 
 class ModeEvent(Event):
 
 	def __init__(self, nick, modes):
-		Event.__init__(self, type="mode", nick=nick,
-				modes=modes)
+		Event.__init__(self, nick, modes)
 
 class TopicEvent(Event):
 
 	def __init__(self, nick, channel, topic, whoset=None,
 			whenset=None):
-		Event.__init__(self, type="topic", nick=nick,
-				channel=channel, topic=topic, whoset=whoset,
-				whenset=whenset)
+		Event.__init__(self, nick, channel, topic, whoset,
+				whenset)
 
 class InviteEvent(Event):
 
 	def __init__(self, source, target, channel):
-		Event.__init__(self, type="invite", source=source,
-				target=target, channel=channel)
+		Event.__init__(self, source, target, channel)
 
 class KickEvent(Event):
 
 	def __init__(self, source, channel, target, message):
-		Event.__init__(self, type="kick", source=source,
-				channel=channel, target=target, message=message)
-
-class WriteEvent(Event):
-
-	def __init__(self, data):
-		Event.__init__(self, type="write", data=data)
+		Event.__init__(self, source, channel, target, message)
 
 ###
 ### Protocol Class
 ###
 
-class IRC:
+class IRC(Component):
 
-	def __init__(self, event):
-		self.event = event
+	def __init__(self):
 		self.info = {}
-
-		self.__setupEvents__()
-
-	def __setupEvents__(self):
-		import inspect
-
-		events = [(x[0][2:].lower(), x[1]) 
-				for x in inspect.getmembers(
-					self, lambda x: inspect.ismethod(x) and \
-					callable(x) and x.__name__[:2] == "on")]
-
-		for event, handler in events:
-			channel = self.event.getChannelID(event)
-			if channel is None:
-				self.event.addChannel(event)
-				channel = self.event.getChannelID(event)
-			if getattr(handler, "filter", False):
-				self.event.addFilter(handler,
-						self.event.getChannelID(event))
-			else:
-				self.event.addListener(handler,
-						self.event.getChannelID(event))
 
 	###
 	### Properties
@@ -204,20 +173,22 @@ class IRC:
 	def setName(self, name):
 		self.info["name"] = name
 	
-	nick = property(getNick, setNick)
-	user = property(getIdent, setIdent)
-	host = property(getHost, setHost)
-	server = property(getServer, setServer)
-	name = property(getName, setName)
+#	nick = property(getNick, setNick)
+#	user = property(getIdent, setIdent)
+#	host = property(getHost, setHost)
+#	server = property(getServer, setServer)
+#	name = property(getName, setName)
 
 	###
 	### IRC Commands
 	###
 
 	def ircRAW(self, data):
-		self.event.push(WriteEvent(data + "\r\n"),
-				self.event.getChannelID("write"),
-				self)
+		"""Send a raw message
+
+		This must be overridden by sub-classes in order to
+		actually do anything usefull.
+		"""
 	
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)
@@ -353,12 +324,35 @@ class IRC:
 	### Event Processing
 	###
 
-	def onREAD(self, event):
-		tokens = event.line.split(" ")
+	@listener("read")
+	def onREAD(self, line):
+		tokens = line.split(" ")
 
 		#TODO: Add TOPIC
 
-		if tokens[1] == "PRIVMSG":
+		"""
+		:test.shortcircuit.net.au 433 * prologic :Nickname is already in use.
+		"""
+
+		if re.match("[0-9]+", tokens[1]):
+			source = sourceSplit(strip(tokens[0].lower()))
+			target = tokens[2].lower()
+
+			numeric = int(tokens[1])
+			if tokens[3][0] == ":":
+				arg = None
+				message = strip(" ".join(tokens[3:]))
+			else:
+				arg = tokens[3]
+				message = strip(" ".join(tokens[4:]))
+
+			self.event.push(
+					NumericEvent(source, target, numeric,
+						arg, message),
+					self.event.getChannelID("numeric"),
+					self)
+
+		elif tokens[1] == "PRIVMSG":
 			source = sourceSplit(strip(tokens[0].lower()))
 			target = tokens[2].lower()
 			message = strip(" ".join(tokens[3:]))
@@ -446,5 +440,129 @@ class IRC:
 	### Default Events
 	###
 
-	def onPING(self, event):
-		self.ircPONG(event.server)
+	@listener("ping")
+	def onPING(self, server):
+		self.ircPONG(server)
+
+###
+### Errors and Numeric Replies
+###
+
+RPL_TRACELINK = 200
+RPL_TRACECONNECTING = 201
+RPL_TRACEHANDSHAKE = 202
+RPL_TRACEUNKNOWN = 203
+RPL_TRACEOPERATOR = 204
+RPL_TRACEUSER = 205
+RPL_TRACESERVER = 206
+RPL_TRACENEWTYPE = 208
+RPL_TRACELOG = 261
+RPL_STATSLINKINFO = 211
+RPL_STATSCOMMANDS = 212
+RPL_STATSCLINE = 213
+RPL_STATSNLINE = 214
+RPL_STATSILINE = 215
+RPL_STATSKLINE = 216
+RPL_STATSYLINE = 218
+RPL_ENDOFSTATS = 219
+RPL_STATSLLINE = 241
+RPL_STATSUPTIME = 242
+RPL_STATSOLINE = 243
+RPL_STATSHLINE = 244
+RPL_UMODEIS = 221
+RPL_LUSERCLIENT = 251
+RPL_LUSEROP = 252
+RPL_LUSERUNKNOWN = 253
+RPL_LUSERCHANNELS = 254
+RPL_LUSERME = 255
+RPL_ADMINME = 256
+RPL_ADMINLOC1 = 257
+RPL_ADMINLOC2 = 258
+RPL_ADMINEMAIL = 259
+
+RPL_NONE = 300
+RPL_USERHOST = 302
+RPL_ISON = 303
+RPL_AWAY = 301
+RPL_UNAWAY = 305
+RPL_NOWAWAY = 306
+RPL_WHOISUSER = 311
+RPL_WHOISSERVER = 312
+RPL_WHOISOPERATOR = 313
+RPL_WHOISIDLE = 317
+RPL_ENDOFWHOIS = 318
+RPL_WHOISCHANNELS = 319
+RPL_WHOWASUSER = 314
+RPL_ENDOFWHOWAS = 369
+RPL_LIST = 322
+RPL_LISTEND = 323
+RPL_CHANNELMODEIS = 324
+RPL_NOTOPIC = 331
+RPL_TOPIC = 332
+RPL_INVITING = 341
+RPL_SUMMONING = 342
+RPL_VERSION = 351
+RPL_WHOREPLY = 352
+RPL_ENDOFWHO = 315
+RPL_NAMREPLY = 353
+RPL_ENDOFNAMES = 366
+RPL_LINKS = 364
+RPL_ENDOFLINKS = 365
+RPL_BANLIST = 367
+RPL_ENDOFBANLIST = 368
+RPL_INFO = 371
+RPL_ENDOFINFO = 374
+RPL_MOTDSTART = 375
+RPL_MOTD = 372
+RPL_ENDOFMOTD = 376
+RPL_YOUREOPER = 381
+RPL_REHASHING = 382
+RPL_TIME = 391
+RPL_USERSSTART = 392
+RPL_USERS = 393
+RPL_ENDOFUSERS = 394
+RPL_NOUSERS = 395
+
+ERR_NOSUCHNICK = 401
+ERR_NOSUCHSERVER = 402
+ERR_NOSUCHCHANNEL = 403
+ERR_CANNOTSENDTOCHAN = 404
+ERR_TOOMANYCHANNELS = 405
+ERR_WASNOSUCHNICK = 406
+ERR_TOOMANYTARGETS = 407
+ERR_NOORIGIN = 409
+ERR_NORECIPIENT = 411
+ERR_NOTEXTTOSEND = 412
+ERR_NOTOPLEVEL = 413
+ERR_WILDTOPLEVEL = 414
+ERR_UNKNOWNCOMMAND = 421
+ERR_NOMOTD = 422
+ERR_NOADMININFO = 423
+ERR_FILEERROR = 424
+ERR_NONICKNAMEGIVEN = 431
+ERR_ERRONEUSNICKNAME = 432
+ERR_NICKNAMEINUSE = 433
+ERR_NICKCOLLISION = 436
+ERR_NOTONCHANNEL = 442
+ERR_USERONCHANNEL = 443
+ERR_NOLOGIN = 444
+ERR_SUMMONDISABLED = 445
+ERR_USERSDISABLED = 446
+ERR_NOTREGISTERED = 451
+ERR_NEEDMOREPARAMS = 461
+ERR_ALREADYREGISTRED = 462
+ERR_PASSWDMISMATCH = 464
+ERR_YOUREBANNEDCREEP = 465
+ERR_KEYSET = 467
+ERR_CHANNELISFULL = 471
+ERR_UNKNOWNMODE = 472
+ERR_INVITEONLYCHAN = 473
+ERR_BANNEDFROMCHAN = 474
+ERR_BADCHANNELKEY = 475
+ERR_NOPRIVILEGES = 481
+ERR_CHANOPRIVSNEEDED = 482
+ERR_CANTKILLSERVER = 483
+ERR_NOOPERHOST = 491
+
+ERR_UMODEUNKNOWNFLAG = 501
+ERR_USERSDONTMATCH = 502

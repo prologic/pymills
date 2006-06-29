@@ -8,24 +8,25 @@
 
 This module contains classes for TCP/IP and UDP sockets for
 both servers and clients. All classes are thin layers on-top
-of the standard socket library. All implementation are
+of the standard socket library. All implementations are
 non-blocking. This module relies heavily on the event module
 and as such the implementations in this module are all
-event-driven and should be sub-classes to do something usefull.
+event-driven and should be sub-classed to do something usefull.
 """
 
 import re
 import socket
 import select
 
-from event import *
+from event import Event, Component, filter, listener
 
 linesep = re.compile("\r?\n")
 
 class SocketError(Exception):
 
 	def __init__(self, type, message):
-		pass
+		Exception.__init__(self)
+		self.args = type, message
 
 class ErrorEvent(Event):
 
@@ -69,20 +70,21 @@ class WriteEvent(Event):
 
 class TCPClient(Component):
 
-	def __init__(self, *args):
+	def __init__(self, event):
 		self._buffer = ""
 
 		self.connected = False
 
 	def __del__(self):
-		self.close()
+		if self.connected:
+			self.close()
 
-	def __ready__(self, wait=0.01):
+	def __ready__(self, wait=0.001):
 		ready = select.select(
 				[self._sock], [self._sock], [], wait)
 		return (not ready[0] == []) and (not ready[1] == [])
 		
-	def __poll__(self, wait=0.01):
+	def __poll__(self, wait=0.001):
 		return not select.select(
 				[self._sock], [], [], wait)[0] == []
 
@@ -119,26 +121,6 @@ class TCPClient(Component):
 					self.event.getChannelID("read"),
 					self)
 
-	@filter("write")
-	def __write__(self, event, data):
-		try:
-			bytes = self._sock.send(data)
-			if bytes < len(data):
-				raise SocketError("Didn't write all data!")
-		except socket.error, e:
-			if e[0] == 32:
-				self.connected = False
-				self.event.push(
-						DisconnectEvent(),
-						self.event.getChannelID("disconnect"),
-						self)
-			else:
-				self.event.push(
-						ErrorEvent(e),
-						self.event.getChannelID("error"),
-						self)
-		return False, event
-
 	def open(self, host, port):
 		self._sock = socket.socket(socket.AF_INET,
 				socket.SOCK_STREAM)
@@ -154,13 +136,18 @@ class TCPClient(Component):
 
 		self._sock.setblocking(False)
 
-		while not self.__ready__():
-			pass
+		for i in range(5000):
+			if self.__ready__():
+				self.connected = True
+				self.event.push(
+						ConnectEvent(host, port),
+						self.event.getChannelID("connect"),
+						self)
+				return
 
-		self.connected = True
 		self.event.push(
-				ConnectEvent(host, port),
-				self.event.getChannelID("connect"),
+				ErrorEvent("Timeout after 5s while connecting"),
+				self.event.getChannelID("error"),
 				self)
 
 	def close(self):
@@ -222,13 +209,31 @@ class TCPClient(Component):
 		do something with read events.
 		"""
 
-	@listener("write")
+	@filter("write")
 	def onWRITE(self, event, data):
 		"""Write Event
 
-		This should be overridden by sub-classes that wish to
-		do something with write events.
+		Typically this should NOT be overridden by sub-classes.
+		If it is, this should be called by the sub-class first.
 		"""
+
+		try:
+			bytes = self._sock.send(data)
+			if bytes < len(data):
+				raise SocketError("Didn't write all data!")
+		except socket.error, e:
+			if e[0] == 32:
+				self.connected = False
+				self.event.push(
+						DisconnectEvent(),
+						self.event.getChannelID("disconnect"),
+						self)
+			else:
+				self.event.push(
+						ErrorEvent(e),
+						self.event.getChannelID("error"),
+						self)
+		return False, event
 
 class TCPServer(Component):
 
@@ -245,17 +250,10 @@ class TCPServer(Component):
 		self._buffers = {}
 		self._clients = []
 
-		self.running = True
-
 	def __del__(self):
 		self.close()
 
-	def __ready__(self, wait=0.01):
-		ready = select.select(
-				[self._sock], [self._sock], [], wait)
-		return (not ready[0] == []) and (not ready[1] == [])
-		
-	def __poll__(self, wait=0.01):
+	def __poll__(self, wait=0.001):
 		try:
 			r, w, e = select.select(
 					[self._sock] + self._clients, [], self._clients,
@@ -308,22 +306,6 @@ class TCPServer(Component):
 							self.event.getChannelID("read"),
 							self)
 
-	@filter("write")
-	def __write__(self, event, sock, data):
-		try:
-			bytes = sock.send(data)
-			if bytes < len(data):
-				raise SocketError("Didn't write all data!")
-		except socket.error, e:
-			if e[0] == 32:
-				self.close(sock)
-			else:
-				self.event.push(
-						ErrorEvent(e, sock),
-						self.event.getChannelID("error"),
-						self)
-		return False, event
-
 	def close(self, sock=None):
 
 		if sock is not None:
@@ -352,7 +334,6 @@ class TCPServer(Component):
 						ErrorEvent(e),
 						self.event.getChannelID("error"),
 						self)
-			self.running = False
 			self.event.push(
 					DisconnectEvent(), 
 					self.event.getChannelID("disconnect"),
@@ -406,10 +387,25 @@ class TCPServer(Component):
 		do something with read events.
 		"""
 
-	@listener("write")
+	@filter("write")
 	def onWRITE(self, event, sock, data):
 		"""Write Event
 
-		This should be overridden by sub-classes that wish to
-		do something with write events.
+		
+		Typically this should NOT be overridden by sub-classes.
+		If it is, this should be called by the sub-class first.
 		"""
+
+		try:
+			bytes = sock.send(data)
+			if bytes < len(data):
+				raise SocketError("Didn't write all data!")
+		except socket.error, e:
+			if e[0] == 32:
+				self.close(sock)
+			else:
+				self.event.push(
+						ErrorEvent(e, sock),
+						self.event.getChannelID("error"),
+						self)
+		return False, event

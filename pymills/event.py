@@ -100,12 +100,11 @@ class Component(object):
 	def __new__(cls, event, *args, **kwargs):
 		"Creates x; see x.__class__.__doc__ for signature"
 
-		if cls in Component.instances:
-			return Component.instances[cls]
+		if cls in cls.instances:
+			return cls.instances[cls]
 		
-		self = super(
-				Component, cls).__new__(cls)
-		Component.instances[cls] = self
+		self = super(cls.__class__, cls).__new__(cls, *args,
+				**kwargs)
 
 		self.event = event
 
@@ -122,6 +121,7 @@ class Component(object):
 				channel = self.event.addChannel(handler.channel)
 			self.event.add(handler, channel)
 
+		self.instances[cls] = self
 		return self
 
 class Event:
@@ -138,6 +138,15 @@ class Event:
 		self._kwargs = kwargs
 		self._time = time.time()
 		self.__dict__.update(kwargs)
+	
+	def __getitem__(self, x):
+		if type(x) == int:
+			return self._args[x]
+		elif type(s) == str:
+			return self._kwargs[x]
+		else:
+			raise TypeError(
+					"x: expected int or str type, got %s" % type(x))
 	
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
@@ -337,7 +346,10 @@ class EventManager:
 			try:
 				if len(args) > 0 and args[0] == "event":
 					if len(args) == 1:
-						return callable(event, **event._kwargs)
+						if kwargs is None:
+							return callable(event)
+						else:
+							return callable(event, **event._kwargs)
 					else:
 						return callable(event, *event._args,
 								**event._kwargs)

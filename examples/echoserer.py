@@ -23,9 +23,12 @@ def main():
 	event = EventManager()
 	server = EchoServer(event, 7)
 
-	while server.running:
-		server.process()
-		event.flush()
+	while True:
+		try:
+			server.process()
+			event.flush()
+		except KeyboardInterrupt:
+			break
 	event.flush()
 
 if __name__ == "__main__":

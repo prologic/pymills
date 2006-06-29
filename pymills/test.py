@@ -7,7 +7,7 @@
 
 """Test Suite
 
-...
+Script to run the PyMills Test Suite.
 """
 
 import unittest

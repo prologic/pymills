@@ -24,19 +24,25 @@ while True:
 
 import time
 
-from event import Event
+from event import *
 
-__all__ = ["Timers"]
+class TimerEvent(Event):
 
-class Timers:
+	def __init__(self, name, length, callable, forever,
+			*args, **kwargs):
+		Event.__ini__(self,
+				name, length, callable, forever,
+				*args, **kwargs)
 
-	def __init__(self, event=None):
+class Timers(Component):
+
+	def __init__(self, *args):
 		self._timers = []
-		self._event = event
-		self._channel = self._event.getChannelID("timer")
-		if self._channel is None:
-			self._event.addChannel("timer")
-			self._channel = self._event.getChannelID("timer")
+	
+	@listener("timer")
+	def onTIMER(self, event, name, length, callable, forever,
+			*args, **kwargs):
+		pass
 	
 	def add(self, name, length, callable=None, forever=False,
 			*args, **kwargs):
@@ -73,17 +79,15 @@ class Timer:
 		self._start = time.time()
 
 	def run(self):
-		now = time.time()
-		if (now - self._start) >= self._length:
+		if (time.time() - self._start) >= self._length:
 			if callable(self._callable):
 				self._callable(self._name, self._length,
 					*self._args, **self._kwargs)
-			return True, Event(
-					name=self._name,
-					length=self._length,
-					callable=self._callable,
-					args=self._args,
-					kwargs=self._kwargs,
-					time=now)
+			return True, TimerEvent(
+					self._name,
+					self._length,
+					self._callable,
+					*self._args,
+					**self._kwargs)
 		else:
 			return False, None
