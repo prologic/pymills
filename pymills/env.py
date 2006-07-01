@@ -16,13 +16,13 @@ just pass a single instance of Environment.
 
 import os
 
-from config import Configuration
+from utils import ConfigParser
 
 VERSION = 1
 
 class BaseEnvironment:
 	"""BaseEnvironment(path, name="PyMills",
-	      version=VERSION, defaultConfig=[],
+	      version=VERSION, defaultConfig=[], defaultDB=([], []),
 	      url="http://trac.shortcircuit.net.au/projects/pymills/",
 	      create=False) -> new environment object
 	
@@ -34,7 +34,7 @@ class BaseEnvironment:
 	"""
 
 	def __init__(self, path, name="PyMills",
-			version=VERSION, defaultConfig=[],
+			version=VERSION, defaultConfig=[], defaultDB=([], []),
 			url="http://trac.shortcircuit.net.au/projects/pymills/",
 			create=False):
 		"initializes x; see x.__class__.__doc__ for signature"
@@ -43,6 +43,7 @@ class BaseEnvironment:
 		self.name = name
 		self.version = version
 		self.defaultConfig = defaultConfig
+		self.defaultDB = defaultDB
 		self.url = url
 
 		if create:
@@ -52,6 +53,22 @@ class BaseEnvironment:
 
 		self.loadConfig()
 		self.setupLog()
+		self.loadDB()
+
+	def reload(self):
+		"""E.reload() -> None
+
+		Reloads the environment by reloading the config file
+		and database.
+
+		Sub-classes may override this to create their
+		own custom reload method and may  also call this to
+		reload the default items.
+
+		By default, the config file and database are reloaded.
+		"""
+
+		self.loadConfig()
 		self.loadDB()
 
 	def create(self):
@@ -90,20 +107,25 @@ class BaseEnvironment:
 		configfile = os.path.join(
 				self.path, "conf", "%s.ini") % self.name
 		createFile(configfile)
-		config = Configuration(configfile)
+		config = ConfigParser()
+		config.read(configfile)
 		for section, name, value in self.defaultConfig:
+			if not config.has_section(section):
+				config.add_section(section)
 			config.set(section, name, value)
-		config.save()
+		fp = open(configfile, "w")
+		config.write(fp)
+		fp.close()
 		self.loadConfig()
 
 		# Create the database
-		try:
-			import default_db
-			default_db.createDB(
-					self.config.get(
-						self.name, "database") % self.path)
-		except ImportError:
-			pass
+		self.loadDB()
+		schemas, data = self.defaultDB
+		for schema in schemas:
+			self.db.do(schema)
+		for line in data:
+			self.db.do(line)
+		self.db.commit()
 
 	def verify(self):
 		"""E.verify() -> None
@@ -145,9 +167,8 @@ class BaseEnvironment:
 
 		configfile = os.path.join(
 				self.path, "conf", "%s.ini") % self.name
-		self.config = Configuration(configfile)
-		for section, name, value in self.defaultConfig:
-			self.config.setdefault(section, name, value)
+		self.config = ConfigParser()
+		self.config.read(configfile)
 	
 	def setupLog(self):
 		"""E.setupLog() -> None
