@@ -2,7 +2,6 @@
 # Module:	event
 # Date:		2nd April 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Event Library
 
@@ -123,6 +122,26 @@ class Component(object):
 
 		self.instances[cls] = self
 		return self
+
+	def unregister(self):
+		"""C.unregister() -> None
+
+		Unregister all listeners/filters associated with
+		this component
+		"""
+
+		events = [(x[0], x[1]) for x in inspect.getmembers(
+			self, lambda x: inspect.ismethod(x) and
+			callable(x) and
+			(hasattr(x, "filter") or hasattr(x, "listener")))]
+
+		for event, handler in events:
+			if not hasattr(handler, "channel"):
+				handler.channel = event
+			channel = self.event.getChannelID(handler.channel)
+			if channel is None:
+				channel = self.event.addChannel(handler.channel)
+			self.event.remove(handler, channel)
 
 class Event:
 	"""Event(*args, **kwargs) -> new event object
@@ -318,7 +337,7 @@ class EventManager:
 	def send(self, event, channel, source=None):
 		"Synonym of sendEvent"
 
-		self.sendEvent(event, channel, source)
+		return self.sendEvent(event, channel, source)
 	
 	def sendEvent(self, event, channel, source=None):
 		"""E.sendEvent(event, channel, source=None) -> None
@@ -396,4 +415,6 @@ class EventManager:
 				event = newEvent
 
 		for listener in listeners:
-			call(listener, event)
+			r = call(listener, event)
+			if r is not None:
+				return r
