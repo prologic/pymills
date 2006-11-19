@@ -2,7 +2,6 @@
 # Module:	sockets
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """TCP/IP and UDP Sockets
 
