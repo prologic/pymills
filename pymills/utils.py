@@ -2,7 +2,6 @@
 # Module:	utils
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Utilities
 
@@ -14,6 +13,7 @@ import re
 import sys
 import optparse
 from optparse import _match_abbrev
+from ConfigParser import ConfigParser as _ConfigParser
 
 from datatypes import CaselessDict
 
@@ -360,3 +360,30 @@ def validateEmail(email):
 					"^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\."
 					"([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$",
 					email) is not None
+
+def safe__import__(moduleName, globals=globals(),
+		locals=locals(), fromlist=[]):
+	"""Safe imports: rollback after a failed import.
+	 
+	Initially inspired from the RollbackImporter in PyUnit,
+	but it's now much simpler and works better for our needs.
+	 
+	See http://pyunit.sourceforge.net/notes/reloading.html
+	"""
+
+	alreadyImported = sys.modules.copy()
+	try:
+		return __import__(moduleName, globals, locals, fromlist)
+	except Exception, e:
+		for name in sys.modules.copy():
+			if not alreadyImported.has_key(name):
+				del (sys.modules[name])
+		raise e
+
+class ConfigParser(_ConfigParser):
+
+	def get(self, section, option, *args):
+		if self.has_option(section, option):
+			return _ConfigParser.get(self, section, option, *args)
+		else:
+			return None
