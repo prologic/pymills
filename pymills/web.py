@@ -2,7 +2,6 @@
 # Module:	web
 # Date:		27th September 2005
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Web Library
 

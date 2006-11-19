@@ -2,7 +2,6 @@
 # Module:	event
 # Date:		23rd June 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Event Test Suite
 

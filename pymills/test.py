@@ -3,7 +3,6 @@
 # Module:	test
 # Date:		18th June 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Test Suite
 

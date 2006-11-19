@@ -2,7 +2,6 @@
 # Module:	spider
 # Date:		19th September 2005
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Web Crawler/Spider
 

@@ -2,7 +2,6 @@
 # Module:	semnet
 # Date:		2nd April 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Semantic Network Library
 

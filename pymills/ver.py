@@ -2,7 +2,6 @@
 # Module:	ver
 # Date:		07th June 2005
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Version Library
 

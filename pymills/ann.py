@@ -2,7 +2,6 @@
 # Module:	ann
 # Date:		18th March 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Artificial Neural Networking Library
 

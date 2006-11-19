@@ -2,7 +2,6 @@
 # Module:	log
 # Date:		11th June 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Log
 

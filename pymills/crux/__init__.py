@@ -2,7 +2,6 @@
 # Module:	__init__
 # Date:		12th September 2005
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """CRUX/Linux Library
 

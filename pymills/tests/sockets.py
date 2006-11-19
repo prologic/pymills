@@ -2,7 +2,6 @@
 # Module:	sockets
 # Date:		26th June 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id: event.py 164 2006-06-25 16:28:07Z prologic $
 
 """Sockets Test Suite
 

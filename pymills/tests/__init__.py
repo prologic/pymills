@@ -2,7 +2,6 @@
 # Module:	__init__
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Teste Suite
 
