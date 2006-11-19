@@ -2,7 +2,6 @@
 # Module:	io
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Advanced IO
 
@@ -16,8 +15,6 @@ import sys
 import inspect
 import readline
 import select
-
-from utils import Tokenizer
 
 class Command:
 
@@ -39,13 +36,13 @@ class Command:
 		input = Input(True)
 		s = input.read(self.prompt)
 		while s is not None:
-			tokens = Tokenizer(s)
-			command = tokens.next()
-			args = tokens.rest()
+			tokens = s.split(" ")
+			command = tokens[0]
+			args = tokens[1:]
 
 			pos = self._pos(command)
 			if pos > -1:
-				(a, b) = self.commands[pos]
+				a, b = self.commands[pos]
 				if inspect.isfunction(b):
 					b(args)
 				elif inspect.isclass(b):
