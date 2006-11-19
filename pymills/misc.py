@@ -53,3 +53,13 @@ def backMerge(l, n, t=" "):
 	t - token (default: " ")
 	"""
 	return l[:-n] + [t.join(l[-n:])]
+
+def strToBool(s):
+	return s.lower() in [
+			"yes",
+			"yeah",
+			"1",
+			"true",
+			"ok",
+			"okay",
+			"k"]
