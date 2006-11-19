@@ -2,7 +2,6 @@
 # Module:	ports
 # Date:		15th June 2005
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Ports System
 
@@ -17,13 +16,12 @@ import StringIO
 from pymills.utils import getFiles
 
 FILEFORMAT = \
-"""# $Id$
-# Description: %(Description)s
-# URL:			%(URL)s
-# Maintainer:	%(Maintainer)s
-# Packager:		%(Packager)s
+"""# Description: %(Description)s
+# URL:         %(URL)s
+# Maintainer:  %(Maintainer)s
+# Packager:    %(Packager)s
 #
-# Depends on:	%(depsStr)s
+# Depends on:  %(depsStr)s
 
 name=%(name)s
 version=%(version)s
@@ -32,9 +30,7 @@ source=(%(sourcesStr)s)
 
 build () {
 %(buildStr)s
-}
-
-# vim: syntax=sh\n"""
+}"""
 
 STRFORMAT = \
 """Name:      %(name)s
