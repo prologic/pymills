@@ -2,13 +2,21 @@
 # Module:	misc
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """Miscellaneous
 
 Various miscellaneous functions that don't fit
 Use as documented.
 """
+
+def hmsToSeconds(h, m, s=0):
+	return h*3600 + m*60 + s
+
+def getTotalTime(s, e):
+	if e < s:
+		return ((60*60*24) + e) - s
+	else:
+		return e - s
 
 def addPercent(value, percentage):
 	return float(value) * ((float(percentage) / 100.0) + 1.0)

@@ -2,7 +2,6 @@
 # Module:	__init__
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
-# $Id$
 
 """James Mills Python Library
 
@@ -30,7 +29,7 @@ JamesMills
 
 __name__ = "pymills"
 __desc__ = "James Mills Python Library"
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 __author__ = "James Mills"
 __email__ = "%s <prologic@shortcircuit.net.au>" % __author__
 __url__ = "http://shortcircuit.net.au/~prologic/"
