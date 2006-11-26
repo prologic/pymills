@@ -384,11 +384,11 @@ class IRC(Component):
 				target, message))
 	
 	def ircCTCP(self, target, type, message, source=None):
-		self.ircPRIVMSG(target, "%s %s" % (type, message),
+		self.ircPRIVMSG(target, "%s %s" % (type, message),
 				source)
 
 	def ircCTCPREPLY(self, target, type, message, source=None):
-		self.ircNOTICE(target, "%s %s" % (type, message),
+		self.ircNOTICE(target, "%s %s" % (type, message),
 			  source)
 	
 	def ircKICK(self, channel, target, message="", source=None):
