@@ -331,8 +331,10 @@ class EventManager:
 		queue = self._queue
 
 		for event, channel, source in queue[:]:
-			self.sendEvent(event, channel, source)
-			queue.remove((event, channel, source))
+			try:
+				self.sendEvent(event, channel, source)
+			finally:
+				queue.remove((event, channel, source))
 
 	def send(self, event, channel, source=None):
 		"Synonym of sendEvent"

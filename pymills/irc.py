@@ -299,8 +299,14 @@ class IRC(Component):
 		Send a raw message
 
 		This must be overridden by sub-classes in order to
-		actually do anything usefull.
+		actually do anything usefull. By default it just
+		pushes a RawEvent with the given data.
 		"""
+
+		self.event.push(
+				RawEvent(data),
+				self.event.getChannelID("raw"),
+				self)
 	
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)

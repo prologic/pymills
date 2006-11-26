@@ -16,6 +16,7 @@ event-driven and should be sub-classed to do something usefull.
 import re
 import socket
 import select
+from time import sleep
 
 from event import Event, Component, filter, listener
 
@@ -143,6 +144,7 @@ class TCPClient(Component):
 						self.event.getChannelID("connect"),
 						self)
 				return
+			sleep(0.001)
 
 		self.event.push(
 				ErrorEvent("Timeout after 5s while connecting"),
