@@ -138,16 +138,16 @@ class Connection:
 		return [Record(zip(fields, row))
 				for row in self._cu.fetchall()]
 	
-	def setAutoCommit(self, autocommit=True):
-		"""C.setAutoCommit(autocommit) -> None
-
-		Set the autocommit flag of the connection.
-		If enabled (autocommit=True), then a commit will occur
-		each time a transaction is executed. This can hamper
-		performance a little.
-		"""
-
-		self.cx.autocommit = autocommit
+#	def setAutoCommit(self, autocommit=True):
+#		"""C.setAutoCommit(autocommit) -> None
+#
+#		Set the autocommit flag of the connection.
+#		If enabled (autocommit=True), then a commit will occur
+#		each time a transaction is executed. This can hamper
+#		performance a little.
+#		"""
+#
+#		self._cx.autocommit = autocommit
 
 	def commit(self):
 		"""C.commit() -> None
@@ -167,6 +167,7 @@ class Connection:
 
 		try:
 			self._cu.execute(sql, args)
+			self._cx.commit()
 			fields = self._getFields()
 			if fields == []:
 				return []

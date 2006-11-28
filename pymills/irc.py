@@ -153,6 +153,11 @@ class KickEvent(Event):
 	def __init__(self, source, channel, target, message):
 		Event.__init__(self, source, channel, target, message)
 
+class MotdEvent(Event):
+
+	def __init__(self, source, server):
+		Event.__init__(self, source, server)
+
 ###
 ### Protocol Class
 ###
@@ -181,7 +186,7 @@ class IRC(Component):
 	      print message
 	}}}
 
-	The available events that are process and generated
+	The available events that are processed and generated
 	are pushed onto channels associated with that event.
 	They are:
 	 * numeric
@@ -543,6 +548,14 @@ class IRC(Component):
 			self.event.push(
 					NickEvent(source, newNick, ctime),
 					self.event.getChannelID("nick"),
+					self)
+
+		elif tokens[1] == "MOTD":
+			source = sourceSplit(strip(tokens[0].lower()))
+			server = strip(tokens[2]).lower()
+			self.event.push(
+					MotdEvent(source, server),
+					self.event.getChannelID("motd"),
 					self)
 
 		elif tokens[0] == "PING":
