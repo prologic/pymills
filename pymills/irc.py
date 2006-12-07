@@ -515,11 +515,12 @@ class IRC(Component):
 
 		elif tokens[1] == "JOIN":
 			source = sourceSplit(strip(tokens[0].lower()))
-			channel = strip(tokens[2]).lower()
-			self.event.push(
-					JoinEvent(source, channel),
-					self.event.getChannelID("join"),
-					self)
+			channels = strip(tokens[2]).lower()
+			for channel in channels.split(","):
+				self.event.push(
+						JoinEvent(source, channel),
+						self.event.getChannelID("join"),
+						self)
 
 		elif tokens[1] == "PART":
 			source = sourceSplit(strip(tokens[0].lower()))
