@@ -138,10 +138,8 @@ class ModeEvent(Event):
 
 class TopicEvent(Event):
 
-	def __init__(self, nick, channel, topic, whoset=None,
-			whenset=None):
-		Event.__init__(self, nick, channel, topic, whoset,
-				whenset)
+	def __init__(self, channel, whoset, whenset, topic):
+		Event.__init__(self, channel, whoset, whenset, topic)
 
 class InviteEvent(Event):
 
@@ -459,8 +457,6 @@ class IRC(Component):
 
 		tokens = line.split(" ")
 
-		#TODO: Add TOPIC
-
 		if re.match("[0-9]+", tokens[1]):
 			source = sourceSplit(strip(tokens[0].lower()))
 			target = tokens[2].lower()
@@ -573,6 +569,14 @@ class IRC(Component):
 						tokens[5].lower(), tokens[6].lower(),
 						strip(" ".join(tokens[8:]))),
 					self.event.getChannelID("newnick"),
+					self)
+
+		elif tokens[0] == "TOPIC":
+			self.event.push(
+					TopicEvent(
+						tokens[1], tokens[2], int(tokens[3]),
+						strip(" ".join(tokens[4:]))),
+					self.event.getChannelID("topic"),
 					self)
 
 	###
