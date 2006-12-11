@@ -84,6 +84,13 @@ class NumericEvent(Event):
 		Event.__init__(self,
 				source, target, numeric, arg, message)
 
+class NetInfoEvent(Event):
+
+	def __init__(self, gcount, ctime, protocol, key, x, y, z,
+			network):
+		Event.__init__(self, gcount, ctime, protocol, key,
+				x, y, z, network)
+
 class NewNickEvent(Event):
 
 	def __init__(self, nick, hops, signon, ident, host,
@@ -457,7 +464,46 @@ class IRC(Component):
 
 		tokens = line.split(" ")
 
-		if re.match("[0-9]+", tokens[1]):
+		if tokens[0] == "PING":
+			self.event.push(
+					PingEvent(strip(tokens[1]).lower()),
+					self.event.getChannelID("ping"),
+					self)
+
+		elif tokens[0] == "NICK":
+			self.event.push(
+					NewNickEvent(
+						tokens[1].lower(), int(tokens[2]),
+						int(tokens[3]), tokens[4].lower(),
+						tokens[5].lower(), tokens[6].lower(),
+						strip(" ".join(tokens[8:]))),
+					self.event.getChannelID("newnick"),
+					self)
+
+		elif tokens[0] == "TOPIC":
+			self.event.push(
+					TopicEvent(
+						tokens[1], tokens[2], int(tokens[3]),
+						strip(" ".join(tokens[4:]))),
+					self.event.getChannelID("topic"),
+					self)
+
+		elif tokens[0] == "NETINFO":
+			#NETINFO 17 1165596244 2303 BBE33DBA 0 0 0 :ShortCircuit
+			self.event.push(
+					NetInfoEvent(
+						int(tokens[1]),
+						int(tokens[2]),
+						tokens[3],
+						tokens[4],
+						tokens[5],
+						tokens[6],
+						tokens[7],
+						strip(" ".join(tokens[8:]))),
+					self.event.getChannelID("netinfo"),
+					self)
+
+		elif re.match("[0-9]+", tokens[1]):
 			source = sourceSplit(strip(tokens[0].lower()))
 			target = tokens[2].lower()
 
@@ -553,30 +599,6 @@ class IRC(Component):
 			self.event.push(
 					MotdEvent(source, server),
 					self.event.getChannelID("motd"),
-					self)
-
-		elif tokens[0] == "PING":
-			self.event.push(
-					PingEvent(strip(tokens[1]).lower()),
-					self.event.getChannelID("ping"),
-					self)
-
-		elif tokens[0] == "NICK":
-			self.event.push(
-					NewNickEvent(
-						tokens[1].lower(), int(tokens[2]),
-						int(tokens[3]), tokens[4].lower(),
-						tokens[5].lower(), tokens[6].lower(),
-						strip(" ".join(tokens[8:]))),
-					self.event.getChannelID("newnick"),
-					self)
-
-		elif tokens[0] == "TOPIC":
-			self.event.push(
-					TopicEvent(
-						tokens[1], tokens[2], int(tokens[3]),
-						strip(" ".join(tokens[4:]))),
-					self.event.getChannelID("topic"),
 					self)
 
 	###
