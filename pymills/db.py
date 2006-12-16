@@ -199,6 +199,8 @@ class Record(OrderedDict):
 	def __init__(self, row):
 		OrderedDict.__init__(self)
 		for k, v in row:
+			if type(v) == str:
+				v = unicode(v, "utf-8")
 			self[k] = v
 			setattr(self, k, v)
 
