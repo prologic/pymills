@@ -9,14 +9,14 @@ This is a module that allows you to implement timed-events
 in your running application/process.
 """
 
-from time import time as _time
+from time import time
 
 from event import Event, Component
 
 class TimerEvent(Event):
 
-	def __init__(self, name, length, channel, **kwargs):
-		Event.__init__(self, name, length, channel, **kwargs)
+	def __init__(self, n, **kwargs):
+		Event.__init__(self, n, **kwargs)
 
 class Timers(Component):
 	"""Timers(event) -> new timers component
@@ -31,29 +31,47 @@ class Timers(Component):
 
 		self._timers = []
 	
-	def add(self, name, length, channel="timer", forever=False,
-			**kwargs):
-		"""T.add(name, length, channel="timer", forever=False,
+	def find(self, **kwargs):
+		for i, timer in enumerate(self._timers):
+			found = True
+			for k, v in kwargs.iteritems():
+				try:
+					if not timer._kwargs[k] == v:
+						found = False
+						break
+				except KeyError:
+					foudn = False
+			if found:
+				return i
+
+	def remove(self, x):
+		"""T.remove(x) -> None
+
+		Remove the x'th timer in the list.
+		"""
+
+		del self._timers[x]
+
+	def add(self, n, channel="timer", forever=False, **kwargs):
+		"""T.add(n, channel="timer", forever=False,
 		      **kwargs) -> None
 
-		Add a new event to be timed and triggered.
-
-		name    - name of the timed-event
-		length  - length of time to wait untill triggered
-		channel - channel the timer is to trigger on
-		forever - repeating timer
+		Add a new event to be timed and triggered of length
+		n seconds. By default this will add the event to
+		the "timer" channel and is a once-only timer unless
+		forever is True.
 
 		Any additional data can be provided by kwargs.
 		"""
 
 		self._timers.append(
-				Timer(name, length, channel, forever, **kwargs))
+				Timer(n, channel, forever, **kwargs))
 	
 	def process(self):
 		"""T.process() -> None
 
 		Process all current timers. If any trigger push
-		a "timer" event onto the queue. Reset timers
+		a "TimerEvent" event onto the queue. Reset timers
 		that are marked with the forever flag.
 		"""
 
@@ -64,11 +82,11 @@ class Timers(Component):
 						event,
 						self.event.getChannelID(channel),
 						timer)
-				if not timer.forever:
+				if not timer._forever:
 					del self._timers[i]
 
 class Timer:
-	"""Timer(name, length, channel="timer", forever=False,
+	"""Timer(n, channel="timer", forever=False,
 	      **kwargs) -> new timer object
 	
 	Creates a new timer object which when triggered
@@ -76,14 +94,13 @@ class Timer:
 	queue held by the Timers container.
 	"""
 
-	def __init__(self, name, length, channel="timer",
-			forever=False, **kwargs):
+	def __init__(self, n, channel="timer", forever=False,
+			**kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self._name = name
-		self._length = length
+		self._n = n
 		self._channel = channel
-		self.forever = forever
+		self._forever = forever
 		self._kwargs = kwargs
 
 		self.reset()
@@ -94,7 +111,7 @@ class Timer:
 		Reset the timer.
 		"""
 
-		self._etime = _time() + self._length
+		self._etime = time() + self._n
 
 	def process(self):
 		"""T.process() -> bool, TimerEvent, str
@@ -107,13 +124,11 @@ class Timer:
 		reset the timer after triggering.
 		"""
 
-		if _time() > self._etime:
-			if self.forever:
+		if time() > self._etime:
+			if self._forever:
 				self.reset()
 			return True, TimerEvent(
-					self._name,
-					self._length,
-					self._channel,
+					self._n,
 					**self._kwargs), \
 							self._channel
 		else:
