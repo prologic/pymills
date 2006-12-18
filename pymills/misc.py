@@ -63,3 +63,22 @@ def strToBool(s):
 			"ok",
 			"okay",
 			"k"]
+
+def beat():
+	from time import localtime, timezone
+	x = localtime()
+
+	y = (x[3] * 3600) + (x[4] * 60) + x[5]
+	y += timezone + 3600
+
+	if x[8] == 1:
+		y -= 3600
+
+	y = (y * 1000) / 86400.0
+
+	if y > 1000:
+		y -= 1000
+	elif y < 0:
+		y += 1000
+
+	return y
