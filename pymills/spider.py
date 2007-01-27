@@ -16,7 +16,7 @@ import time
 import urllib2
 import urlparse
 import collections
-from BeautifulSoup import BeautifulSoup, Null
+from BeautifulSoup import BeautifulSoup
 
 try:
 	import psyco
@@ -25,7 +25,8 @@ except ImportError:
 	pass
 
 import spider
-import pymills.url
+import pymills
+from pymills.web import decodeHTMLEntities
 from pymills.misc import duration
 
 AGENT = "%s-%s/%s" % (pymills.__name__, spider.__name__, pymills.__version__)
@@ -112,8 +113,8 @@ class Fetcher:
 				content = handle.open(request).read()
 				soup.feed(content)
 				title = soup.html.head.title.string
-				if title == Null:
-					title = ""
+				#if title == Null:
+				#	title = ""
 				tags = soup('a')
 			except urllib2.HTTPError, error:
 				if error.code == 404:
@@ -126,7 +127,7 @@ class Fetcher:
 				tags = []
 			for tag in tags:
 				try:
-					url = urlparse.urljoin(self._url, pymills.url.unescape(tag['href']))
+					url = urlparse.urljoin(self._url, decodeHTMLEntities(tag['href']))
 				except KeyError:
 					continue
 				self._urls.append(url)

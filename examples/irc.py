@@ -141,6 +141,7 @@ class MainWindow(Screen, Component, Thread):
 		self.lines.append(
 				urwid.Text(
 					"Unknown command: %s" % command))
+	
 	def syntaxError(self, command, args, expected):
 		self.lines.append(
 				urwid.Text(
