@@ -83,7 +83,9 @@ class Timers(Component):
 						self.event.getChannelID(channel),
 						timer)
 				if not timer._forever:
-					del self._timers[i]
+					if timer in self._timers and \
+							len(self._timers) > i:
+						del self._timers[i]
 
 class Timer:
 	"""Timer(n, channel="timer", forever=False,
