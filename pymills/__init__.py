@@ -31,7 +31,7 @@ JamesMills
 
 __name__ = "pymills"
 __desc__ = "James Mills Python Library"
-__version__ = "3.2.1-2007020400"
+__version__ = "3.2.1-2007020401"
 __author__ = "James Mills"
 __email__ = "%s, prologic at shortcircuit dot net dot au" % __author__
 __url__ = "http://trac.shortcircuit.net.au/pymills/"
