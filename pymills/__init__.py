@@ -30,13 +30,35 @@ JamesMills
 """
 
 __name__ = "pymills"
-__desc__ = "James Mills Python Library"
+__description__ = "James Mills Python Library"
 __version__ = "3.2.1-2007020401"
 __author__ = "James Mills"
-__email__ = "%s, prologic at shortcircuit dot net dot au" % __author__
+__author_email__ = "%s, prologic at shortcircuit dot net dot au" % __author__
+__maintainer__ = __author__
+__maintainer_email__ = __author_email__
 __url__ = "http://trac.shortcircuit.net.au/pymills/"
-__copyright__ = "CopyRight (C) 2005 by %s" % __author__
+__download_url__ = "http://shortcircuit.net.au/~prologic/downloads/software/%s-%s.tar.gz" % (__name__, __version__)
+__copyright__ = "CopyRight (C) 2005-2007 by %s" % __author__
 __license__ = "GPL"
+__platform__ = ""
+__keywords__ = "James Mills Python Library General Purpose"
+__classifiers__ = [
+		"Development Status :: 3 - Alpha",
+		"Environment :: Other Environment",
+		"Intended Audience :: Developers",
+		"Intended Audience :: End Users/Desktop",
+		"License :: OSI Approved :: GNU General Public License (GPL)",
+		"Natural Language :: English",
+		"Operating System :: OS Independent",
+		"Programming Language :: Python",
+		"Topic :: Adaptive Technologies",
+		"Topic :: Communications :: Chat :: Internet Relay Chat",
+		"Topic :: Database :: Front-Ends",
+		"Topic :: Scientific/Engineering :: Artificial Intelligence",
+		"Topic :: Software Development :: Libraries",
+		"Topic :: Software Development :: Libraries :: Application Frameworks",
+		"Topic :: Software Development :: Libraries :: Python Modules",
+		]
 __str__ = "%s-%s" % (__name__, __version__)
 
 __all__ = [
