@@ -93,7 +93,7 @@ class Client(Component):
 
 	def __read__(self, bufsize=512):
 		try:
-			if self.ssl:
+			if self.ssl and hasattr(self, "_ssock"):
 				data = self._ssock.read(bufsize)
 			else:
 				data = self._sock.recv(bufsize)
@@ -102,19 +102,11 @@ class Client(Component):
 					ErrorEvent(e),
 					self.event.getChannelID("error"),
 					self)
-			self.connected = False
-			self.event.push(
-					DisconnectEvent(),
-					self.event.getChannelID("disconnect"),
-					self)
+			self.close()
 			return
 
 		if not data:
-			self.connected = False
-			self.event.push(
-					DisconnectEvent(),
-					self.event.getChannelID("disconnect"),
-					self)
+			self.close()
 			return
 
 		lines = linesep.split(self._buffer + data)
@@ -147,7 +139,7 @@ class Client(Component):
 
 				self.connected = True
 
-				if self.ssl:
+				if self.ssl and hasattr(self, "_ssock"):
 					self.server = re.match(
 							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
 							"/L=(?P<L>.*)/O=(?P<O>.*)"
@@ -240,7 +232,7 @@ class Client(Component):
 		"""
 
 		try:
-			if self.ssl:
+			if self.ssl and hasattr(self, "_ssock"):
 				bytes = self._ssock.write(data)
 			else:
 				bytes = self._sock.send(data)
@@ -248,11 +240,7 @@ class Client(Component):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:
 			if e[0] == 32:
-				self.connected = False
-				self.event.push(
-						DisconnectEvent(),
-						self.event.getChannelID("disconnect"),
-						self)
+				self.close()
 			else:
 				self.event.push(
 						ErrorEvent(e),
@@ -264,21 +252,25 @@ class TCPClient(Client):
 
 	def __init__(self, event, ssl=False):
 		Client.__init__(self, event, ssl)
+	
+	def open(self, host, port):
 		self._sock = socket.socket(
 				socket.AF_INET,
 				socket.SOCK_STREAM)
+		Client.open(self, host, port)
 
 class UDPClient(Client):
 
 	def __init__(self, event, ssl=False):
 		Client.__init__(self, event, ssl)
-		self._sock = socket.socket(
-				socket.AF_INET,
-				socket.SOCK_DGRAM)
 
 	__ready__ = lambda: None
 
 	def open(self, host, port):
+		self._sock = socket.socket(
+				socket.AF_INET,
+				socket.SOCK_DGRAM)
+
 		self.addr = (host, port)
 
 		if self.ssl:
@@ -315,7 +307,7 @@ class UDPClient(Client):
 		"""
 
 		try:
-			if self.ssl:
+			if self.ssl and hasattr(self, "_ssock"):
 				bytes = self._ssock.write(data)
 			else:
 				bytes = self._sock.sendto(data, self.addr)
@@ -323,11 +315,7 @@ class UDPClient(Client):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:
 			if e[0] == 32:
-				self.connected = False
-				self.event.push(
-						DisconnectEvent(),
-						self.event.getChannelID("disconnect"),
-						self)
+				self.close()
 			else:
 				self.event.push(
 						ErrorEvent(e),
