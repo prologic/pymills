@@ -99,7 +99,7 @@ class Client(Component):
 				data = self._sock.recv(bufsize)
 		except socket.error, e:
 			self.event.push(
-					ErrorEvent(e),
+					ErrorEvent(e[1]),
 					self.event.getChannelID("error"),
 					self)
 			self.close()
@@ -125,8 +125,9 @@ class Client(Component):
 			if self.ssl:
 				self._ssock = socket.ssl(self._sock)
 		except socket.error, e:
+			self.close()
 			self.event.push(
-					ErrorEvent(e),
+					ErrorEvent(e[1]),
 					self.event.getChannelID("error"),
 					self)
 			return
@@ -170,7 +171,7 @@ class Client(Component):
 			self._sock.close()
 		except socket.error, e:
 			self.event.push(
-					ErrorEvent(e),
+					ErrorEvent(e[1]),
 					self.event.getChannelID("error"),
 					self)
 		self.connected = False
@@ -239,11 +240,11 @@ class Client(Component):
 			if bytes < len(data):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:
-			if e[0] == 32:
+			if e[0] in [32, 107]:
 				self.close()
 			else:
 				self.event.push(
-						ErrorEvent(e),
+						ErrorEvent(e[1]),
 						self.event.getChannelID("error"),
 						self)
 		return False, event
@@ -314,11 +315,11 @@ class UDPClient(Client):
 			if bytes < len(data):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:
-			if e[0] == 32:
+			if e[0] in [32, 107]:
 				self.close()
 			else:
 				self.event.push(
-						ErrorEvent(e),
+						ErrorEvent(e[1]),
 						self.event.getChannelID("error"),
 						self)
 		return False, event
@@ -364,7 +365,7 @@ class Server(Component):
 					data = sock.recv(bufsize)
 				except socket.error, e:
 					self.event.push(
-							ErrorEvent(e, sock),
+							ErrorEvent(e[1], sock),
 							self.event.getChannelID("error"),
 							self)
 					self.close(sock)
@@ -393,7 +394,7 @@ class Server(Component):
 				sock.close()
 			except socket.error, e:
 				self.event.push(
-						ErrorEvent(e, sock),
+						ErrorEvent(e[1], sock),
 						self.event.getChannelID("error"),
 						self)
 			self._clients.remove(sock)
@@ -410,7 +411,7 @@ class Server(Component):
 				self._sock.close()
 			except socket.error, e:
 				self.event.push(
-						ErrorEvent(e),
+						ErrorEvent(e[1]),
 						self.event.getChannelID("error"),
 						self)
 			self.event.push(
@@ -480,11 +481,11 @@ class Server(Component):
 			if bytes < len(data):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:
-			if e[0] == 32:
+			if e[0] in [32, 107]:
 				self.close(sock)
 			else:
 				self.event.push(
-						ErrorEvent(e, sock),
+						ErrorEvent(e[1], sock),
 						self.event.getChannelID("error"),
 						self)
 		return False, event
@@ -531,7 +532,7 @@ class UDPServer(Server):
 				data, addr = self._sock.recvfrom(bufsize)
 			except socket.error, e:
 				self.event.push(
-						ErrorEvent(e, self._sock),
+						ErrorEvent(e[1], self._sock),
 						self.event.getChannelID("error"),
 						self)
 				self.close()
