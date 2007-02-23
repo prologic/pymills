@@ -93,7 +93,8 @@ class Repository:
 		
 		self._root = root
 		self._name = name
-		self._ports = []
+		self._portsDict = {}
+		self._portsList = []
 		
 	def __str__(self):
 		f = StringIO.StringIO()
@@ -104,13 +105,22 @@ class Repository:
 		f.close()
 		return output
 
+	def __getitem__(self, y):
+		if type(y) == int:
+			return self._portsList[y]
+		elif type(y) == str:
+			return self._portsDict[y]
+		else:
+			raise Error("str or int expected, got %s" % type(y))
+
 	def buildList(self):
 		path = os.path.join(self._root, self._name)
 		dirs = getFiles(path, [os.path.isdir], "^[^.].*")
 		
 		for dir in dirs:
 			port = Port(path, dir)
-			self._ports.append(port)
+			self._portsList.append(port)
+			self._portsDict[dir] = port
 
 class Port:
 

@@ -38,6 +38,7 @@ only be instantiated once.
 """
 
 import time
+import socket
 import inspect
 
 class EventError(Exception):
@@ -182,10 +183,16 @@ class EventManager:
 	"""EventManager() -> new event manager
 
 	Create a new event manager which manages events.
+	If server=True, this will listen on the default port
+	of 64000 allowing events to be to other connected
+	remote event managers.
 	"""
 
-	def __init__(self):
+	def __init__(self, server=False, port=64000):
 		"initializes x; see x.__class__.__doc__ for signature"
+
+		if server:
+			pass
 
 		self._channels = {
 				"global": 0}

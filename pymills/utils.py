@@ -311,7 +311,7 @@ def mkpasswd(n):
 	import string
 	import random
 
-	validCharacters = string.ascii_lowercase + string.digits
+	validCharacters = string.ascii_letters + string.digits
 	validCharacters = validCharacters.strip("oO0")
 	return string.join(
 			[random.choice(validCharacters)

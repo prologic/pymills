@@ -68,11 +68,14 @@ class WriteEvent(Event):
 		else:
 			Event.__init__(self, sock, data)
 
-class TCPClient(Component):
+class Client(Component):
 
-	def __init__(self, event):
+	def __init__(self, event, ssl=False):
 		self._buffer = ""
 
+		self.ssl = ssl
+		self.server = {}
+		self.issuer = {}
 		self.connected = False
 
 	def __del__(self):
@@ -90,7 +93,10 @@ class TCPClient(Component):
 
 	def __read__(self, bufsize=512):
 		try:
-			data = self._sock.recv(bufsize)
+			if self.ssl:
+				data = self._ssock.read(bufsize)
+			else:
+				data = self._sock.recv(bufsize)
 		except socket.error, e:
 			self.event.push(
 					ErrorEvent(e),
@@ -122,11 +128,10 @@ class TCPClient(Component):
 					self)
 
 	def open(self, host, port):
-		self._sock = socket.socket(socket.AF_INET,
-				socket.SOCK_STREAM)
-
 		try:
 			self._sock.connect((host, port))
+			if self.ssl:
+				self._ssock = socket.ssl(self._sock)
 		except socket.error, e:
 			self.event.push(
 					ErrorEvent(e),
@@ -137,14 +142,30 @@ class TCPClient(Component):
 		self._sock.setblocking(False)
 
 		for i in range(5000):
+
 			if self.__ready__():
+
 				self.connected = True
+
+				if self.ssl:
+					self.server = re.match(
+							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
+							"/L=(?P<L>.*)/O=(?P<O>.*)"
+							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
+							self._ssock.server()).groupdict()
+
+					self.issuer = re.match(
+							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
+							"/L=(?P<L>.*)/O=(?P<O>.*)"
+							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
+							self._ssock.issuer()).groupdict()
+
 				self.event.push(
 						ConnectEvent(host, port),
 						self.event.getChannelID("connect"),
 						self)
+
 				return
-			sleep(0.001)
 
 		self.event.push(
 				ErrorEvent("Timeout after 5s while connecting"),
@@ -219,7 +240,10 @@ class TCPClient(Component):
 		"""
 
 		try:
-			bytes = self._sock.send(data)
+			if self.ssl:
+				bytes = self._ssock.write(data)
+			else:
+				bytes = self._sock.send(data)
 			if bytes < len(data):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:
@@ -236,18 +260,84 @@ class TCPClient(Component):
 						self)
 		return False, event
 
-class TCPServer(Component):
+class TCPClient(Client):
 
-	def __init__(self, event, port, address=""):
+	def __init__(self, event, ssl=False):
+		Client.__init__(self, event, ssl)
 		self._sock = socket.socket(
-				socket.AF_INET, socket.SOCK_STREAM)
-		self._sock.setsockopt(
-				socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+				socket.AF_INET,
+				socket.SOCK_STREAM)
+
+class UDPClient(Client):
+
+	def __init__(self, event, ssl=False):
+		Client.__init__(self, event, ssl)
+		self._sock = socket.socket(
+				socket.AF_INET,
+				socket.SOCK_DGRAM)
+
+	__ready__ = lambda: None
+
+	def open(self, host, port):
+		self.addr = (host, port)
+
+		if self.ssl:
+			self._ssock = socket.ssl(self._sock)
+
 		self._sock.setblocking(False)
 
-		self._sock.bind((address, port))
-		self._sock.listen(5)
+		self.connected = True
 
+		if self.ssl:
+			self.server = re.match(
+					"/C=(?P<C>.*)/ST=(?P<ST>.*)"
+					"/L=(?P<L>.*)/O=(?P<O>.*)"
+					"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
+					self._ssock.server()).groupdict()
+
+			self.issuer = re.match(
+					"/C=(?P<C>.*)/ST=(?P<ST>.*)"
+					"/L=(?P<L>.*)/O=(?P<O>.*)"
+					"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
+					self._ssock.issuer()).groupdict()
+
+			self.event.push(
+					ConnectEvent(host, port),
+					self.event.getChannelID("connect"),
+					self)
+
+	@filter("write")
+	def onWRITE(self, event, data):
+		"""Write Event
+
+		Typically this should NOT be overridden by sub-classes.
+		If it is, this should be called by the sub-class first.
+		"""
+
+		try:
+			if self.ssl:
+				bytes = self._ssock.write(data)
+			else:
+				bytes = self._sock.sendto(data, self.addr)
+			if bytes < len(data):
+				raise SocketError("Didn't write all data!")
+		except socket.error, e:
+			if e[0] == 32:
+				self.connected = False
+				self.event.push(
+						DisconnectEvent(),
+						self.event.getChannelID("disconnect"),
+						self)
+			else:
+				self.event.push(
+						ErrorEvent(e),
+						self.event.getChannelID("error"),
+						self)
+		return False, event
+	
+class Server(Component):
+
+	def __init__(self, event, port, address=""):
 		self._buffers = {}
 		self._clients = []
 
@@ -410,3 +500,66 @@ class TCPServer(Component):
 						self.event.getChannelID("error"),
 						self)
 		return False, event
+
+class TCPServer(Server):
+
+	def __init__(self, event, port, address=""):
+		Server.__init__(self, event, port, address)
+		self._sock = socket.socket(
+				socket.AF_INET, socket.SOCK_STREAM)
+		self._sock.setsockopt(
+				socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self._sock.setblocking(False)
+
+		self._sock.bind((address, port))
+		self._sock.listen(5)
+
+class UDPServer(Server):
+
+	def __init__(self, event, port, address=""):
+		self._buffer = ""
+		self._sock = socket.socket(
+				socket.AF_INET, socket.SOCK_DGRAM)
+		self._sock.setsockopt(
+				socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self._sock.setblocking(False)
+
+		self._sock.bind((address, port))
+
+	def __poll__(self, wait=0.001):
+		try:
+			r, w, e = select.select([self._sock], [], [], wait)
+			if not r == []:
+				return True
+		except socket.error, error:
+			if error[0] == 9:
+				for sock in e:
+					self.close(sock)
+			return False
+
+	def __read__(self, bufsize=512):
+		if  self.__poll__():
+			try:
+				data, addr = self._sock.recvfrom(bufsize)
+			except socket.error, e:
+				self.event.push(
+						ErrorEvent(e, self._sock),
+						self.event.getChannelID("error"),
+						self)
+				self.close()
+				return
+
+			if not data:
+				self.close()
+				return
+
+			lines = linesep.split(
+					self._buffer + data)
+			self._buffers = lines[-1]
+			lines = lines[:-1]
+
+			for line in lines:
+				self.event.push(
+						ReadEvent(line, self._sock),
+						self.event.getChannelID("read"),
+						self)

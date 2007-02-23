@@ -31,7 +31,7 @@ JamesMills
 
 __name__ = "pymills"
 __description__ = "James Mills Python Library"
-__version__ = "3.2.1-2007020402"
+__version__ = "3.2.2-2007022300"
 __author__ = "James Mills"
 __author_email__ = "%s, prologic at shortcircuit dot net dot au" % __author__
 __maintainer__ = __author__
