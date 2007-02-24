@@ -201,6 +201,9 @@ class EventManager:
 		self._listeners = {0: []}
 		self._queue = []
 
+	def __len__(self):
+		return len(self._queue)
+
 	def add(self, callable, *channels):
 		"""E.add(callable, *channels) -> None
 
