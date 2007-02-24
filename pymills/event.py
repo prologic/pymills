@@ -39,7 +39,10 @@ only be instantiated once.
 
 import time
 import socket
+import socket
+import select
 import inspect
+import cPickle as pickle
 
 class EventError(Exception):
 	"Event Error Exception"
@@ -144,7 +147,7 @@ class Component(object):
 				channel = self.event.addChannel(handler.channel)
 			self.event.remove(handler, channel)
 
-class Event:
+class Event(object):
 	"""Event(*args, **kwargs) -> new event object
 
 	Create a new event object populating it with the given
@@ -188,11 +191,8 @@ class EventManager:
 	remote event managers.
 	"""
 
-	def __init__(self, server=False, port=64000):
+	def __init__(self):
 		"initializes x; see x.__class__.__doc__ for signature"
-
-		if server:
-			pass
 
 		self._channels = {
 				"global": 0}
@@ -297,30 +297,20 @@ class EventManager:
 			del self._listeners[channel]
 			del self._channels[name]
 
-	def push(self, event, channel, source=None):
+	def push(self, event, channel):
 		"Synonym of pushEvent"
 
-		self.pushEvent(event, channel, source)
+		self.pushEvent(event, channel)
 
-	def pushEvent(self, event, channel, source=None):
-		"""E.pushEvent(event, channel, source=None) -> None
+	def pushEvent(self, event, channel):
+		"""E.pushEvent(event, channel) -> None
 
 		Push the given event onto the given channel.
-		This will queue the event up to be processes later
-		by flushEvents. If a channel is given as a str
-		the appropiate channel id will be retrieved.
-		Events cannot be pushed onto the global channel,
-		doing so will raise an error.
+		This will queue the event up to be processed later
+		by flushEvents.
 		"""
 
-		if type(channel) == str:
-			channel = self.getChannelID(channel)
-
-		if channel == self.getChannelID("global"):
-			raise EventError(
-					"You cannot push events onto the global channel")
-
-		self._queue.append((event, channel, source))
+		self._queue.append((event, channel))
 	
 	def flush(self):
 		"Synonym of flushEvents"
@@ -337,23 +327,21 @@ class EventManager:
 
 		queue = self._queue
 
-		for event, channel, source in queue[:]:
+		for event, channel in queue[:]:
 			try:
-				self.sendEvent(event, channel, source)
+				self.sendEvent(event, channel)
 			finally:
-				queue.remove((event, channel, source))
+				queue.remove((event, channel))
 
-	def send(self, event, channel, source=None):
+	def send(self, event, channel):
 		"Synonym of sendEvent"
 
-		return self.sendEvent(event, channel, source)
+		return self.sendEvent(event, channel)
 	
-	def sendEvent(self, event, channel, source=None):
-		"""E.sendEvent(event, channel, source=None) -> None
+	def sendEvent(self, event, channel):
+		"""E.sendEvent(event, channel) -> None
 
 		Send the given event to listeners on the given channel.
-		THe _source and _time of the event are populated in
-		the event object.
 
 		Filters are processed first.
 		Filters must return a tuple (halt, event)
@@ -391,16 +379,14 @@ class EventManager:
 							callable, e))
 
 		if type(channel) == str:
-			channel = self.getChannelID(channel)
+			id = self.getChannelID(channel)
+			if id is not None:
+				channel = id
 
 		if channel == 0:
 			raise EventError(
 					"You cannot send events to the global channel")
 
-		if source is not None:
-			event._source = source
-		else:
-			event._source = self
 		event._channel = channel
 		if not hasattr(event, "_time"):
 			event._time = time.time()
@@ -426,4 +412,65 @@ class EventManager:
 		for listener in listeners:
 			r = call(listener, event)
 			if r is not None:
-				return r
+				return r 
+
+class RemoteManager(EventManager):
+
+	def __init__(self, host="0.0.0.0", port=64000, nodes=()):
+		EventManager.__init__(self)
+
+		self._nodes = nodes
+
+		self._ssock = socket.socket(
+				socket.AF_INET,
+				socket.SOCK_DGRAM)
+		self._ssock.setsockopt(
+				socket.SOL_SOCKET,
+				socket.SO_REUSEADDR,
+				1)
+		self._ssock.setblocking(False)
+		self._ssock.bind((host, port))
+
+	def __del__(self):
+		self.__close__()
+
+	def __poll__(self, wait=0.001):
+		try:
+			r, w, e = select.select([self._ssock], [], [], wait)
+			if not r == []:
+				return True
+		except socket.error, error:
+			self.__close__()
+			return False
+
+	def __read__(self, bufsize=512):
+		if  self.__poll__():
+			try:
+				data, addr = self._ssock.recvfrom(bufsize)
+			except socket.error, e:
+				self.__close__()
+
+			if not data:
+				self.__close__()
+
+			event, channel = pickle.loads(data)
+			self.sendEvent(event, channel)
+
+	def __close__(self):
+		self._ssock.shutdown(2)
+		self._ssock.close()
+	
+	def __write__(self, data):
+		for node in self._nodes:
+			bytes = self._ssock.sendto(data, node)
+			if bytes < len(data):
+				raise EventError("Couldn't send event to %s" % str(node))
+
+	def process(self):
+		if self.__poll__():
+			self.__read__()
+
+	def sendEvent(self, event, channel):
+		EventManager.sendEvent(self, event, channel)
+		if not self._nodes == []:
+			self.__write__(pickle.dumps((event, channel)))
