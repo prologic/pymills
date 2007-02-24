@@ -428,6 +428,10 @@ class RemoteManager(EventManager):
 				socket.SOL_SOCKET,
 				socket.SO_REUSEADDR,
 				1)
+		self._ssock.setsockopt(
+				socket.SOL_SOCKET,
+				socket.SO_BROADCAST,
+				1)
 		self._ssock.setblocking(False)
 		self._ssock.bind((host, port))
 
@@ -471,6 +475,6 @@ class RemoteManager(EventManager):
 			self.__read__()
 
 	def sendEvent(self, event, channel):
-		EventManager.sendEvent(self, event, channel)
 		if not self._nodes == []:
 			self.__write__(pickle.dumps((event, channel)))
+		return EventManager.sendEvent(self, event, channel)
