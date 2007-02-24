@@ -315,8 +315,7 @@ class IRC(Component):
 
 		self.event.push(
 				RawEvent(data),
-				self.event.getChannelID("raw"),
-				self)
+				self.event.getChannelID("raw"))
 	
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)
@@ -467,8 +466,7 @@ class IRC(Component):
 		if tokens[0] == "PING":
 			self.event.push(
 					PingEvent(strip(tokens[1]).lower()),
-					self.event.getChannelID("ping"),
-					self)
+					self.event.getChannelID("ping"))
 
 		elif tokens[0] == "NICK":
 			self.event.push(
@@ -477,19 +475,16 @@ class IRC(Component):
 						int(tokens[3]), tokens[4].lower(),
 						tokens[5].lower(), tokens[6].lower(),
 						strip(" ".join(tokens[8:]))),
-					self.event.getChannelID("newnick"),
-					self)
+					self.event.getChannelID("newnick"))
 
 		elif tokens[0] == "TOPIC":
 			self.event.push(
 					TopicEvent(
 						tokens[1], tokens[2], int(tokens[3]),
 						strip(" ".join(tokens[4:]))),
-					self.event.getChannelID("topic"),
-					self)
+					self.event.getChannelID("topic"))
 
 		elif tokens[0] == "NETINFO":
-			#NETINFO 17 1165596244 2303 BBE33DBA 0 0 0 :ShortCircuit
 			self.event.push(
 					NetInfoEvent(
 						int(tokens[1]),
@@ -500,8 +495,7 @@ class IRC(Component):
 						tokens[6],
 						tokens[7],
 						strip(" ".join(tokens[8:]))),
-					self.event.getChannelID("netinfo"),
-					self)
+					self.event.getChannelID("netinfo"))
 
 		elif re.match("[0-9]+", tokens[1]):
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -518,8 +512,7 @@ class IRC(Component):
 			self.event.push(
 					NumericEvent(source, target, numeric,
 						arg, message),
-					self.event.getChannelID("numeric"),
-					self)
+					self.event.getChannelID("numeric"))
 
 		elif tokens[1] == "PRIVMSG":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -533,18 +526,15 @@ class IRC(Component):
 					message = " ".join(tokens[1:])
 					self.event.push(
 							CtcpEvent(source, target, type, message),
-							self.event.getChannelID("ctcp"),
-							self)
+							self.event.getChannelID("ctcp"))
 				else:
 					self.event.push(
 							MessageEvent(source, target, message),
-							self.event.getChannelID("message"),
-							self)
+							self.event.getChannelID("message"))
 			else:
 				self.event.push(
 						MessageEvent(source, target, message),
-						self.event.getChannelID("message"),
-						self)
+						self.event.getChannelID("message"))
 
 		elif tokens[1] == "NOTICE":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -552,8 +542,7 @@ class IRC(Component):
 			message = strip(" ".join(tokens[3:]))
 			self.event.push(
 					NoticeEvent(source, target, message),
-					self.event.getChannelID("notice"),
-					self)
+					self.event.getChannelID("notice"))
 
 		elif tokens[1] == "JOIN":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -561,8 +550,7 @@ class IRC(Component):
 			for channel in channels.split(","):
 				self.event.push(
 						JoinEvent(source, channel),
-						self.event.getChannelID("join"),
-						self)
+						self.event.getChannelID("join"))
 
 		elif tokens[1] == "PART":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -570,16 +558,14 @@ class IRC(Component):
 			message = strip(" ".join(tokens[3:]))
 			self.event.push(
 					PartEvent(source, channel, message),
-					self.event.getChannelID("part"),
-					self)
+					self.event.getChannelID("part"))
 
 		elif tokens[1] == "QUIT":
 			source = sourceSplit(strip(tokens[0].lower()))
 			message = strip(" ".join(tokens[2:]))
 			self.event.push(
 					QuitEvent(source, message),
-					self.event.getChannelID("quit"),
-					self)
+					self.event.getChannelID("quit"))
 
 		elif tokens[1] == "NICK":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -590,16 +576,14 @@ class IRC(Component):
 				ctime = time.time()
 			self.event.push(
 					NickEvent(source, newNick, ctime),
-					self.event.getChannelID("nick"),
-					self)
+					self.event.getChannelID("nick"))
 
 		elif tokens[1] == "MOTD":
 			source = sourceSplit(strip(tokens[0].lower()))
 			server = strip(tokens[2]).lower()
 			self.event.push(
 					MotdEvent(source, server),
-					self.event.getChannelID("motd"),
-					self)
+					self.event.getChannelID("motd"))
 
 	###
 	### Default Events

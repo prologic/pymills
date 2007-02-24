@@ -80,8 +80,7 @@ class Timers(Component):
 			if done:
 				self.event.push(
 						event,
-						self.event.getChannelID(channel),
-						timer)
+						self.event.getChannelID(channel))
 				if not timer._forever:
 					if timer in self._timers and \
 							len(self._timers) > i:

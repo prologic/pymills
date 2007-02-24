@@ -12,8 +12,7 @@ class TodoList(Component):
 		self.todos[name] = description
 		self.event.send(
 				Event(name, description),
-				"TodoAdded",
-				self)
+				"TodoAdded")
 
 class TodoPrinter(Component):
 

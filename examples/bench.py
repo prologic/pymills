@@ -21,8 +21,7 @@ class Bench(Component):
 
 		self.event.push(
 				Event(),
-				self.event.getChannelID("foo"),
-				self)
+				self.event.getChannelID("foo"))
 
 def main():
 
@@ -31,8 +30,7 @@ def main():
 
 	event.push(
 			Event(),
-			event.getChannelID("foo"),
-			None)
+			event.getChannelID("foo"))
 
 	stime = time.time()
 

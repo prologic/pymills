@@ -8,8 +8,7 @@ class InfiniteLoop(Component):
 	def onFOO(self, event):
 		self.event.push(
 				Event(),
-				self.event.getChannelID("foo"),
-				self)
+				self.event.getChannelID("foo"))
 
 def main():
 
@@ -19,8 +18,7 @@ def main():
 
 	event.push(
 			Event(),
-			event.getChannelID("foo"),
-			None)
+			event.getChannelID("foo"))
 
 	while True:
 		event.flush()
