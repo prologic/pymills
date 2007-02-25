@@ -74,7 +74,6 @@ class Client(TCPClient, Thread):
 	
 	@filter()
 	def onDEBUG(self, event):
-		print event
 		return False, event
 
 	@listener("connect")
@@ -112,7 +111,6 @@ class Server(TCPServer, Thread):
 
 	@filter()
 	def onDEBUG(self, event):
-		print event
 		return False, event
 
 	@listener("connect")
@@ -262,7 +260,6 @@ class SocketsTestCase(unittest.TestCase):
 
 		@listener("connect")
 		def onCONNECT(host, port):
-			print "connect from %s: %s" % (host, port)
 			onCONNECT.flag = True
 
 		@listener("disconnect")

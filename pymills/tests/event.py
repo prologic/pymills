@@ -33,17 +33,15 @@ class ListenerComponent(Component):
 	def onFoo(self, event, test, msg=""):
 		if msg.lower() == "start":
 			self.event.pushEvent(
-					event._channel,
-					event._source,
-					Event(msg="foo"))
+					Event(msg="foo"),
+					event._channel)
 
 	@listener("Bar")
 	def onBar(self, event, test, msg=""):
 		if msg.lower() == "test":
 			self.event.pushEvent(
-					event._channel,
-					event._source,
-					Event(msg="hello world"))
+					Event(msg="hello world"),
+					event._channel)
 
 class EventTestCase(unittest.TestCase):
 
@@ -355,17 +353,15 @@ class EventTestCase(unittest.TestCase):
 
 		1. Test that push is a synonym of pushEvent
 		2. Test that flush is a synonym of flushEvents
-		3. Test that events cannot be pushed onto the global
+		3. Test that the event queue is empty after flushing
+		4. Test that send is a synonym of sendEvent
+		5. Test that events cannot be sent to the global
 		   channel
-		4. Test that the event queue is empty after flushing
-		5. Test that send is a synonym of sendEvent
-		6. Test that events cannot be sent to the global
-		   channel
-		7. Test that a channel can be given as a string
+		6. Test that a channel can be given as a string
 		   identifying that channel by name vs. id
-		8. Test that _source, _channel and _time are set on
+		7. Test that _channel and _time are set on
 		   the event
-		#9 Test that a filter actually can stop further event
+		8 Test that a filter actually can stop further event
 		   processing
 		"""
 
@@ -375,9 +371,7 @@ class EventTestCase(unittest.TestCase):
 
 		@filter()
 		def onCHECK(event, test, time):
-			#8
-			test.assertTrue(
-					hasattr(event, "_source"))
+			#7
 			test.assertTrue(
 					hasattr(event, "_time") and
 					type(event._time) == float and
@@ -401,34 +395,27 @@ class EventTestCase(unittest.TestCase):
 		self.event.add(onTEST, channel)
 
 		#1 & #2
-		self.event.push(Event(self, time.time()), channel, self)
+		self.event.push(Event(self, time.time()), channel)
 		self.event.flush()
 		self.assertTrue(self.flag == True)
 		self.flag = False
-		self.event.pushEvent(Event(self, time.time()), channel, self)
+		self.event.pushEvent(Event(self, time.time()), channel)
 		self.event.flushEvents()
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
 		#3
-		try:
-			self.event.push(Event(), self.event.getChannelID("global"))
-			self.assertFalse(False)
-		except EventError:
-			self.assertTrue(True)
-
-		#4
 		self.assertTrue(self.event._queue == [])
 
-		#5
-		self.event.send(Event(self, time.time()), channel, self)
+		#4
+		self.event.send(Event(self, time.time()), channel)
 		self.assertTrue(self.flag == True)
 		self.flag = False
-		self.event.sendEvent(Event(self, time.time()), channel, self)
+		self.event.sendEvent(Event(self, time.time()), channel)
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
-		#6
+		#5
 		try:
 			self.event.send(
 					Event(), self.event.getChannelID("global"))
@@ -436,12 +423,12 @@ class EventTestCase(unittest.TestCase):
 		except EventError:
 			self.assertTrue(True)
 
-		#7
+		#6
 		self.event.send(Event(self, time.time()), channel)
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
-		#9
+		#8
 		self.event.send(Event(self, time.time(), stop=True),
 				channel)
 		self.assertTrue(self.flag == False)
