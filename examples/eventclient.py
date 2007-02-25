@@ -6,9 +6,9 @@ from pymills.event import *
 
 class Foo(Component):
 
-	@listener("foo")
-	def onFOO(self, event):
-		print event
+	@listener("received")
+	def onRECEIVED(self, event, message=""):
+		print "%s received" % message
 
 def main():
 
@@ -24,7 +24,6 @@ def main():
 	while True:
 
 		if (time.time() - sTime) > 5:
-			print "Sending event..."
 			event.push(hello, "hello")
 			sTime = time.time()
 

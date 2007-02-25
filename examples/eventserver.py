@@ -6,9 +6,8 @@ class HelloWorld(Component):
 
 	@listener("hello")
 	def onHELLO(self, event, message=""):
-		print event
 		print message
-		self.event.push(Event(), "foo")
+		self.event.push(Event(message), "received")
 
 def main():
 	event = RemoteManager()
