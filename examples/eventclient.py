@@ -12,9 +12,7 @@ class Foo(Component):
 
 def main():
 
-	nodes = [
-			("10.0.0.2", 64000)
-			]
+	nodes = ["10.0.0.2"]
 
 	event = RemoteManager(nodes)
 	foo = Foo(event)
