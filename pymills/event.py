@@ -376,7 +376,6 @@ class EventManager:
 					return callable(*event._args,
 							**event._kwargs)
 			except Exception, e:
-				raise
 				raise EventError(
 						"API Error with filter/listener '%s': %s" % (
 							callable, e))
@@ -403,7 +402,6 @@ class EventManager:
 			try:
 				halt, newEvent = call(filter, event)
 			except TypeError:
-				raise
 				raise EventError(
 						"Filter '%s' did not return (halt, event)" %
 						filter)
