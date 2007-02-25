@@ -8,11 +8,10 @@
 ...
 """
 
-import os
-import time
 import unittest
 
-from pymills.event import *
+from pymills.event import filter, listener, Component, \
+		Event, EventError, EventManager
 
 class FilterComponent(Component):
 

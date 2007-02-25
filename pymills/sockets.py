@@ -16,7 +16,6 @@ event-driven and should be sub-classed to do something usefull.
 import re
 import socket
 import select
-from time import sleep
 
 from event import Event, Component, filter, listener
 

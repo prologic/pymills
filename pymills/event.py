@@ -39,7 +39,6 @@ only be instantiated once.
 
 import time
 import socket
-import socket
 import select
 import inspect
 import cPickle as pickle
@@ -165,7 +164,7 @@ class Event(object):
 	def __getitem__(self, x):
 		if type(x) == int:
 			return self._args[x]
-		elif type(s) == str:
+		elif type(x) == str:
 			return self._kwargs[x]
 		else:
 			raise TypeError(

@@ -10,10 +10,13 @@
 
 import unittest
 from threading import Thread
-from time import sleep, time
+from time import sleep
 
-from pymills.event import *
-from pymills.sockets import *
+from pymills.event import listener, filter, EventManager, \
+		ErrorEvent
+from pymills.sockets import TCPClient, TCPServer, \
+		SocketError, ConnectEvent, DisconnectEvent, \
+		ReadEvent, WriteEvent
 
 class ClientManager(EventManager, Thread):
 

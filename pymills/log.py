@@ -13,7 +13,6 @@ def newLogger(name="PyMills", logType="syslog",
 
 	import sys
 	import logging
-	import logging.handlers
 
 	logger = logging.getLogger(logID)
 
