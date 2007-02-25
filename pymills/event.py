@@ -463,8 +463,8 @@ class RemoteManager(EventManager):
 			raise
 			self.__close__()
 	
-		if not addr in self._nodes:
-			self._nodes.append(addr)
+		if not (addr[0], 64000) in self._nodes:
+			self._nodes.append((addr[0], 64000))
 
 		event, channel = pickle.loads(data)
 		self.sendEvent(event, channel)
@@ -477,6 +477,7 @@ class RemoteManager(EventManager):
 	
 	def __write__(self, data):
 		for node in self._nodes:
+			print "Sending to %s" % str(node)
 			bytes = self._csock.sendto(data, node)
 			if bytes < len(data):
 				raise EventError("Couldn't send event to %s" % str(node))
