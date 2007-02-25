@@ -374,7 +374,7 @@ class EventManager:
 				else:
 					return callable(*event._args,
 							**event._kwargs)
-			except Exception, e:
+			except TypeError, e:
 				raise EventError(
 						"API Error with filter/listener '%s': %s" % (
 							callable, e))
@@ -416,7 +416,7 @@ class EventManager:
 
 class RemoteManager(EventManager):
 
-	def __init__(self, host="0.0.0.0", port=64000, nodes=()):
+	def __init__(self, host="0.0.0.0", port=64000, nodes=[]):
 		EventManager.__init__(self)
 
 		self._nodes = nodes
@@ -428,12 +428,21 @@ class RemoteManager(EventManager):
 				socket.SOL_SOCKET,
 				socket.SO_REUSEADDR,
 				1)
-		self._ssock.setsockopt(
+		self._ssock.setblocking(False)
+		self._ssock.bind((host, port))
+
+		self._csock = socket.socket(
+				socket.AF_INET,
+				socket.SOCK_DGRAM)
+		self._csock.setsockopt(
+				socket.SOL_SOCKET,
+				socket.SO_REUSEADDR,
+				1)
+		self._csock.setsockopt(
 				socket.SOL_SOCKET,
 				socket.SO_BROADCAST,
 				1)
-		self._ssock.setblocking(False)
-		self._ssock.bind((host, port))
+		self._csock.setblocking(False)
 
 	def __del__(self):
 		self.__close__()
@@ -441,9 +450,9 @@ class RemoteManager(EventManager):
 	def __poll__(self, wait=0.001):
 		try:
 			r, w, e = select.select([self._ssock], [], [], wait)
-			if not r == []:
-				return True
+			return (not r == [], not w == [])
 		except socket.error, error:
+			raise
 			self.__close__()
 			return False
 
@@ -451,26 +460,35 @@ class RemoteManager(EventManager):
 		try:
 			data, addr = self._ssock.recvfrom(bufsize)
 		except socket.error, e:
+			raise
 			self.__close__()
 	
+		if not addr in self._nodes:
+			self._nodes.append(addr)
+
 		event, channel = pickle.loads(data)
 		self.sendEvent(event, channel)
 
 	def __close__(self):
 		self._ssock.shutdown(2)
 		self._ssock.close()
+		self._csock.shutdown(2)
+		self._csock.close()
 	
 	def __write__(self, data):
 		for node in self._nodes:
-			bytes = self._ssock.sendto(data, node)
+			bytes = self._csock.sendto(data, node)
 			if bytes < len(data):
 				raise EventError("Couldn't send event to %s" % str(node))
 
 	def process(self):
-		if self.__poll__():
+		if self.__poll__()[0]:
 			self.__read__()
 
 	def sendEvent(self, event, channel):
 		if not self._nodes == []:
-			self.__write__(pickle.dumps((event, channel)))
+			if self.__poll__()[1]:
+				self.__write__(pickle.dumps((event, channel)))
+			else:
+				self.pushEvent(event, channel)
 		return EventManager.sendEvent(self, event, channel)

@@ -122,10 +122,3 @@ class Neuron(Node):
 		if self.getOutput() > self.__threshold:
 			for output in self._outputs:
 				output.fire(self._output)
-
-def test():
-	import doctest
-	doctest.testmod()
-
-if __name__ == "__main__":
-	test()
