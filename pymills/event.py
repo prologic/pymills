@@ -476,9 +476,7 @@ class RemoteManager(EventManager):
 		self._csock.close()
 	
 	def __write__(self, data):
-		print self._nodes
 		for node in self._nodes:
-			print "Sending to %s" % str(node)
 			bytes = self._csock.sendto(data, node)
 			if bytes < len(data):
 				raise EventError("Couldn't send event to %s" % str(node))
