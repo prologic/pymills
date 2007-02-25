@@ -32,7 +32,7 @@ def main():
 			Event(),
 			event.getChannelID("foo"))
 
-	stime = time.time()
+	sTime = time.time()
 
 	while True:
 		try:
@@ -40,13 +40,13 @@ def main():
 		except:
 			break
 	
-	etime = time.time()
+	eTime = time.time()
 
-	ttime = etime - stime
-	ltime = duration(ttime)
+	tTime = eTime - sTime
+	lTime = duration(tTime)
 
 	print "Total Events: %d" % bench.count
-	print "%d/s after %ds" % (bench.count / ttime, ttime)
+	print "%d/s after %ds" % (bench.count / tTime, tTime)
 
 if __name__ == "__main__":
 	main()
