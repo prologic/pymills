@@ -7,7 +7,7 @@ from pymills.sockets import TCPClient
 class TestBot(TCPClient, IRC):
 
 	def __init__(self, event):
-		TCPClient.__init__(self, event)
+		TCPClient.__init__(self, event, ssl=True)
 		IRC.__init__(self)
 
 	@filter()
