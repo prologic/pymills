@@ -463,9 +463,6 @@ class RemoteManager(EventManager):
 			raise
 			self.__close__()
 	
-		if not (addr[0], 64000) in self._nodes:
-			self._nodes.append((addr[0], 64000))
-
 		event, channel = pickle.loads(data)
 		self.sendEvent(event, channel)
 
