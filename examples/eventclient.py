@@ -12,11 +12,11 @@ class Foo(Component):
 
 def main():
 
-	nodes = (
-			("localhost", 64000),
-			)
+	nodes = [
+			("10.0.0.2", 64000)
+			]
 
-	event = RemoteManager("0.0.0.0", 64001, nodes)
+	event = RemoteManager(nodes)
 	foo = Foo(event)
 
 	hello = Event(message="Hello World")

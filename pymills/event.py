@@ -416,7 +416,7 @@ class EventManager:
 
 class RemoteManager(EventManager):
 
-	def __init__(self, host="0.0.0.0", port=64000, nodes=[]):
+	def __init__(self, nodes=[]):
 		EventManager.__init__(self)
 
 		self._nodes = nodes
@@ -429,7 +429,7 @@ class RemoteManager(EventManager):
 				socket.SO_REUSEADDR,
 				1)
 		self._ssock.setblocking(False)
-		self._ssock.bind((host, port))
+		self._ssock.bind(("0.0.0.0", 64000))
 
 		self._csock = socket.socket(
 				socket.AF_INET,
@@ -463,8 +463,11 @@ class RemoteManager(EventManager):
 			raise
 			self.__close__()
 	
+		if (addr[0], 64000) not in self._nodes:
+			self._nodes.append((addr[0], 64000))
+
 		event, channel = pickle.loads(data)
-		self.sendEvent(event, channel)
+		EventManager.sendEvent(self, event, channel)
 
 	def __close__(self):
 		self._ssock.shutdown(2)
@@ -473,6 +476,7 @@ class RemoteManager(EventManager):
 		self._csock.close()
 	
 	def __write__(self, data):
+		print self._nodes
 		for node in self._nodes:
 			print "Sending to %s" % str(node)
 			bytes = self._csock.sendto(data, node)
