@@ -70,10 +70,10 @@ class WriteEvent(Event):
 
 class Client(Component):
 
-	def __init__(self, event, ssl=False):
+	def __init__(self, event):
 		self._buffer = ""
 
-		self.ssl = ssl
+		self.ssl = False
 		self.server = {}
 		self.issuer = {}
 		self.connected = False
@@ -117,7 +117,9 @@ class Client(Component):
 					ReadEvent(line),
 					self.event.getChannelID("read"))
 
-	def open(self, host, port):
+	def open(self, host, port, ssl=False):
+		self.ssl = ssl
+
 		try:
 			self._sock.connect((host, port))
 			if self.ssl:
@@ -242,19 +244,19 @@ class Client(Component):
 
 class TCPClient(Client):
 
-	def __init__(self, event, ssl=False):
-		Client.__init__(self, event, ssl)
+	def __init__(self, event):
+		Client.__init__(self, event)
 	
-	def open(self, host, port):
+	def open(self, host, port, ssl=False):
 		self._sock = socket.socket(
 				socket.AF_INET,
 				socket.SOCK_STREAM)
-		Client.open(self, host, port)
+		Client.open(self, host, port, ssl)
 
 class UDPClient(Client):
 
-	def __init__(self, event, ssl=False):
-		Client.__init__(self, event, ssl)
+	def __init__(self, event):
+		Client.__init__(self, event)
 
 	__ready__ = lambda: None
 
@@ -265,29 +267,13 @@ class UDPClient(Client):
 
 		self.addr = (host, port)
 
-		if self.ssl:
-			self._ssock = socket.ssl(self._sock)
-
 		self._sock.setblocking(False)
 
 		self.connected = True
 
-		if self.ssl:
-			self.server = re.match(
-					"/C=(?P<C>.*)/ST=(?P<ST>.*)"
-					"/L=(?P<L>.*)/O=(?P<O>.*)"
-					"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
-					self._ssock.server()).groupdict()
-
-			self.issuer = re.match(
-					"/C=(?P<C>.*)/ST=(?P<ST>.*)"
-					"/L=(?P<L>.*)/O=(?P<O>.*)"
-					"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
-					self._ssock.issuer()).groupdict()
-
-			self.event.push(
-					ConnectEvent(host, port),
-					self.event.getChannelID("connect"))
+		self.event.push(
+				ConnectEvent(host, port),
+				self.event.getChannelID("connect"))
 
 	@filter("write")
 	def onWRITE(self, event, data):
@@ -298,10 +284,7 @@ class UDPClient(Client):
 		"""
 
 		try:
-			if self.ssl and hasattr(self, "_ssock"):
-				bytes = self._ssock.write(data)
-			else:
-				bytes = self._sock.sendto(data, self.addr)
+			bytes = self._sock.sendto(data, self.addr)
 			if bytes < len(data):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:

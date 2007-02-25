@@ -7,7 +7,7 @@ from pymills.sockets import TCPClient
 class TestBot(TCPClient, IRC):
 
 	def __init__(self, event):
-		TCPClient.__init__(self, event, ssl=True)
+		TCPClient.__init__(self, event)
 		IRC.__init__(self)
 
 	@filter()
@@ -29,7 +29,7 @@ def main():
 	event = EventManager()
 	testbot = TestBot(event)
 
-	testbot.open("localhost", 6667)
+	testbot.open("localhost", 6667, ssl=True)
 
 	testbot.ircUSER(
 			"test",

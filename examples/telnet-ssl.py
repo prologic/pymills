@@ -21,11 +21,11 @@ def main(host, port):
 	from pymills.io import SelectInput
 
 	event = EventManager()
-	client = TelnetClient(event, ssl=True)
+	client = TelnetClient(event)
 	input = SelectInput()
 
 	print "Trying %s..." % host
-	client.open(host, int(port))
+	client.open(host, int(port), ssl=True)
 
 	while client.connected:
 		client.process()

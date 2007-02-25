@@ -247,7 +247,16 @@ class MainWindow(Screen, Component, Thread):
 		self.running = False
 
 	def cmdSERVER(self, host, port=6667):
-		self.client.open(host, port)
+		self.client.open(host, int(port))
+		self.client.ircUSER(
+				self.client.getIdent(),
+				socket.gethostname(),
+				host,
+				"PyMills Example IRC Client")
+		self.client.ircNICK(self.client.getNick())
+
+	def cmdSSLSERVER(self, host, port=6697):
+		self.client.open(host, int(port), ssl=True)
 		self.client.ircUSER(
 				self.client.getIdent(),
 				socket.gethostname(),
