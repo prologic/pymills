@@ -450,7 +450,7 @@ class RemoteManager(EventManager):
 	def __poll__(self, wait=0.001):
 		try:
 			r, w, e = select.select([self._ssock], [], [], wait)
-			return (not r == [], not w == [])
+			return not r == []
 		except socket.error, error:
 			raise
 			self.__close__()
@@ -482,13 +482,10 @@ class RemoteManager(EventManager):
 				raise EventError("Couldn't send event to %s" % str(node))
 
 	def process(self):
-		if self.__poll__()[0]:
+		if self.__poll__():
 			self.__read__()
 
 	def sendEvent(self, event, channel):
 		if not self._nodes == []:
-			if self.__poll__()[1]:
-				self.__write__(pickle.dumps((event, channel)))
-			else:
-				self.pushEvent(event, channel)
+			self.__write__(pickle.dumps((event, channel)))
 		return EventManager.sendEvent(self, event, channel)
