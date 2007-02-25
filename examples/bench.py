@@ -30,9 +30,9 @@ USAGE = "%prog [options]"
 VERSION = "%prog v" + __version__
 
 ERRORS = [
-		(1, "Cannot listen and connect at the same time!"),
-		(2, "Invalid events spcified. Must be an integer."),
-		(3, "Invalid time spcified. Must be an integer."),
+#		(1, "Cannot listen and connect at the same time!"),
+		(1, "Invalid events spcified. Must be an integer."),
+		(2, "Invalid time spcified. Must be an integer."),
 		]
 
 def parse_options():
@@ -71,8 +71,8 @@ def parse_options():
 		print str(e)
 		parser.exit(ERRORS[2][0], ERRORS[2][1])
 
-	if opts.listen and opts.connect is not None:
-		parser.exit(ERRORS[0][0], ERRORS[0][1])
+#	if opts.listen and opts.connect is not None:
+#		parser.exit(ERRORS[0][0], ERRORS[0][1])
 
 	return opts, args
 
@@ -94,65 +94,37 @@ class Bench(Component):
 				Event(),
 				self.event.getChannelID("foo"))
 
-	@listener("bar")
-	def onBAR(self, event):
-
-		self.count += 1
-
-		self.event.push(
-				Event(),
-				self.event.getChannelID("bar"))
-
 def main():
 
 	opts, args = parse_options()
 
+	nodes = []
+	if opts.connect is not None:
+		nodes = opts.connect.split(",")
+
 	if opts.listen:
-		event = RemoteManager()
+		event = RemoteManager(nodes=nodes)
 	else:
-		if opts.connect is not None:
-			print opts.connect
-			nodes = [(x.split(":")[0], int(x.split(":")[1])) for x in opts.connect.split(",")]
-			event = RemoteManager(nodes=nodes)
-		else:
-			event = EventManager()
+		event = EventManager()
 
 	bench = Bench(event)
 
-	if not opts.listen:
-		event.push(
-				Event(),
-				event.getChannelID("foo"))
-	else:
-		event.push(
-				Event(),
-				event.getChannelID("bar"))
+	event.push(Event(), "foo")
 
 	sTime = time.time()
 
-	if opts.listen or opts.connect is not None:
-		while True:
-			try:
-				event.flush()
+	while True:
+		try:
+			event.flush()
+			if hasattr(event, "process"):
 				event.process()
 
-				if opts.events > 0 and bench.count > opts.events:
-					break
-				if opts.time > 0 and (time.time() - sTime) > opts.time:
-					break
-			except:
+			if opts.events > 0 and bench.count > opts.events:
 				break
-	else:
-		while True:
-			try:
-				event.flush()
-
-				if opts.events > 0 and bench.count > opts.events:
-					break
-				if opts.time > 0 and (time.time() - sTime) > opts.time:
-					break
-			except:
+			if opts.time > 0 and (time.time() - sTime) > opts.time:
 				break
+		except:
+			break
 	
 	eTime = time.time()
 
