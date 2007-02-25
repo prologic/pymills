@@ -486,6 +486,7 @@ class RemoteManager(EventManager):
 			self.__read__()
 
 	def sendEvent(self, event, channel):
-		if not self._nodes == []:
-			self.__write__(pickle.dumps((event, channel)))
-		return EventManager.sendEvent(self, event, channel)
+		r = EventManager.sendEvent(self, event, channel)
+		if r is not None:
+			if not self._nodes == []:
+				self.__write__(pickle.dumps((event, channel)))
