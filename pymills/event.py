@@ -451,17 +451,13 @@ class RemoteManager(EventManager):
 			return False
 
 	def __read__(self, bufsize=512):
-		if  self.__poll__():
-			try:
-				data, addr = self._ssock.recvfrom(bufsize)
-			except socket.error, e:
-				self.__close__()
-
-			if not data:
-				self.__close__()
-
-			event, channel = pickle.loads(data)
-			self.sendEvent(event, channel)
+		try:
+			data, addr = self._ssock.recvfrom(bufsize)
+		except socket.error, e:
+			self.__close__()
+	
+		event, channel = pickle.loads(data)
+		self.sendEvent(event, channel)
 
 	def __close__(self):
 		self._ssock.shutdown(2)

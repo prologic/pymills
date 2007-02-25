@@ -31,6 +31,8 @@ VERSION = "%prog v" + __version__
 
 ERRORS = [
 		(1, "Cannot listen and connect at the same time!"),
+		(2, "Invalid events spcified. Must be an integer."),
+		(3, "Invalid time spcified. Must be an integer."),
 		]
 
 def parse_options():
@@ -42,14 +44,32 @@ def parse_options():
 
 	parser = optparse.OptionParser(usage=USAGE, version=VERSION)
 
-	parser.add_option("-c", "--connect",
-			action="store", default=None, dest="connect",
-			help="Connect to given host (test remote events)")
 	parser.add_option("-l", "--listen",
 			action="store_true", default=False, dest="listen",
 			help="Listen on 0.0.0.0:64000 (UDP) (test remote events)")
+	parser.add_option("-c", "--connect",
+			action="store", default=None, dest="connect",
+			help="Connect to given host (test remote events)")
+	parser.add_option("-t", "--time",
+			action="store", default=0, dest="time",
+			help="Stop after specified elapsed seconds")
+	parser.add_option("-e", "--events",
+			action="store", default=0, dest="events",
+			help="Stop after specified number of events")
 
 	opts, args = parser.parse_args()
+
+	try:
+		opts.events = int(opts.events)
+	except Exception, e:
+		print str(e)
+		parser.exit(ERRORS[1][0], ERRORS[1][1])
+
+	try:
+		opts.time = int(opts.time)
+	except Exception, e:
+		print str(e)
+		parser.exit(ERRORS[2][0], ERRORS[2][1])
 
 	if opts.listen and opts.connect is not None:
 		parser.exit(ERRORS[0][0], ERRORS[0][1])
@@ -115,12 +135,22 @@ def main():
 			try:
 				event.flush()
 				event.process()
+
+				if opts.events > 0 and bench.count > opts.events:
+					break
+				if opts.time > 0 and (time.time() - sTime) > opts.time:
+					break
 			except:
 				break
 	else:
 		while True:
 			try:
 				event.flush()
+
+				if opts.events > 0 and bench.count > opts.events:
+					break
+				if opts.time > 0 and (time.time() - sTime) > opts.time:
+					break
 			except:
 				break
 	
