@@ -144,11 +144,13 @@ def testFetcher():
 def testCrawler():
 	url = sys.argv[1]
 	maxLinks = int(sys.argv[2])
+	print >> sys.stderr, "Crawling %s (Max Depth: %d)" % (
+			url, maxLinks)
 	crawler = Crawler(url, maxLinks)
 	crawler.crawl()
-	print "DONE"
+	print >> sys.stderr, "DONE"
 	startTime, countLinks, countFollowed = crawler.getStats()
-	print "Found %d links, following %d urls in %s+%s:%s:%s" % ((countLinks, countFollowed,) + duration(time.time() - startTime))
+	print >> sys.stderr, "Found %d links, following %d urls in %s+%s:%s:%s" % ((countLinks, countFollowed,) + duration(time.time() - startTime))
 
 ### Main
 
