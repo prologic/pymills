@@ -64,42 +64,43 @@ class PortsTree:
 		
 		self._path = path
 		self._repos = []
+
+		self.__build__()
 		
 	def __str__(self):
 		f = StringIO.StringIO()
 		f.write("Ports Tree: %s\n" % self._path)
 		f.write("-----------\n\n")
-		f.writelines(self._repos)
+#		f.writelines(self._repos)
 		f.write("Collections: %d\n" % len(self._repos))
 		f.write("Ports:       %d" % sum(
-			map(lambda x: len(x._ports), self._repos)))
+			map(lambda x: len(x._portsList), self._repos)))
 		output = f.getvalue()
 		f.close()
 		return output
 
-	def buildTree(self):
+	def __build__(self):
 		dirs = getFiles(self._path, [os.path.isdir], "^[^.].*")
 		
 		for dir in dirs:
 			repo = Repository(self._path, dir)
-			repo.buildList()
-				
 			if not repo == []:
 				self._repos.append(repo)
 
 class Repository:
 
 	def __init__(self, root, name):
-		
 		self._root = root
 		self._name = name
 		self._portsDict = {}
 		self._portsList = []
+
+		self.__build__()
 		
 	def __str__(self):
 		f = StringIO.StringIO()
 		f.write("%s:\n" % self._name)
-		f.writelines(self._ports)
+		f.writelines(self._portsList)
 		f.write("\n")
 		output = f.getvalue()
 		f.close()
@@ -113,7 +114,10 @@ class Repository:
 		else:
 			raise Error("str or int expected, got %s" % type(y))
 
-	def buildList(self):
+	def __len__(self):
+		return len(self._portsList)
+
+	def __build__(self):
 		path = os.path.join(self._root, self._name)
 		dirs = getFiles(path, [os.path.isdir], "^[^.].*")
 		

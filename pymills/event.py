@@ -37,11 +37,15 @@ set to True. All components are singletons, that is they can
 only be instantiated once.
 """
 
-import time
 import socket
 import select
 import inspect
 import cPickle as pickle
+
+try:
+	import pygame
+except ImportError:
+	pygame = None
 
 class EventError(Exception):
 	"Event Error Exception"
@@ -126,6 +130,13 @@ class Component(object):
 		self.instances[cls] = self
 		return self
 
+	def __init__(self, event):
+		if hasattr(self, "init"):
+			self.init()
+	
+	def __del__(self):
+		self.unregister()
+
 	def unregister(self):
 		"""C.unregister() -> None
 
@@ -158,7 +169,6 @@ class Event(object):
 
 		self._args = args
 		self._kwargs = kwargs
-		self._time = time.time()
 		self.__dict__.update(kwargs)
 	
 	def __getitem__(self, x):
@@ -390,7 +400,8 @@ class EventManager:
 
 		event._channel = channel
 		if not hasattr(event, "_time"):
-			event._time = time.time()
+			from time import time
+			event._time = time()
 
 		filters = self._filters.get(0, []) + \
 				self._filters.get(channel, [])
@@ -490,3 +501,43 @@ class RemoteManager(EventManager):
 		if not self._nodes == []:
 			self.__write__(pickle.dumps((event, channel)))
 		return r
+
+if pygame is not None:
+
+	class QuitEvent(Event):
+		pass
+
+	class KeyEvent(Event):
+		def __init__(self, key, mod):
+			Event.__init__(self, key, mod)
+	
+	class FocusEvent(Event):
+		def __init__(self, state, gain):
+			Event.__init__(self, state, gain)
+
+	class MouseEvent(Event):
+		def __init__(self, buttons, pos, rel):
+			Event.__init__(self, buttons, pos, rel)
+
+	class ClickEvent(Event):
+		def __init__(self, button, pos):
+			Event.__init__(self, button, pos)
+	
+	class PyGameManager(EventManager):
+
+		def process(self):
+			for event in pygame.event.get():
+				if event.type == pygame.QUIT:
+					self.push(QuitEvent(), "quit")
+				elif event.type == pygame.KEYDOWN:
+					self.push(KeyEvent(event.key, event.mod), "keydown")
+				elif event.type == pygame.KEYUP:
+					self.push(KeyEvent(event.key, event.mod), "keyup")
+				elif event.type == pygame.ACTIVEEVENT:
+					self.push(FocusEvent(event.state, event.gain), "focus")
+				elif event.type == pygame.MOUSEMOTION:
+					self.push(MouseEvent(event.buttons, event.pos, event.rel), "mouse")
+				elif event.type == pygame.MOUSEBUTTONDOWN:
+					self.push(ClickEvent(event.button, event.pos), "click")
+				elif event.type == pygame.MOUSEBUTTONUP:
+					self.push(ClickEvent(event.button, event.pos), "click")

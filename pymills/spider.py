@@ -110,11 +110,12 @@ class Fetcher:
 		if handle is not None:
 			soup = BeautifulSoup()
 			try:
-				content = handle.open(request).read()
+				content = handle.open(request).read().encode("ISO-8859-1")
 				soup.feed(content)
-				title = soup.html.head.title.string
-				#if title == Null:
-				#	title = ""
+				if soup.html is not None:
+					title = soup.html.head.title.string
+				else:
+					title = ""
 				tags = soup('a')
 			except urllib2.HTTPError, error:
 				if error.code == 404:
