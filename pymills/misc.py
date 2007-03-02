@@ -34,7 +34,7 @@ def bytes(bytes):
 	elif bytes >= 1024**1:
 		return (round(bytes / float(1024**1), 2), "KB")
 	else:
-		return (bytes, "B")
+		return bytes, "B"
 
 def duration(seconds):
 	days = int(seconds / 60 / 60 / 24)
