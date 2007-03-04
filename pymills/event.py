@@ -130,13 +130,6 @@ class Component(object):
 		self.instances[cls] = self
 		return self
 
-	def __init__(self, event):
-		if hasattr(self, "init"):
-			self.init()
-	
-	def __del__(self):
-		self.unregister()
-
 	def unregister(self):
 		"""C.unregister() -> None
 

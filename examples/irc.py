@@ -73,7 +73,7 @@ class MainWindow(Screen, Component, Thread):
 
 	def __init__(self, event, client):
 		Screen.__init__(self)
-		Component.__init__(self)
+		Component.__init__(self, event)
 		Thread.__init__(self)
 
 		self.client = client
