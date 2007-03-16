@@ -61,8 +61,9 @@ class MainWindow(Screen, Component):
 				("line", "light gray", "black"),
 				("help", "white", "dark blue")])
 
-		self.lines = []
-		self.body = urwid.ListBox(self.lines)
+#		self.lines = []
+		self.body = urwid.ListBox([])
+		self.lines = self.body.body
 		self.body.set_focus(len(self.lines))
 
 		self.title = urwid.Text(MAIN_TITLE)
