@@ -7,14 +7,16 @@ import urwid
 import curses
 import socket
 from time import sleep
-from threading import Thread
+from select import select
 from inspect import getargspec
-from urwid.curses_display import Screen
+from traceback import format_exc
+from urwid.raw_display import Screen
 
-from pymills.irc import *
-from pymills.event import *
 from pymills.misc import backMerge
 from pymills.sockets import TCPClient
+from pymills.irc import sourceSplit, IRC, ERR_NICKNAMEINUSE
+from pymills.event import filter, listener, Component, \
+		EventManager
 
 MAIN_TITLE = "PyMills IRC Client"
 
@@ -22,45 +24,12 @@ HELP_STRINGS = {
 "main": "For help, type: /help"
 }
 
-class Manager(EventManager, Thread):
-
-	def __init__(self):
-		EventManager.__init__(self)
-		Thread.__init__(self)
-	
-	def start(self):
-		self.running = True
-		Thread.start(self)
-
-	def stop(self):
-		self.running = False
-
-	def run(self):
-		while self.running:
-			self.flush()
-			sleep(0.001)
-
-class Client(TCPClient, IRC, Thread):
+class Client(TCPClient, IRC):
 
 	def __init__(self, event):
 		TCPClient.__init__(self, event)
 		IRC.__init__(self)
-		Thread.__init__(self)
 
-	def start(self):
-		self.running = True
-		Thread.start(self)
-
-	def stop(self):
-		self.running = False
-
-	def run(self):
-		while self.running:
-			if self.connected:
-				self.process()
-			else:
-				sleep(1)
-	
 	def ircRAW(self, data):
 		self.write(data + "\r\n")
 	
@@ -69,12 +38,11 @@ class Client(TCPClient, IRC, Thread):
 		TCPClient.onREAD(self, line)
 		IRC.onREAD(self, line)
 	
-class MainWindow(Screen, Component, Thread):
+class MainWindow(Screen, Component):
 
 	def __init__(self, event, client):
 		Screen.__init__(self)
 		Component.__init__(self, event)
-		Thread.__init__(self)
 
 		self.client = client
 		self.channel = None
@@ -108,34 +76,31 @@ class MainWindow(Screen, Component, Thread):
 
 		self.top = urwid.Frame(self.body, self.header,
 				self.footer)
-
-	def start(self):
-		self.running = True
 	
-		self.s = curses.initscr()
-		self.has_color = curses.has_colors()
-		if self.has_color:
-			curses.start_color()
-			if curses.COLORS < 8:
-				# not colourful enough
-				self.has_color = False
-		if self.has_color:
-			try:
-				curses.use_default_colors()
-				self.has_default_colors=True
-			except:
-				self.has_default_colors=False
-		self._setup_colour_pairs()
-		curses.noecho()
-		curses.meta(1)
-		curses.halfdelay(10) # don't wait longer than 1s for keypress
-		self.s.keypad(0)
-		self.s.scrollok(1)
+	def process(self):
+		size = self.get_cols_rows()
 
-		Thread.start(self)
+		if not select(
+				self.get_input_descriptors(),
+				[], [], 0.1)[0] == []:
+
+			timeout, keys, raw = self.get_input_nonblocking()
+
+			for k in keys:
 	
-	def stop(self):
-		self.running = False
+				if k == "window resize":
+					size = self.get_cols_rows()
+					continue
+				elif k == "enter":
+					self.processCommand(self.input.get_edit_text())
+					self.input.set_edit_text("")
+					continue
+
+				self.top.keypress(size, k)
+				self.input.set_edit_text(
+						self.input.get_edit_text() + k)
+
+		self.update_screen(size)
 
 	def unknownCommand(self, command):
 		self.lines.append(
@@ -148,7 +113,7 @@ class MainWindow(Screen, Component, Thread):
 					"Syntax error (%s): %s Expected: %s" % (
 						command, args, expected)))
 
-	def process(self, s):
+	def processCommand(self, s):
 
 		match = self.cmdRegex.match(s)
 		if match is not None:
@@ -244,7 +209,7 @@ class MainWindow(Screen, Component, Thread):
 	def cmdEXIT(self, message=""):
 		if self.client.connected:
 			self.cmdQUIT(message)
-		self.running = False
+		raise SystemExit, 0
 
 	def cmdSERVER(self, host, port=6667):
 		self.client.open(host, int(port))
@@ -284,59 +249,37 @@ class MainWindow(Screen, Component, Thread):
 	def cmdQUIT(self, message="Bye"):
 		self.client.ircQUIT(message)
 
-	def run(self):
-
-		try:
-			size = self.get_cols_rows()
-
-			while self.running:
-
-				self.update_screen(size)
-
-				keys = self.get_input()
-
-				for k in keys:
-
-					if k == "window resize":
-						size = self.get_cols_rows()
-						continue
-					elif k == "enter":
-						self.process(self.input.get_edit_text())
-						self.input.set_edit_text("")
-						continue
-
-					self.top.keypress(size, k)
-					self.input.set_edit_text(
-							self.input.get_edit_text() + k)
-
-		finally:
-			curses.echo()
-			self._curs_set(1)
-			try:
-				curses.endwin()
-			except:
-				pass # don't block original error with curses error
-
 	def update_screen(self, size):
 		self.body.set_focus(len(self.lines))
 		canvas = self.top.render(size, focus=True)
 		self.draw_screen(size, canvas)
 	
 def main():
-	manager = Manager()
-	client = Client(manager)
-	window = MainWindow(manager, client)
+	event = EventManager()
+	client = Client(event)
+	window = MainWindow(event, client)
 
-	manager.start()
-	client.start()
 	window.start()
 
-	while window.running:
-		sleep(1)
+	while True:
+		try:
+			if client.connected:
+				client.process()
+			window.process()
+			event.flush()
+		except KeyboardInterrupt:
+			window.stop()
+			break
+		except SystemExit:
+			window.stop()
+			break
+		except Exception, e:
+			window.stop()
+			print format_exc()
+			break
 
-	client.stop()
-	manager.stop()
-	window.stop()
+	for i in xrange(len(event)):
+		event.flush()
 
 if __name__ == "__main__":
 	main()
