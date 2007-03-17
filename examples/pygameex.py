@@ -8,7 +8,9 @@ from pymills.event import filter, listener, Component, \
 
 class Test(Component):
 
-	def init(self):
+	def __init__(self, event):
+		Component.__init__(self, event)
+
 		pygame.init()
 		screen = pygame.display.set_mode(
 				(640, 480),
@@ -32,6 +34,9 @@ def main():
 
 	event = PyGameManager()
 	test = Test(event)
+
+	from time import sleep
+	sleep(1)
 
 	while True:
 		try:
