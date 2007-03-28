@@ -313,9 +313,7 @@ class IRC(Component):
 		pushes a RawEvent with the given data.
 		"""
 
-		self.event.push(
-				RawEvent(data),
-				self.event.getChannelID("raw"))
+		self.event.push(RawEvent(data), "raw", self)
 	
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)
@@ -466,7 +464,7 @@ class IRC(Component):
 		if tokens[0] == "PING":
 			self.event.push(
 					PingEvent(strip(tokens[1]).lower()),
-					self.event.getChannelID("ping"))
+					"ping", self)
 
 		elif tokens[0] == "NICK":
 			self.event.push(
@@ -475,14 +473,14 @@ class IRC(Component):
 						int(tokens[3]), tokens[4].lower(),
 						tokens[5].lower(), tokens[6].lower(),
 						strip(" ".join(tokens[8:]))),
-					self.event.getChannelID("newnick"))
+					"newnick", self)
 
 		elif tokens[0] == "TOPIC":
 			self.event.push(
 					TopicEvent(
 						tokens[1], tokens[2], int(tokens[3]),
 						strip(" ".join(tokens[4:]))),
-					self.event.getChannelID("topic"))
+					"topic", self)
 
 		elif tokens[0] == "NETINFO":
 			self.event.push(
@@ -495,7 +493,7 @@ class IRC(Component):
 						tokens[6],
 						tokens[7],
 						strip(" ".join(tokens[8:]))),
-					self.event.getChannelID("netinfo"))
+					"netinfo", self)
 
 		elif re.match("[0-9]+", tokens[1]):
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -512,7 +510,7 @@ class IRC(Component):
 			self.event.push(
 					NumericEvent(source, target, numeric,
 						arg, message),
-					self.event.getChannelID("numeric"))
+					"numeric", self)
 
 		elif tokens[1] == "PRIVMSG":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -526,15 +524,15 @@ class IRC(Component):
 					message = " ".join(tokens[1:])
 					self.event.push(
 							CtcpEvent(source, target, type, message),
-							self.event.getChannelID("ctcp"))
+							"ctcp", self)
 				else:
 					self.event.push(
 							MessageEvent(source, target, message),
-							self.event.getChannelID("message"))
+							"message", self)
 			else:
 				self.event.push(
 						MessageEvent(source, target, message),
-						self.event.getChannelID("message"))
+						"message", self)
 
 		elif tokens[1] == "NOTICE":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -542,7 +540,7 @@ class IRC(Component):
 			message = strip(" ".join(tokens[3:]))
 			self.event.push(
 					NoticeEvent(source, target, message),
-					self.event.getChannelID("notice"))
+					"notice", self)
 
 		elif tokens[1] == "JOIN":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -550,7 +548,7 @@ class IRC(Component):
 			for channel in channels.split(","):
 				self.event.push(
 						JoinEvent(source, channel),
-						self.event.getChannelID("join"))
+						"join", self)
 
 		elif tokens[1] == "PART":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -558,14 +556,14 @@ class IRC(Component):
 			message = strip(" ".join(tokens[3:]))
 			self.event.push(
 					PartEvent(source, channel, message),
-					self.event.getChannelID("part"))
+					"part", self)
 
 		elif tokens[1] == "QUIT":
 			source = sourceSplit(strip(tokens[0].lower()))
 			message = strip(" ".join(tokens[2:]))
 			self.event.push(
 					QuitEvent(source, message),
-					self.event.getChannelID("quit"))
+					"quit", self)
 
 		elif tokens[1] == "NICK":
 			source = sourceSplit(strip(tokens[0].lower()))
@@ -576,14 +574,14 @@ class IRC(Component):
 				ctime = time.time()
 			self.event.push(
 					NickEvent(source, newNick, ctime),
-					self.event.getChannelID("nick"))
+					"nick", self)
 
 		elif tokens[1] == "MOTD":
 			source = sourceSplit(strip(tokens[0].lower()))
 			server = strip(tokens[2]).lower()
 			self.event.push(
 					MotdEvent(source, server),
-					self.event.getChannelID("motd"))
+					"motd", self)
 
 	###
 	### Default Events

@@ -10,13 +10,13 @@ class TodoList(Component):
 	def add(self, name, description):
 		assert not name in self.todos, "To-do already in list"
 		self.todos[name] = description
-		self.event.send(
+		self.event.push(
 				Event(name, description),
 				"TodoAdded")
 
 class TodoPrinter(Component):
 
-	@listener("TodoAdded")
+#	@listener("TodoAdded")
 	def onTodoAdded(self, name, description):
 		print "TODO:", name
 		print "	  ", description
@@ -36,6 +36,8 @@ def main():
 			"Really need to make some coffee")
 	todo.add("Bug triage",
 			"Double-check that all known issues were addressed")
+
+	manager.flush()
 
 if __name__ == "__main__":
 	main()

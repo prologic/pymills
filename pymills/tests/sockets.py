@@ -12,8 +12,7 @@ import unittest
 from threading import Thread
 from time import sleep
 
-from pymills.event import listener, filter, EventManager, \
-		ErrorEvent
+from pymills.event import listener, filter, EventManager
 from pymills.sockets import TCPClient, TCPServer, \
 		SocketError, ConnectEvent, DisconnectEvent, \
 		ReadEvent, WriteEvent
@@ -148,26 +147,6 @@ class SocketsTestCase(unittest.TestCase):
 			self.assertEquals(error[0], 123)
 			self.assertEquals(error[1], "test")
 	
-	def testErrorEvent(self):
-		"""Test sockets.ErrorEvent
-
-		1. Test that ErrorEvent is able to hold an error with
-		   sock == None
-		2. Test that ErrorEvent is able to hold an error for
-		   a specific socket with sock not None
-		"""
-
-		#1
-		event = ErrorEvent((123, "test"))
-		self.assertEquals(event[0][0], 123)
-		self.assertEquals(event[0][1], "test")
-
-		#2
-		event = ErrorEvent((123, "test"), "sock")
-		self.assertEquals(event[0], "sock")
-		self.assertEquals(event[1][0], 123)
-		self.assertEquals(event[1][1], "test")
-
 	def testConnectEvent(self):
 		"""Test sockets.ConnectEvent
 
@@ -273,7 +252,6 @@ class SocketsTestCase(unittest.TestCase):
 		def onREAD(line):
 			onREAD.line = line
 
-
 		@filter("write")
 		def onWRITE(event, data):
 			onWRITE.data = data
@@ -287,7 +265,6 @@ class SocketsTestCase(unittest.TestCase):
 		try:
 			#1
 			client.open("localhost", 10000)
-			sleep(1)
 			self.assertTrue(onCONNECT.flag)
 
 			#2

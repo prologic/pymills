@@ -90,9 +90,7 @@ class Bench(Component):
 
 		self.count += 1
 
-		self.event.push(
-				Event(),
-				self.event.getChannelID("foo"))
+		self.event.push(Event(), "foo")
 
 def main():
 

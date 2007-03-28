@@ -21,11 +21,7 @@ from event import Event, Component, filter, listener
 
 linesep = re.compile("\r?\n")
 
-class SocketError(Exception):
-
-	def __init__(self, type, message):
-		Exception.__init__(self)
-		self.args = type, message
+class SocketError(Exception): pass
 
 class ErrorEvent(Event):
 
@@ -82,13 +78,21 @@ class Client(Component):
 			self.close()
 
 	def __ready__(self, wait=0.001):
-		ready = select.select(
-				[self._sock], [self._sock], [], wait)
-		return (not ready[0] == []) and (not ready[1] == [])
+		try:
+			ready = select.select(
+					[self._sock], [self._sock], [], wait)
+			return (not ready[0] == []) and (not ready[1] == [])
+		except select.error, e:
+			if e[0] == 4:
+				pass
 		
 	def __poll__(self, wait=0.001):
-		return not select.select(
-				[self._sock], [], [], wait)[0] == []
+		try:
+			return not select.select(
+					[self._sock], [], [], wait)[0] == []
+		except select.error, e:
+			if e[0] == 4:
+				pass
 
 	def __read__(self, bufsize=512):
 		try:
@@ -97,9 +101,7 @@ class Client(Component):
 			else:
 				data = self._sock.recv(bufsize)
 		except socket.error, e:
-			self.event.push(
-					ErrorEvent(e[1]),
-					self.event.getChannelID("error"))
+			self.event.push(ErrorEvent(e[1]), "error", self)
 			self.close()
 			return
 
@@ -112,9 +114,7 @@ class Client(Component):
 		lines = lines[:-1]
 
 		for line in lines:
-			self.event.push(
-					ReadEvent(line),
-					self.event.getChannelID("read"))
+			self.event.push(ReadEvent(line), "read", self)
 
 	def open(self, host, port, ssl=False):
 		self.ssl = ssl
@@ -125,9 +125,7 @@ class Client(Component):
 				self._ssock = socket.ssl(self._sock)
 		except socket.error, e:
 			self.close()
-			self.event.push(
-					ErrorEvent(e[1]),
-					self.event.getChannelID("error"))
+			self.event.push(ErrorEvent(e[1]), "error", self)
 			return
 
 		self._sock.setblocking(False)
@@ -152,32 +150,25 @@ class Client(Component):
 							self._ssock.issuer()).groupdict()
 
 				self.event.push(
-						ConnectEvent(host, port),
-						self.event.getChannelID("connect"))
+						ConnectEvent(host, port), "connect", self)
 
 				return
 
 		self.event.push(
 				ErrorEvent("Timeout after 5s while connecting"),
-				self.event.getChannelID("error"))
+				"error", self)
 
 	def close(self):
 		try:
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, e:
-			self.event.push(
-					ErrorEvent(e[1]),
-					self.event.getChannelID("error"))
+			self.event.push(ErrorEvent(e[1]), "error", self)
 		self.connected = False
-		self.event.push(
-				DisconnectEvent(), 
-				self.event.getChannelID("disconnect"))
+		self.event.push(DisconnectEvent(), "disconnect", self)
 	
 	def write(self, data):
-		self.event.push(
-				WriteEvent(data),
-				self.event.getChannelID("write"))
+		self.event.push(WriteEvent(data), "write", self)
 
 	def process(self):
 		if self.__poll__():
@@ -228,17 +219,17 @@ class Client(Component):
 		try:
 			if self.ssl and hasattr(self, "_ssock"):
 				bytes = self._ssock.write(data)
-			else:
+			elif hasattr(self, "_sock"):
 				bytes = self._sock.send(data)
+			else:
+				raise SocketError("Socket not connected")
 			if bytes < len(data):
 				raise SocketError("Didn't write all data!")
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.event.push(
-						ErrorEvent(e[1]),
-						self.event.getChannelID("error"))
+				self.event.push(ErrorEvent(e[1]), "error", self)
 		return False, event
 
 class TCPClient(Client):
@@ -270,9 +261,7 @@ class UDPClient(Client):
 
 		self.connected = True
 
-		self.event.push(
-				ConnectEvent(host, port),
-				self.event.getChannelID("connect"))
+		self.event.push(ConnectEvent(host, port), "connect", self)
 
 	@filter("write")
 	def onWRITE(self, event, data):
@@ -290,9 +279,7 @@ class UDPClient(Client):
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.event.push(
-						ErrorEvent(e[1]),
-						self.event.getChannelID("error"))
+				self.event.push(ErrorEvent(e[1]), "error", self)
 		return False, event
 	
 class Server(Component):
@@ -327,7 +314,7 @@ class Server(Component):
 				host, port = host
 				self.event.push(
 						ConnectEvent(host, port, newsock),
-						self.event.getChannelID("connect"))
+						"connect", self)
 			else:
 				# Socket has data
 
@@ -335,8 +322,7 @@ class Server(Component):
 					data = sock.recv(bufsize)
 				except socket.error, e:
 					self.event.push(
-							ErrorEvent(e[1], sock),
-							self.event.getChannelID("error"))
+							ErrorEvent(e[1], sock), "error", self)
 					self.close(sock)
 					continue
 
@@ -351,8 +337,7 @@ class Server(Component):
 
 				for line in lines:
 					self.event.push(
-							ReadEvent(line, sock),
-							self.event.getChannelID("read"))
+							ReadEvent(line, sock), "read", self)
 
 	def close(self, sock=None):
 
@@ -362,12 +347,10 @@ class Server(Component):
 				sock.close()
 			except socket.error, e:
 				self.event.push(
-						ErrorEvent(e[1], sock),
-						self.event.getChannelID("error"))
+						ErrorEvent(e[1], sock), "error", self)
 			self._clients.remove(sock)
 			self.event.push(
-					DisconnectEvent(sock),
-					self.event.getChannelID("disconnect"))
+					DisconnectEvent(sock), "disconnect", self)
 
 		else:
 			for sock in self._clients:
@@ -376,17 +359,11 @@ class Server(Component):
 				self._sock.shutdown(2)
 				self._sock.close()
 			except socket.error, e:
-				self.event.push(
-						ErrorEvent(e[1]),
-						self.event.getChannelID("error"))
-			self.event.push(
-					DisconnectEvent(), 
-					self.event.getChannelID("disconnect"))
+				self.event.push(ErrorEvent(e[1]), "error", self)
+			self.event.push(DisconnectEvent(), "disconnect", self)
 	
 	def write(self, sock, data):
-		self.event.push(
-				WriteEvent(data, sock),
-				self.event.getChannelID("write"))
+		self.event.push(WriteEvent(data, sock), "write", self)
 	
 	def broadcast(self, data):
 		for sock in self._clients:
@@ -448,8 +425,7 @@ class Server(Component):
 				self.close(sock)
 			else:
 				self.event.push(
-						ErrorEvent(e[1], sock),
-						self.event.getChannelID("error"))
+						ErrorEvent(e[1], sock), "error", self)
 		return False, event
 
 class TCPServer(Server):
@@ -494,8 +470,7 @@ class UDPServer(Server):
 				data, addr = self._sock.recvfrom(bufsize)
 			except socket.error, e:
 				self.event.push(
-						ErrorEvent(e[1], self._sock),
-						self.event.getChannelID("error"))
+						ErrorEvent(e[1], self._sock), "error", self)
 				self.close()
 				return
 
@@ -510,5 +485,4 @@ class UDPServer(Server):
 
 			for line in lines:
 				self.event.push(
-						ReadEvent(line, self._sock),
-						self.event.getChannelID("read"))
+						ReadEvent(line, self._sock), "read". self)

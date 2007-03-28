@@ -136,7 +136,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 	os.dup2(so.fileno(), sys.stdout.fileno())
 	os.dup2(se.fileno(), sys.stderr.fileno())
 
-class State:
+class State(object):
 	"""State() -> new state object
 
 	Creates a new state object that is suitable
@@ -155,7 +155,7 @@ class State:
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self._states = {}
-		self._nextValue = 0
+		self._next = 0
 
 		# Default States
 
@@ -164,34 +164,39 @@ class State:
 
 	def __repr__(self):
 		try:
-			return self._state
+			return "<State: %s>" % self._state
 		except AttributeError:
-			return ""
+			return "<State: ???>"
 
-	__str__ = __repr__
-	
-	def __eq__(self, state):
-		if self._states.has_key(state):
-			return self._state == state
-		else:
-			return False
-	
-	def _add(self, state):
-		self._states[state] = self._nextValue
-		self._nextValue = self._nextValue + 1
-	
-	def set(self, state):
-		"""S.set(state) -> None
+	def __str__(self):
+		return self._state
 
-		Set the current state to the specified state,
+	def __eq__(self, s):
+		return s in self._states and self._state == s
+	
+	def __lt__(self, s):
+		return s in self._states and self._state == s and \
+				self._states[s] < self._states[self._state]
+
+	def __gr__(self, state):
+		return s in self._states and self._state == s and \
+				self._states[s] > self._states[self._state]
+
+	def _add(self, s):
+		self._states[s] = self._next
+		self._next = self._next + 1
+	
+	def set(self, s):
+		"""S.set(s) -> None
+
+		Set the current state to the specified state given by s,
 		adding it if it doesn't exist.
 		"""
 
-		if self._states.has_key(state):
-			self._state = state
-		else:
-			self._add(state)
-			self._state = state
+		if not s in self._states:
+			self._add(s)
+
+		self._state = s
 
 class CaselessOptionParser(optparse.OptionParser):
 	"""CaselessOptionParser() -> new Caseless OptionParser object
@@ -387,3 +392,29 @@ class ConfigParser(_ConfigParser):
 			return _ConfigParser.get(self, section, option, *args)
 		else:
 			return None
+
+def notags(str):
+	"Removes HTML tags from str and returns the new string"
+
+	s = State()
+
+	STATE_TEXT = 0
+	STATE_TAG = 1
+
+	state = STATE_TEXT
+
+	newStr = ""
+
+	for char in str:
+
+		if state == STATE_TEXT:
+			if char == '<':
+				state = STATE_TAG
+			else:
+				newStr = newStr + char
+
+		elif state == STATE_TAG:
+			if char == '>':
+				state = STATE_TEXT
+	
+	return newStr

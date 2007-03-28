@@ -12,8 +12,7 @@ could be sub-classes. Really any object could be used as
 the 'event'.
 
 Channels must be registered by calling EventManager.addChannel
-There is one special channel:
-   name=global, channel=0: The global channel.
+There is one special channel, this is the "global" channel.
 
 Events cannot be sent to or pushed onto the global channel.
 Instead, any filters/listeners that are on this channel
@@ -37,18 +36,25 @@ set to True. All components are singletons, that is they can
 only be instantiated once.
 """
 
+import time
 import socket
 import select
 import inspect
 import cPickle as pickle
 
-try:
-	import pygame
-except ImportError:
-	pygame = None
+#try:
+#	import pygame
+#except ImportError:
+#	pygame = None
 
 class EventError(Exception):
-	"Event Error Exception"
+	"Event Error"
+
+class UnhandledEvent(EventError):
+	"Unhandled Event Error"
+
+	def __init__(self, event, channel):
+		EventError.__init__(self, event, channel)
 
 def filter(*args):
 	"Decorator function for a filter"
@@ -120,12 +126,11 @@ class Component(object):
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for event, handler in events:
-			if not hasattr(handler, "channel"):
-				handler.channel = event
-			channel = self.event.getChannelID(handler.channel)
-			if channel is None:
-				channel = self.event.addChannel(handler.channel)
-			self.event.add(handler, channel)
+			if hasattr(self, "__channelPrefix__"):
+				self.event.add(handler, "%s:%s" % (
+					self.__channelPrefix__, handler.channel))
+			else:
+				self.event.add(handler, handler.channel)
 
 		self.instances[cls] = self
 		return self
@@ -143,12 +148,7 @@ class Component(object):
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for event, handler in events:
-			if not hasattr(handler, "channel"):
-				handler.channel = event
-			channel = self.event.getChannelID(handler.channel)
-			if channel is None:
-				channel = self.event.addChannel(handler.channel)
-			self.event.remove(handler, channel)
+			self.event.remove(handler, handler.channel)
 
 class Event(object):
 	"""Event(*args, **kwargs) -> new event object
@@ -196,11 +196,8 @@ class EventManager:
 	def __init__(self):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self._channels = {
-				"global": 0}
-
-		self._filters = {0: []}
-		self._listeners = {0: []}
+		self._filters = {"global": []}
+		self._listeners = {"global": []}
 		self._queue = []
 
 	def __len__(self):
@@ -215,12 +212,9 @@ class EventManager:
 		"""
 
 		if len(channels) == 0:
-			channels = [0]
+			channels = ["global"]
 
 		for channel in channels:
-
-			if type(channel) == str:
-				channel = self.getChannelID(channel)
 
 			if hasattr(callable, "filter"):
 				container = self._filters
@@ -230,11 +224,10 @@ class EventManager:
 				raise EventError("Given callable '%s' is" \
 						"not a filter or listener" % callable)
 
-			try:
+			if container.has_key(channel):
 				container[channel].append(callable)
-			except KeyError:
-				raise EventError(
-						"Channel %s not found" % channel)
+			else:
+				container[channel] = [callable]
 	
 	def remove(self, callable, *channels):
 		"""E.remove(callable, *channels) -> None
@@ -248,14 +241,11 @@ class EventManager:
 		"""
 
 		if len(channels) == 0:
-			keys = self._channels.keys()
+			keys = self._filters.keys() + self._listeners.keys()
 		else:
 			keys = channels
 
 		for channel in keys:
-
-			if type(channel) == str:
-				channel = self.getChannelID(channel)
 
 			if hasattr(callable, "filter"):
 				container = self._filters
@@ -272,57 +262,19 @@ class EventManager:
 					pass
 			except KeyError:
 				raise EventError(
-						"Channel %d not found" % channel)
+						"Channel %s not found" % channel)
 
-	def getChannelID(self, name):
-		"Return the channel id given by name"
-
-		return self._channels.get(name, None)
-
-	def addChannel(self, name):
-		"Add a new channel with the name given"
-
-		channel = len(self._channels)
-		self._channels[name] = channel
-		self._filters[channel] = []
-		self._listeners[channel] = []
-		return channel
-
-	def removeChannel(self, name):
-		"""Remove a channel given by name
-
-		This also clears the filters and listeners containers
-		of that channel, any filters/listeners in that channel
-		are removed.
-		"""
-
-		channel = self.getChannelID(name)
-		if channel is not None:
-			del self._filters[channel]
-			del self._listeners[channel]
-			del self._channels[name]
-
-	def push(self, event, channel):
-		"Synonym of pushEvent"
-
-		self.pushEvent(event, channel)
-
-	def pushEvent(self, event, channel):
-		"""E.pushEvent(event, channel) -> None
+	def push(self, event, channel, source=None):
+		"""E.push(event, channel, source=None) -> None
 
 		Push the given event onto the given channel.
 		This will queue the event up to be processed later
-		by flushEvents.
+		by flushEvents. source is expected to be an object.
 		"""
 
-		self._queue.append((event, channel))
+		self._queue.append((event, channel, source))
 	
 	def flush(self):
-		"Synonym of flushEvents"
-
-		self.flushEvents()
-	
-	def flushEvents(self):
 		"""E.flushEvents() -> None
 
 		Flush all events waiting in the queue.
@@ -332,21 +284,17 @@ class EventManager:
 
 		queue = self._queue
 
-		for event, channel in queue[:]:
+		for event, channel, source in queue[:]:
 			try:
-				self.sendEvent(event, channel)
+				self.send(event, channel, source)
 			finally:
-				queue.remove((event, channel))
+				queue.remove((event, channel, source))
 
-	def send(self, event, channel):
-		"Synonym of sendEvent"
-
-		return self.sendEvent(event, channel)
-	
-	def sendEvent(self, event, channel):
-		"""E.sendEvent(event, channel) -> None
+	def send(self, event, channel, source=None):
+		"""E.send(event, channel, source=None) -> None
 
 		Send the given event to listeners on the given channel.
+		source is expected to be an object.
 
 		Filters are processed first.
 		Filters must return a tuple (halt, event)
@@ -382,24 +330,26 @@ class EventManager:
 						"API Error with filter/listener '%s': %s" % (
 							callable, e))
 
-		if type(channel) == str:
-			id = self.getChannelID(channel)
-			if id is not None:
-				channel = id
+		if source is not None and hasattr(source, "__channelPrefix__"):
+			channel = "%s:%s" % (source.__channelPrefix__, channel)
 
-		if channel == 0:
+		if channel == "global":
 			raise EventError(
 					"You cannot send events to the global channel")
 
+		event._time = time.time()
+		event._source = source
 		event._channel = channel
-		if not hasattr(event, "_time"):
-			from time import time
-			event._time = time()
 
-		filters = self._filters.get(0, []) + \
+		filters = self._filters.get("global", []) + \
 				self._filters.get(channel, [])
-		listeners =	self._listeners.get(0, []) + \
+		listeners =	self._listeners.get("global", []) + \
 				self._listeners.get(channel, [])
+
+		print "Sending %s to %s from %s" % (event, channel, source)
+
+		if filters == [] and listeners == []:
+			raise UnhandledEvent(event, channel)
 
 		for filter in filters:
 			try:
@@ -471,7 +421,7 @@ class RemoteManager(EventManager):
 			self._nodes.append(addr[0])
 
 		event, channel = pickle.loads(data)
-		EventManager.sendEvent(self, event, channel)
+		EventManager.send(self, event, channel)
 
 	def __close__(self):
 		self._ssock.shutdown(2)
@@ -489,12 +439,13 @@ class RemoteManager(EventManager):
 		if self.__poll__():
 			self.__read__()
 
-	def sendEvent(self, event, channel):
-		r = EventManager.sendEvent(self, event, channel)
+	def send(self, event, channel):
+		r = EventManager.send(self, event, channel)
 		if not self._nodes == []:
 			self.__write__(pickle.dumps((event, channel)))
 		return r
 
+pygame = None
 if pygame is not None:
 
 	class QuitEvent(Event):

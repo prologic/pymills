@@ -248,7 +248,8 @@ class MainWindow(Screen, Component):
 		self.client.ircRAW(message)
 
 	def cmdQUIT(self, message="Bye"):
-		self.client.ircQUIT(message)
+		if self.client.connected:
+			self.client.ircQUIT(message)
 
 	def update_screen(self, size):
 		self.body.set_focus(len(self.lines))
