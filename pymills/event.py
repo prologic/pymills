@@ -346,8 +346,6 @@ class EventManager:
 		listeners =	self._listeners.get("global", []) + \
 				self._listeners.get(channel, [])
 
-		print "Sending %s to %s from %s" % (event, channel, source)
-
 		if filters == [] and listeners == []:
 			raise UnhandledEvent(event, channel)
 
