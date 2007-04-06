@@ -50,7 +50,8 @@ def decodeHTMLEntities(text):
 			.replace("&lt;", "<") \
 			.replace("&gt;", ">") \
 			.replace("&quot;", "\"") \
-			.replace("&#039;", "'")
+			.replace("&#039;", "'") \
+			.replace("&mdash", "--")
 
 def encodeHTMLEntities(text):
 	"""Convert & < > and \" to their relevant HTML entities."""
@@ -61,5 +62,5 @@ def encodeHTMLEntities(text):
 			.replace("<", "&lt;") \
 			.replace(">", "&gt;") \
 			.replace("\"", "&quot;") \
-			.replace("'", "&#039;")
-
+			.replace("'", "&#039;") \
+			.replace("--", "&mdash")
