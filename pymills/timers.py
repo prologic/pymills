@@ -78,9 +78,7 @@ class Timers(Component):
 		for i, timer in enumerate(self._timers[:]):
 			done, event, channel = timer.process()
 			if done:
-				self.event.push(
-						event,
-						self.event.getChannelID(channel))
+				self.event.push(event, channel)
 				if not timer._forever:
 					if timer in self._timers and \
 							len(self._timers) > i:
