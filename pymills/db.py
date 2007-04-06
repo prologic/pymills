@@ -42,7 +42,10 @@ from datatypes import OrderedDict
 try:
 	from pysqlite2 import dbapi2 as sqlite
 except ImportError:
-	import sqlite3 as sqlite
+	try:
+		import sqlite3 as sqlite
+	except ImportError:
+		from sqlite import dbapi2 as sqlite
 
 def parseURI(uri):
 	"""uri -> {"schema": ..., "username": ..., ...}
