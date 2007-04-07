@@ -14,12 +14,14 @@ event-driven and should be sub-classed to do something usefull.
 """
 
 import re
+import time
 import socket
 import select
 
 from event import Event, Component, filter, listener
 
-linesep = re.compile("\r?\n")
+POLL_INTERVAL = 0.01
+CONNECT_TIMEOUT = 5.0
 
 class SocketError(Exception): pass
 
@@ -49,11 +51,11 @@ class DisconnectEvent(Event):
 
 class ReadEvent(Event):
 
-	def __init__(self, line, sock=None):
+	def __init__(self, data, sock=None):
 		if sock is None:
-			Event.__init__(self, line)
+			Event.__init__(self, data)
 		else:
-			Event.__init__(self, sock, line)
+			Event.__init__(self, sock, data)
 
 class WriteEvent(Event):
 
@@ -66,8 +68,6 @@ class WriteEvent(Event):
 class Client(Component):
 
 	def __init__(self, event):
-		self._buffer = ""
-
 		self.ssl = False
 		self.server = {}
 		self.issuer = {}
@@ -77,16 +77,16 @@ class Client(Component):
 		if self.connected:
 			self.close()
 
-	def __ready__(self, wait=0.001):
+	def __ready__(self, wait=POLL_INTERVAL):
 		try:
 			ready = select.select(
 					[self._sock], [self._sock], [], wait)
-			return (not ready[0] == []) and (not ready[1] == [])
+			return (not ready[0] == []) or (not ready[1] == [])
 		except select.error, e:
 			if e[0] == 4:
 				pass
 		
-	def __poll__(self, wait=0.001):
+	def __poll__(self, wait=POLL_INTERVAL):
 		try:
 			return not select.select(
 					[self._sock], [], [], wait)[0] == []
@@ -109,12 +109,7 @@ class Client(Component):
 			self.close()
 			return
 
-		lines = linesep.split(self._buffer + data)
-		self._buffer = lines[-1]
-		lines = lines[:-1]
-
-		for line in lines:
-			self.event.push(ReadEvent(line), "read", self)
+		self.event.push(ReadEvent(data), "read", self)
 
 	def open(self, host, port, ssl=False):
 		self.ssl = ssl
@@ -130,9 +125,17 @@ class Client(Component):
 
 		self._sock.setblocking(False)
 
-		for i in range(5000):
+		stime = time.time()
+
+		while time.time() - stime < CONNECT_TIMEOUT:
+
+			print "Waiting..."
 
 			if self.__ready__():
+
+				etime = time.time()
+				ttime = etime - stime
+				print "Ready after %0.2fs" % ttime
 
 				self.connected = True
 
@@ -154,9 +157,12 @@ class Client(Component):
 
 				return
 
+		etime = time.time()
+		ttime = etime - stime
+		print "Timed out after %0.2fs" % ttime
+
 		self.event.push(
-				ErrorEvent("Timeout after 5s while connecting"),
-				"error", self)
+				ErrorEvent("Connection timed out"), "error", self)
 
 	def close(self):
 		try:
@@ -174,16 +180,6 @@ class Client(Component):
 		if self.__poll__():
 			self.__read__()
 	
-	@filter()
-	def onDEBUG(self, event):
-		"""Debug Events
-
-		This should be overridden by sub-classes that wish to
-		process all events.
-		"""
-
-		return False, event
-
 	@listener("connect")
 	def onCONNECT(self, host, port):
 		"""Connect Event
@@ -191,6 +187,8 @@ class Client(Component):
 		This should be overridden by sub-classes that wish to
 		do something with connection events.
 		"""
+
+		pass
 	
 	@listener("disconnect")
 	def onDISCONNECT(self):
@@ -200,13 +198,17 @@ class Client(Component):
 		do something with disconnection events.
 		"""
 
+		pass
+
 	@listener("read")
-	def onREAD(self, line):
+	def onREAD(self, data):
 		"""Read Event
 
 		This should be overridden by sub-classes that wish to
 		do something with read events.
 		"""
+
+		pass
 
 	@filter("write")
 	def onWRITE(self, event, data):
@@ -285,13 +287,12 @@ class UDPClient(Client):
 class Server(Component):
 
 	def __init__(self, event, port, address=""):
-		self._buffers = {}
 		self._clients = []
 
 	def __del__(self):
 		self.close()
 
-	def __poll__(self, wait=0.001):
+	def __poll__(self, wait=POLL_INTERVAL):
 		try:
 			r, w, e = select.select(
 					[self._sock] + self._clients, [], self._clients,
@@ -310,7 +311,6 @@ class Server(Component):
 				newsock, host = self._sock.accept()
 				newsock.setblocking(False)
 				self._clients.append(newsock)
-				self._buffers[newsock] = ""
 				host, port = host
 				self.event.push(
 						ConnectEvent(host, port, newsock),
@@ -330,14 +330,8 @@ class Server(Component):
 					self.close(sock)
 					continue
 
-				lines = linesep.split(
-						self._buffers[sock] + data)
-				self._buffers[sock] = lines[-1]
-				lines = lines[:-1]
-
-				for line in lines:
-					self.event.push(
-							ReadEvent(line, sock), "read", self)
+				self.event.push(
+						ReadEvent(data, sock), "read", self)
 
 	def close(self, sock=None):
 
@@ -373,16 +367,6 @@ class Server(Component):
 		if self.__poll__():
 			self.__read__()
 	
-	@filter()
-	def onDEBUG(self, event):
-		"""Debug Events
-
-		This should be overridden by sub-classes that wish to
-		process all events.
-		"""
-
-		return False, event
-
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
 		"""Connect Event
@@ -390,6 +374,8 @@ class Server(Component):
 		This should be overridden by sub-classes that wish to
 		do something with connection events.
 		"""
+
+		pass
 	
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
@@ -399,13 +385,17 @@ class Server(Component):
 		do something with disconnection events.
 		"""
 
+		pass
+
 	@listener("read")
-	def onREAD(self, sock, line):
+	def onREAD(self, sock, data):
 		"""Read Event
 
 		This should be overridden by sub-classes that wish to
 		do something with read events.
 		"""
+
+		pass
 
 	@filter("write")
 	def onWRITE(self, event, sock, data):
@@ -444,7 +434,6 @@ class TCPServer(Server):
 class UDPServer(Server):
 
 	def __init__(self, event, port, address=""):
-		self._buffer = ""
 		self._sock = socket.socket(
 				socket.AF_INET, socket.SOCK_DGRAM)
 		self._sock.setsockopt(
@@ -453,7 +442,7 @@ class UDPServer(Server):
 
 		self._sock.bind((address, port))
 
-	def __poll__(self, wait=0.001):
+	def __poll__(self, wait=POLL_INTERVAL):
 		try:
 			r, w, e = select.select([self._sock], [], [], wait)
 			if not r == []:
@@ -478,11 +467,5 @@ class UDPServer(Server):
 				self.close()
 				return
 
-			lines = linesep.split(
-					self._buffer + data)
-			self._buffers = lines[-1]
-			lines = lines[:-1]
-
-			for line in lines:
-				self.event.push(
-						ReadEvent(line, self._sock), "read". self)
+			self.event.push(
+					ReadEvent(data, self._sock), "read". self)

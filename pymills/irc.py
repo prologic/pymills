@@ -23,6 +23,20 @@ from event import Component, Event, listener
 ### Supporting Functions
 ###
 
+linesep = re.compile("\r?\n")
+
+def splitLines(s, buffer):
+	"""splitLines(s, buffer) -> lines, buffer
+
+	Append s to buffer and find any new lines of text in the
+	string splitting at the standard IRC delimiter \r\n. Any
+	new lines found, return them as a list and the remaining
+	buffer for further processing.
+	"""
+
+	lines = linesep.split(buffer + s)
+	return lines[:-1], lines[-1]
+
 def strip(s, color=False):
 	"""strip(s, color=False) -> str
 
@@ -74,9 +88,8 @@ def sourceSplit(source):
 
 class RawEvent(Event):
 
-	def __init__(self, data):
-		Event.__init__(self,
-				data=data)
+	def __init__(self, line):
+		Event.__init__(self, line=line)
 	
 class NumericEvent(Event):
 
@@ -208,6 +221,7 @@ class IRC(Component):
 	def __init__(self, *args):
 		"initializes x; see x.__class__.__doc__ for signature"
 
+		self._buffer = ""
 		self.info = {}
 
 	###
@@ -309,11 +323,11 @@ class IRC(Component):
 		Send a raw message
 
 		This must be overridden by sub-classes in order to
-		actually do anything usefull. By default it just
-		pushes a RawEvent with the given data.
+		actually do anything usefull. By default it does
+		nothing. See: ircbot.py for an example.
 		"""
 
-		self.event.push(RawEvent(data), "raw", self)
+		pass
 	
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)
@@ -450,13 +464,29 @@ class IRC(Component):
 	###
 
 	@listener("read")
-	def onREAD(self, line):
-		"""I.onREAD(line) -> None
+	def onREAD(self, data):
+		"""I.onREAD(data) -> None
+
+		Process any incoming data appending it to an internal
+		buffer. Split the buffer by the standard IRC delimiter
+		\r\n and create a RawEvent per line. Any unfinished
+		lines of text, leave in the buffer.
+		"""
+
+		lines, buffer = splitLines(data, self._buffer)
+		self._buffer = buffer
+		for line in lines:
+			self.event.push(RawEvent(line), "raw", self)
+
+	@listener("raw")
+	def onRAW(self, line):
+		"""I.onRAW(line) -> None
 
 		Process a line of text and generate the appropiate
 		event. This must not be overridden by sub-classes,
 		if it is, this must be explitetly called by the
-		sub-class.
+		sub-class. Other Components may however listen to
+		this event and process custom IRC events.
 		"""
 
 		tokens = line.split(" ")
