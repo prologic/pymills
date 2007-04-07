@@ -129,13 +129,10 @@ class Client(Component):
 
 		while time.time() - stime < CONNECT_TIMEOUT:
 
-			print "Waiting..."
-
 			if self.__ready__():
 
 				etime = time.time()
 				ttime = etime - stime
-				print "Ready after %0.2fs" % ttime
 
 				self.connected = True
 
@@ -159,7 +156,6 @@ class Client(Component):
 
 		etime = time.time()
 		ttime = etime - stime
-		print "Timed out after %0.2fs" % ttime
 
 		self.event.push(
 				ErrorEvent("Connection timed out"), "error", self)
