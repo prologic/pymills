@@ -43,7 +43,7 @@ class OrderedDict(dict):
 			del self[key]
 			return key, val
 
-	def setdefault(self, key, failobj = None):
+	def setdefault(self, key, failobj=None):
 		dict.setdefault(self, key, failobj)
 		if key not in self._keys:
 			self._keys.append(key)
@@ -188,7 +188,7 @@ class CaselessDict(dict):
 		return dict.__getitem__(self, key.lower())
 
 	def get(self, key, default=None):
-		return dict.get(self, key.lower())
+		return dict.get(self, key.lower(), default)
 
 	def has_key(self, key):
 		return dict.has_key(self, key.lower())

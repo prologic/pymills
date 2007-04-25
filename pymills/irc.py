@@ -89,7 +89,7 @@ def sourceSplit(source):
 class RawEvent(Event):
 
 	def __init__(self, line):
-		Event.__init__(self, line=line)
+		Event.__init__(self, line)
 	
 class NumericEvent(Event):
 

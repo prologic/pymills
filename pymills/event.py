@@ -47,6 +47,8 @@ import cPickle as pickle
 #except ImportError:
 #	pygame = None
 
+from datatypes import CaselessDict
+
 class EventError(Exception):
 	"Event Error"
 
@@ -128,7 +130,8 @@ class Component(object):
 		for event, handler in events:
 			if hasattr(self, "__channelPrefix__"):
 				self.event.add(handler, "%s:%s" % (
-					self.__channelPrefix__, handler.channel))
+					self.__channelPrefix__,
+					handler.channel))
 			else:
 				self.event.add(handler, handler.channel)
 
@@ -196,8 +199,8 @@ class EventManager:
 	def __init__(self):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self._filters = {"global": []}
-		self._listeners = {"global": []}
+		self._filters = CaselessDict({"global": []})
+		self._listeners = CaselessDict({"global": []})
 		self._queue = []
 
 	def __len__(self):
@@ -325,9 +328,9 @@ class EventManager:
 				else:
 					return callable(*event._args,
 							**event._kwargs)
-			except TypeError, e:
+			except Exception, e:
 				raise EventError(
-						"API Error with filter/listener '%s': %s" % (
+						"Error with filter/listener '%s': %s" % (
 							callable, e))
 
 		if source is not None and hasattr(source, "__channelPrefix__"):
