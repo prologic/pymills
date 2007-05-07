@@ -62,6 +62,9 @@ class OrderedDict(dict):
 		for key in self._keys:
 			yield self[key]
 
+	def values(self):
+		return [self[k] for k in self._keys]
+
 	def iterkeys(self):
 		for key in self._keys:
 			yield key
