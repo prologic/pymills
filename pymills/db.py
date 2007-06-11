@@ -15,7 +15,8 @@ Python DB API and gives you nicer access to results
 with multiple access interfaces. (See example below)
 
 Supprted:
-* SQLite
+ * SQLite
+ * MySQL
 
 Example Usage:
 >>> import db
@@ -47,6 +48,11 @@ except ImportError:
 	except ImportError:
 		import sqlite
 
+try:
+	import MySQLdb as mysql
+except ImportError:
+	pass
+
 def parseURI(uri):
 	"""uri -> {"schema": ..., "username": ..., ...}
 
@@ -58,8 +64,8 @@ def parseURI(uri):
 	import re
 
 	m = re.match("(?P<schema>mysql|sqlite)://"
-			"((?P<username>.*?):(?P<password>.*?)@)?"
-			"(?P<location>.*)",
+			"((?P<username>.*?):(?P<password>.*?)@(?P<hostname>.*?)/)?"
+			"(?P<database>.*)",
 			uri, re.IGNORECASE)
 	if m is not None:
 		return m.groupdict()
@@ -88,15 +94,23 @@ class Connection:
 			setattr(self, "_%s" % k, v)
 
 		if self._schema.lower() == "mysql":
-			raise NotImplemented
+			try:
+				self._cx = mysql.connect(
+						host=self._hostname,
+						user=self._username,
+						passwd=self._password,
+						db=self._database)
+				self._cu = self._cx.cursor()
+			except sqlite.Error, e:
+				raise DBError("Could not open database '%s' -> %s" % (filename, e))
 
 		elif self._schema.lower() == "sqlite":
 			import os
-			if self._location.lower() == ":memory:":
+			if self._database.lower() == ":memory:":
 				filename = ":memory:"
 			else:
 				filename = os.path.abspath(
-						os.path.expanduser(self._location))
+						os.path.expanduser(self._database))
 			try:
 				self._cx = sqlite.connect(filename)
 				self._cu = self._cx.cursor()
@@ -131,15 +145,15 @@ class Connection:
 			return []
 
 	def _buildResult(self, fields):
-		"""C.__buildResult(fields) -> list of rows from cursor
+		"""C._buildResult(fields) -> list of rows from cursor
 
 		Build a list of rows where each row is an instance
 		of Record. The rows returned are retrieved from the
 		last transaction executed and stored in the cursor.
 		"""
 
-		return [Record(zip(fields, row))
-				for row in self._cu.fetchall()]
+		rows = self._cu.fetchall()
+		return [Record(zip(fields, row)) for row in rows]
 	
 #	def setAutoCommit(self, autocommit=True):
 #		"""C.setAutoCommit(autocommit) -> None
