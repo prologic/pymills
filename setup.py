@@ -32,9 +32,9 @@ setup(
 			"pymills",
 			),
 
-		package_data=(
-			"examples": "pymills/examples",
-			),
+		package_data={
+			"examples": "pymills/examples"
+			},
 
 		install_requires=(
 			)
