@@ -11,8 +11,11 @@ Events are formed by constructing a new Event object, which
 could be sub-classes. Really any object could be used as
 the 'event'.
 
-Channels must be registered by calling EventManager.addChannel
-There is one special channel, this is the "global" channel.
+Channels are automatically registered by each Component
+that is linked to an EventManager. All methods/functions
+of the component that are marked with a filter or listener
+decorator are added to the appropiate channel of the
+event manager given to it.
 
 Events cannot be sent to or pushed onto the global channel.
 Instead, any filters/listeners that are on this channel
