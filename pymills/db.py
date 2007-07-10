@@ -20,16 +20,16 @@ Supprted:
 
 Example Usage:
 >>> import db
->>> conn = db.Connection("sqlite://test.db")
->>> conn.execute("create table names (firstname, lastname)")
+>>> data = db.Connection("sqlite://test.db")
+>>> data.do("create table names (firstname, lastname)")
 []
->>> conn.execute("insert into names values ('James', 'Mills')")
+>>> data.do("insert into names values ('James', 'Mills')")
 []
->>> conn.execute("insert into names values ('Danny', 'Rawlins')")
+>>> data.do("insert into names values ('Danny', 'Rawlins')")
 []
->>> conn.execute("select firstname, lastname from names")
+>>> data.do("select firstname, lastname from names")
 [{'lastname': u'Mills', 'firstname': u'James'}, {'lastname': u'Rawlins', 'firstname': u'Danny'}]
->>> rows = conn.execute("select firstname, lastname from names")
+>>> rows = data.do("select firstname, lastname from names")
 >>> rows[0]
 {'lastname': u'Mills', 'firstname': u'James'}
 >>> rows[0]["firstname"]
@@ -53,8 +53,8 @@ try:
 except ImportError:
 	pass
 
-def parseURI(uri):
-	"""uri -> {"schema": ..., "username": ..., ...}
+def _parseURI(uri):
+	"""_parseURI(uri) -> dict
 
 	Parse a Connection URI into it's parts returning
 	a dictionary of schema, username, password and location.
@@ -72,10 +72,7 @@ def parseURI(uri):
 	else:
 		raise DBError("Supplied URI is not valid: %s" % uri)
 
-class DBError(Exception):
-	"""Database Error Occured"""
-
-	pass
+class DBError(Exception): pass
 
 class Connection:
 	"""Connection(uri) -> new connection
@@ -90,7 +87,7 @@ class Connection:
 		self._cx = None
 		self._cu = None
 
-		for k, v in parseURI(uri).iteritems():
+		for k, v in _parseURI(uri).iteritems():
 			setattr(self, "_%s" % k, v)
 
 		if self._schema.lower() == "mysql":
@@ -131,8 +128,8 @@ class Connection:
 		except:
 			pass
 
-	def _getFields(self):
-		"""C._getFields() -> [field1, field2, ...]
+	def __getFields__(self):
+		"""C.__getFields__() -> [field1, field2, ...]
 
 		Get a list of field names for the current result set
 		stored in the cursor's .description. If there are
@@ -144,8 +141,8 @@ class Connection:
 		else:
 			return []
 
-	def _buildResult(self, fields):
-		"""C._buildResult(fields) -> list of rows from cursor
+	def __buildResult__(self, fields):
+		"""C.__buildResult__(fields) -> list of rows from cursor
 
 		Build a list of rows where each row is an instance
 		of Record. The rows returned are retrieved from the
@@ -153,19 +150,8 @@ class Connection:
 		"""
 
 		rows = self._cu.fetchall()
-		return [Record(zip(fields, row)) for row in rows]
+		return [_Record(zip(fields, row)) for row in rows]
 	
-#	def setAutoCommit(self, autocommit=True):
-#		"""C.setAutoCommit(autocommit) -> None
-#
-#		Set the autocommit flag of the connection.
-#		If enabled (autocommit=True), then a commit will occur
-#		each time a transaction is executed. This can hamper
-#		performance a little.
-#		"""
-#
-#		self._cx.autocommit = autocommit
-
 	def commit(self):
 		"""C.commit() -> None
 
@@ -185,11 +171,11 @@ class Connection:
 		try:
 			self._cu.execute(sql, args)
 			self._cx.commit()
-			fields = self._getFields()
+			fields = self.__getFields__()
 			if fields == []:
 				return []
 			else:
-				return self._buildResult(fields)
+				return self.__buildResult__(fields)
 		except sqlite.Error, e:
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
@@ -198,19 +184,12 @@ class Connection:
 
 		return self.execute(sql, *args)
 
-class Record(OrderedDict):
-	"""Recird(row) -> a new multi-access row
+class _Record(OrderedDict):
+	"""_Recird(row) -> a new multi-access row
 
 	Create a new multi-access row given a list of 2-pair
 	tuplies containing the field and value for that row.
 	Each row created can be access any number of ways.
-
-	Example:
-	>>> row = Record([("a", 1), ("b", 2), ("c", 3)])
-	>>> row.a
-	1
-	>>> row["a"]
-	1
 	"""
 
 	def __init__(self, row):
@@ -220,10 +199,3 @@ class Record(OrderedDict):
 				v = unicode(v, "utf-8")
 			self[k] = v
 			setattr(self, k, v)
-
-def test():
-	import doctest
-	doctest.testmod()
-
-if __name__ == "__main__":
-	test()
