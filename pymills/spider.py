@@ -26,7 +26,7 @@ except ImportError:
 
 import spider
 import pymills
-from pymills.web import decodeHTMLEntities
+from pymills.web import escape
 from pymills.misc import duration
 
 AGENT = "%s-%s/%s" % (pymills.__name__, spider.__name__, pymills.__version__)
@@ -128,7 +128,7 @@ class Fetcher:
 				tags = []
 			for tag in tags:
 				try:
-					url = urlparse.urljoin(self._url, decodeHTMLEntities(tag['href']))
+					url = urlparse.urljoin(self._url, escape(tag['href']))
 				except KeyError:
 					continue
 				self._urls.append(url)
