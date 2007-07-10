@@ -28,15 +28,14 @@ setup(
 		keywords=pkg.__keywords__,
 		platform=pkg.__platform__,
 
-		packages=[
+		packages=(
 			"pymills",
-			],
+			),
 
-		package_data={
-			"examples": "pymills/examples"
-			},
+		package_data=(
+			"examples": "pymills/examples",
+			),
 
-		install_requires=[
-			"pysqlite"
-			]
+		install_requires=(
+			)
 		)
