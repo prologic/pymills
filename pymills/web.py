@@ -41,24 +41,33 @@ def setupPaths(req, PYTHONPATH=None):
 			req.hostname, os.path.dirname(req.uri))
 	return (docroot, docpath)
 
-def decodeHTMLEntities(text):
-	"""Decode HTML entitiesC &amp; &lt; &gt; and &#34;"""
+def escape(s=""):
+	"""escape(s) -> str
 
-	if not text:
+	Replace special characters "&", "<" and ">" to HTML-safe 
+	sequences
+	"""
+	
+	if s == "":
 		return ""
-	return str(text).replace("&amp;", "&") \
+	return s.replace("&amp;", "&") \
 			.replace("&lt;", "<") \
 			.replace("&gt;", ">") \
 			.replace("&quot;", "\"") \
 			.replace("&#039;", "'") \
 			.replace("&mdash", "--")
 
-def encodeHTMLEntities(text):
-	"""Convert & < > and \" to their relevant HTML entities."""
+def unescape(s=""):
+	"""unescape(s) -> str
 
-	if not text:
+	Replace HTML-safe sequences back to their ASCII equivilent
+	characters "&", "<" and ">" ...
+	"""
+	
+	if s == "":
 		return ""
-	return str(text).replace("&", "&amp;") \
+
+	return s.replace("&", "&amp;") \
 			.replace("<", "&lt;") \
 			.replace(">", "&gt;") \
 			.replace("\"", "&quot;") \
