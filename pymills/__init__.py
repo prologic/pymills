@@ -60,21 +60,3 @@ __classifiers__ = [
 		"Topic :: Software Development :: Libraries :: Python Modules",
 		]
 __str__ = "%s-%s" % (__name__, __version__)
-
-__all__ = [
-		"utils",
-		"cmdopt",
-		"io",
-		"ircbot",
-		"sockets",
-		"utils",
-		"adt",
-		"db",
-		"irc",
-		"misc",
-		"timers",
-		"ver",
-		"spider",
-		"web",
-		"url"
-	]
