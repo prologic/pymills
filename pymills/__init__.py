@@ -60,3 +60,26 @@ __classifiers__ = [
 		"Topic :: Software Development :: Libraries :: Python Modules",
 		]
 __str__ = "%s-%s" % (__name__, __version__)
+
+__all__ = (
+		"ann",
+		"crux",
+		"datatypes",
+		"db",
+		"env",
+		"event",
+		"io",
+		"irc",
+		"log",
+		"mem",
+		"misc",
+		"semnet",
+		"sockets",
+		"spider",
+		"test",
+		"tests",
+		"timers",
+		"utils",
+		"ver",
+		"web",
+		)
