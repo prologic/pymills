@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
-from pymills.event import *
+from pymills.event import listener, filter, Component, \
+		Event, RemoteManager
 
 class HelloWorld(Component):
+
+	@filter()
+	def onDEBUG(self, event):
+		print "DEBUG: %s" % event
+		return False, event
 
 	@listener("hello")
 	def onHELLO(self, event, message=""):
