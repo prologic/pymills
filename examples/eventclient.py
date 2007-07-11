@@ -9,7 +9,7 @@ class Foo(Component):
 
 	@filter()
 	def onDEBUG(self, event):
-		print event
+		print "DEBUG: %s" % event
 		return False, event
 
 	@listener("received")
