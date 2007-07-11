@@ -45,11 +45,6 @@ import select
 import inspect
 import cPickle as pickle
 
-#try:
-#	import pygame
-#except ImportError:
-#	pygame = None
-
 from datatypes import CaselessDict
 
 class EventError(Exception):
@@ -190,7 +185,7 @@ class Event(object):
 
 	__str__ = __repr__
 
-class EventManager:
+class EventManager(object):
 	"""EventManager() -> new event manager
 
 	Create a new event manager which manages events.
@@ -293,6 +288,8 @@ class EventManager:
 		for event, channel, source in queue[:]:
 			try:
 				self.send(event, channel, source)
+			except:
+				raise
 			finally:
 				queue.remove((event, channel, source))
 
@@ -443,49 +440,8 @@ class RemoteManager(EventManager):
 		if self.__poll__():
 			self.__read__()
 
-	def send(self, event, channel):
-		r = EventManager.send(self, event, channel)
+	def send(self, event, channel, source=None):
+		r = EventManager.send(self, event, channel, source)
 		if not self._nodes == []:
 			self.__write__(pickle.dumps((event, channel)))
 		return r
-
-pygame = None
-if pygame is not None:
-
-	class QuitEvent(Event):
-		pass
-
-	class KeyEvent(Event):
-		def __init__(self, key, mod):
-			Event.__init__(self, key, mod)
-	
-	class FocusEvent(Event):
-		def __init__(self, state, gain):
-			Event.__init__(self, state, gain)
-
-	class MouseEvent(Event):
-		def __init__(self, buttons, pos, rel):
-			Event.__init__(self, buttons, pos, rel)
-
-	class ClickEvent(Event):
-		def __init__(self, button, pos):
-			Event.__init__(self, button, pos)
-	
-	class PyGameManager(EventManager):
-
-		def process(self):
-			for event in pygame.event.get():
-				if event.type == pygame.QUIT:
-					self.push(QuitEvent(), "quit")
-				elif event.type == pygame.KEYDOWN:
-					self.push(KeyEvent(event.key, event.mod), "keydown")
-				elif event.type == pygame.KEYUP:
-					self.push(KeyEvent(event.key, event.mod), "keyup")
-				elif event.type == pygame.ACTIVEEVENT:
-					self.push(FocusEvent(event.state, event.gain), "focus")
-				elif event.type == pygame.MOUSEMOTION:
-					self.push(MouseEvent(event.buttons, event.pos, event.rel), "mouse")
-				elif event.type == pygame.MOUSEBUTTONDOWN:
-					self.push(ClickEvent(event.button, event.pos), "click")
-				elif event.type == pygame.MOUSEBUTTONUP:
-					self.push(ClickEvent(event.button, event.pos), "click")

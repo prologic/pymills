@@ -2,9 +2,15 @@
 
 import time
 
-from pymills.event import *
+from pymills.event import listener, filter, Component, \
+		Event, RemoteManager
 
 class Foo(Component):
+
+	@filter()
+	def onDEBUG(self, event):
+		print event
+		return False, event
 
 	@listener("received")
 	def onRECEIVED(self, event, message=""):
@@ -12,7 +18,9 @@ class Foo(Component):
 
 def main():
 
-	nodes = ["10.0.0.2"]
+	nodes = (
+			"202.63.43.98",
+			)
 
 	event = RemoteManager(nodes)
 	foo = Foo(event)
