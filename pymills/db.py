@@ -40,19 +40,6 @@ u'Mills'
 
 from datatypes import OrderedDict
 
-try:
-	from pysqlite2 import dbapi2 as sqlite
-except ImportError:
-	try:
-		import sqlite3 as sqlite
-	except ImportError:
-		import sqlite
-
-try:
-	import MySQLdb as mysql
-except ImportError:
-	pass
-
 def _parseURI(uri):
 	"""_parseURI(uri) -> dict
 
@@ -92,22 +79,33 @@ class Connection:
 
 		if self._schema.lower() == "mysql":
 			try:
+				import MySQLdb as mysql
+			except:
+				raise DBError("No MySQL support available.")
+
+			try:
 				self._cx = mysql.connect(
 						host=self._hostname,
 						user=self._username,
 						passwd=self._password,
 						db=self._database)
 				self._cu = self._cx.cursor()
-			except sqlite.Error, e:
-				raise DBError("Could not open database '%s' -> %s" % (filename, e))
+			except Exception, e:
+				raise DBError("Could not open database: %s" % e)
 
 		elif self._schema.lower() == "sqlite":
-			import os
+			try:
+				import sqlite3 as sqlite
+			except:
+				raise DBError("No SQLite support available.")
+
 			if self._database.lower() == ":memory:":
 				filename = ":memory:"
 			else:
+				import os
 				filename = os.path.abspath(
 						os.path.expanduser(self._database))
+
 			try:
 				self._cx = sqlite.connect(filename)
 				self._cu = self._cx.cursor()
