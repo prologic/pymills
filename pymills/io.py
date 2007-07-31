@@ -53,7 +53,7 @@ class Command:
 				elif b == self.HELP:
 					print self.help
 			else:
-				print 'ERROR: Invalid Command'
+				print "ERROR: Invalid Command"
 
 			s = input.read(self.prompt)
 
@@ -192,9 +192,9 @@ def test():
 	"""
 
 	headers = [
-		('id', 4, LJUSTIFY),
-		('Name', 10, LJUSTIFY),
-		('Age', 3, LJUSTIFY)]
+		("id", 4, LJUSTIFY),
+		("Name", 10, LJUSTIFY),
+		("Age", 3, LJUSTIFY)]
 	table = Table(headers)
 	table.add([0, "James", 21])
 	print table
@@ -202,26 +202,26 @@ def test():
 	help = "Help me! I'm stupid!"
 
 	commands = []
-	commands.append(('quit', Command.QUIT))
-	commands.append(('help', Command.HELP))
-	commands.append(('hello', hello))
-	commands.append(('world', world))
+	commands.append(("quit", Command.QUIT))
+	commands.append(("help", Command.HELP))
+	commands.append(("hello", hello))
+	commands.append(("world", world))
 
-	prompt = 'Command: '
+	prompt = "Command: "
 
 	command = Command(help, prompt, commands)
 	command.process()
 
 def hello(args):
-	print 'Hello'
+	print "Hello"
 	print args
 
 class world:
 	def __init__(self, args):
 		self.args = args
 	def run(self):
-		print 'World'
+		print "World"
 		print self.args
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 	test()
