@@ -7,7 +7,7 @@ class HelloWorld(Component):
 
 	@filter()
 	def onDEBUG(self, event):
-		print "DEBUG: %s" % event
+		print "DEBUG: %s (From: %s)" % (event, event._source)
 		return False, event
 
 	@listener("hello")

@@ -42,9 +42,12 @@ only be instantiated once.
 import time
 import socket
 import select
-import inspect
 import cPickle as pickle
+from threading import Thread
+from StringIO import StringIO
+from inspect import getmembers, ismethod, getargspec
 
+from utils import caller
 from datatypes import CaselessDict
 
 class EventError(Exception):
@@ -56,10 +59,24 @@ class UnhandledEvent(EventError):
 	def __init__(self, event, channel):
 		EventError.__init__(self, event, channel)
 
+class FilteredEvent(EventError):
+	"Filtered Event Error"
+
+	def __init__(self, event, channel):
+		EventError.__init__(self, event, channel)
+
 def filter(*args):
 	"Decorator function for a filter"
 
 	def decorate(f):
+		_args, _vargs, _kwargs, _defaults = getargspec(f)
+		if "self" in _args:
+			_args.remove("self")
+		if _vargs is None:
+			_vargs = ()
+		if _kwargs is None:
+			_kwargs = {}
+		f._argspec = _args, _vargs, _kwargs
 		f.filter = True
 		if len(args) == 1:
 			setattr(f, "channel", args[0])
@@ -72,6 +89,14 @@ def listener(*args):
 	"Decorator function for a listener"
 
 	def decorate(f):
+		_args, _vargs, _kwargs, _defaults = getargspec(f)
+		if "self" in _args:
+			_args.remove("self")
+		if _vargs is None:
+			_vargs = ()
+		if _kwargs is None:
+			_kwargs = {}
+		f._argspec = _args, _vargs, _kwargs
 		f.listener = True
 		if len(args) == 1:
 			setattr(f, "channel", args[0])
@@ -120,8 +145,8 @@ class Component(object):
 
 		self.event = event
 
-		events = [(x[0], x[1]) for x in inspect.getmembers(
-			self, lambda x: inspect.ismethod(x) and
+		events = [(x[0], x[1]) for x in getmembers(
+			self, lambda x: ismethod(x) and
 			callable(x) and
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
@@ -143,13 +168,32 @@ class Component(object):
 		this component
 		"""
 
-		events = [(x[0], x[1]) for x in inspect.getmembers(
-			self, lambda x: inspect.ismethod(x) and
+		events = [(x[0], x[1]) for x in getmembers(
+			self, lambda x: ismethod(x) and
 			callable(x) and
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for event, handler in events:
 			self.event.remove(handler, handler.channel)
+
+class ThreadedComponent(Component, Thread):
+
+	def __init__(self, event):
+		Component.__init__(self)
+		Thread.__init__(self)
+
+		self.__running = True
+		self.start()
+	
+	def stop(self):
+		self.__running = False
+
+	def isRunning(self):
+		return self.__running
+
+	def run(self):
+		while self.isRunning():
+			time.sleep(1)
 
 class Event(object):
 	"""Event(*args, **kwargs) -> new event object
@@ -197,8 +241,7 @@ class EventManager(object):
 	def __init__(self):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self._filters = CaselessDict({"global": []})
-		self._listeners = CaselessDict({"global": []})
+		self._handlers = CaselessDict({"global": []})
 		self._queue = []
 
 	def __len__(self):
@@ -216,19 +259,12 @@ class EventManager(object):
 			channels = ["global"]
 
 		for channel in channels:
-
-			if hasattr(callable, "filter"):
-				container = self._filters
-			elif hasattr(callable, "listener"):
-				container = self._listeners
+			if self._handlers.has_key(channel):
+				self._handlers[channel].append(callable)
+				self._handlers[channel].sort(
+						cmp=lambda x, y: hasattr(x, "filter"))
 			else:
-				raise EventError("Given callable '%s' is" \
-						"not a filter or listener" % callable)
-
-			if container.has_key(channel):
-				container[channel].append(callable)
-			else:
-				container[channel] = [callable]
+				self._handlers[channel] = [callable]
 	
 	def remove(self, callable, *channels):
 		"""E.remove(callable, *channels) -> None
@@ -242,23 +278,14 @@ class EventManager(object):
 		"""
 
 		if len(channels) == 0:
-			keys = self._filters.keys() + self._listeners.keys()
+			keys = self._handlers.keys()
 		else:
 			keys = channels
 
 		for channel in keys:
-
-			if hasattr(callable, "filter"):
-				container = self._filters
-			elif hasattr(callable, "listener"):
-				container = self._listeners
-			else:
-				raise EventError("Given callable '%s' is" \
-						"not a filter or listener" % callable)
-
 			try:
 				try:
-					container[channel].remove(callable)
+					self._handlers[channel].remove(callable)
 				except ValueError:
 					pass
 			except KeyError:
@@ -309,16 +336,13 @@ class EventManager(object):
 		"""
 
 		def call(callable, event):
-			args, vargs, kwargs, default = inspect.getargspec(
-					callable)
 
-			if len(args) > 0 and args[0] == "self":
-				args.remove("self")
+			args, vargs, kwargs = callable._argspec
 
 			try:
 				if len(args) > 0 and args[0] == "event":
 					if len(args) == 1:
-						if kwargs is None:
+						if kwargs == {}:
 							return callable(event)
 						else:
 							return callable(event, **event._kwargs)
@@ -330,10 +354,10 @@ class EventManager(object):
 							**event._kwargs)
 			except Exception, e:
 				raise EventError(
-						"Error with filter/listener '%s': %s" % (
+						"Error with %s: %s" % (
 							callable, e))
 
-		if source is not None and hasattr(source, "__channelPrefix__"):
+		if hasattr(source, "__channelPrefix__"):
 			channel = "%s:%s" % (source.__channelPrefix__, channel)
 
 		if channel == "global":
@@ -344,30 +368,25 @@ class EventManager(object):
 		event._source = source
 		event._channel = channel
 
-		filters = self._filters.get("global", []) + \
-				self._filters.get(channel, [])
-		listeners =	self._listeners.get("global", []) + \
-				self._listeners.get(channel, [])
+		handlers = self._handlers.get("global", []) + \
+				self._handlers.get(channel, [])
 
-		if filters == [] and listeners == []:
+		if handlers == []:
 			raise UnhandledEvent(event, channel)
 
-		for filter in filters:
-			try:
-				halt, newEvent = call(filter, event)
-			except TypeError:
-				raise EventError(
-						"Filter '%s' did not return (halt, event)" %
-						filter)
-			if halt:
-				return
+		for handler in handlers:
+			filter = getattr(handler, "filter", False)
+			if filter:
+				try:
+					halt, event = call(handler, event)
+				except Exception, e:
+					raise
+					raise EventError(
+							"Error in return for '%s'" % handler)
+				if halt:
+					raise FilteredEvent(event, channel)
 			else:
-				event = newEvent
-
-		for listener in listeners:
-			r = call(listener, event)
-			if r is not None:
-				return r 
+				return call(handler, event)
 
 class RemoteManager(EventManager):
 
@@ -375,6 +394,7 @@ class RemoteManager(EventManager):
 		EventManager.__init__(self)
 
 		self._nodes = nodes
+		self._buffer = ""
 
 		self._ssock = socket.socket(
 				socket.AF_INET,
@@ -411,18 +431,26 @@ class RemoteManager(EventManager):
 			self.__close__()
 			return False
 
-	def __read__(self, bufsize=512):
+	def __read__(self, bufsize=16384):
 		try:
 			data, addr = self._ssock.recvfrom(bufsize)
 		except socket.error, e:
 			raise
 			self.__close__()
-	
+
 		if addr[0] not in self._nodes:
 			self._nodes.append(addr[0])
 
-		event, channel = pickle.loads(data)
-		EventManager.send(self, event, channel)
+		event, channel, source = pickle.loads(data)
+
+		if source is None:
+			source = addr[0]
+		try:
+			EventManager.send(self, event, channel, source)
+		except UnhandledEvent:
+			pass
+		except FilteredEvent:
+			pass
 
 	def __close__(self):
 		self._ssock.shutdown(2)
@@ -439,9 +467,37 @@ class RemoteManager(EventManager):
 	def process(self):
 		if self.__poll__():
 			self.__read__()
+			#while self.__poll__():
+			#	self.__read__()
 
-	def send(self, event, channel, source=None):
-		r = EventManager.send(self, event, channel, source)
-		if not self._nodes == []:
-			self.__write__(pickle.dumps((event, channel)))
+	def flush(self):
+		queue = self._queue
+
+		for event, channel, source in queue[:]:
+			try:
+				EventManager.send(self, event, channel, source)
+
+				if not self._nodes == []:
+					s = pickle.dumps((event, channel, source))
+					if len(self._buffer) + len(s) > 1460:
+						self.__write__(self._buffer)
+						self._buffer = ""
+					self._buffer += s
+			except:
+				raise
+			finally:
+				queue.remove((event, channel, source))
+		if not self._buffer == "":
+			self.__write__(self._buffer)
+			self._buffer = ""
+
+	def send(self, event, channel, source=socket.gethostname()):
+		try:
+			r = EventManager.send(self, event, channel, source)
+		except UnhandledEvent:
+			r = None
+		except FilteredEvent:
+			return None
+		if not caller() == "flush":
+			self.__write__(pickle.dumps((event, channel, source)))
 		return r

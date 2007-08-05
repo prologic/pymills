@@ -28,8 +28,13 @@ def main():
 
 	event.push(Event(x, y), "add")
 
-	event.flush()
-	event.process()
+	while True:
+		try:
+			event.flush()
+			event.process()
+		except KeyboardInterrupt:
+			break
 
 if __name__ == "__main__":
+	import sys
 	main()

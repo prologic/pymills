@@ -75,14 +75,12 @@ class Timers(Component):
 		that are marked with the forever flag.
 		"""
 
-		for i, timer in enumerate(self._timers[:]):
+		for timer in self._timers[:]:
 			done, event, channel = timer.process()
 			if done:
 				self.event.push(event, channel)
 				if not timer._forever:
-					if timer in self._timers and \
-							len(self._timers) > i:
-						del self._timers[i]
+					self._timers.remove(timer)
 
 class Timer:
 	"""Timer(n, channel="timer", forever=False,
@@ -126,9 +124,7 @@ class Timer:
 		if time() > self._etime:
 			if self._forever:
 				self.reset()
-			return True, TimerEvent(
-					self._n,
-					**self._kwargs), \
-							self._channel
+			return True, TimerEvent(self._n, **self._kwargs), \
+					self._channel
 		else:
 			return False, None, None

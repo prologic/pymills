@@ -103,10 +103,13 @@ class Stack:
 	def empty(self):
 		return self._stack == []
 
-class Queue:
+class Queue(object):
 
 	def __init__(self):
 		self._queue = []
+
+	def __len__(self):
+		return len(self._queue)
 
 	def __getitem__(self, n):
 		if (not self.empty()) and (0 <= (n + 1) <= len(self._queue)):
@@ -117,13 +120,16 @@ class Queue:
 	def push(self, item):
 		self._queue.insert(0, item)
 	
-	def pop(self):
+	def pop(self, n=None):
 		if not self.empty():
-			return self._queue.pop()
+			if n is None:
+				return self._queue.pop()
+			else:
+				return self._queue.pop(n)
 		else:
 			return None
 	
-	def peek(self, n = 0):
+	def peek(self, n=0):
 		if (not self.empty()) and (0 <= (n + 1) <= len(self._queue)):
 			return self._queue[(len(self._queue) - (n + 1))]
 		else:

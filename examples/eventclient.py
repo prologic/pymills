@@ -25,21 +25,18 @@ def main():
 	event = RemoteManager(nodes)
 	foo = Foo(event)
 
-	hello = Event(message="Hello World")
-
 	sTime = time.time()
 
 	while True:
-
-		if (time.time() - sTime) > 5:
-			event.push(hello, "hello")
-			sTime = time.time()
-
 		try:
 			event.flush()
 			event.process()
+			if (time.time() - sTime) > 5:
+				event.push(Event(message="hello"), "hello")
+				sTime = time.time()
 		except KeyboardInterrupt:
 			break
+
 	event.flush()
 
 if __name__ == "__main__":

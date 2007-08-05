@@ -6,9 +6,7 @@ class InfiniteLoop(Component):
 
 	@listener("foo")
 	def onFOO(self, event):
-		self.event.push(
-				Event(),
-				self.event.getChannelID("foo"))
+		self.event.push(Event(), "foo")
 
 def main():
 
@@ -16,9 +14,7 @@ def main():
 
 	infiniteLoop = InfiniteLoop(event)
 
-	event.push(
-			Event(),
-			event.getChannelID("foo"))
+	event.push(Event(), "foo")
 
 	while True:
 		event.flush()

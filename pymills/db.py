@@ -20,7 +20,7 @@ Supprted:
 
 Example Usage:
 >>> import db
->>> data = db.Connection("sqlite://test.db")
+>>> data = db.Session("sqlite://test.db")
 >>> data.do("create table names (firstname, lastname)")
 []
 >>> data.do("insert into names values ('James', 'Mills')")
@@ -39,11 +39,12 @@ u'Mills'
 """
 
 from datatypes import OrderedDict
+from event import Component, listener
 
 def _parseURI(uri):
 	"""_parseURI(uri) -> dict
 
-	Parse a Connection URI into it's parts returning
+	Parse a URI into it's parts returning
 	a dictionary of schema, username, password and location.
 	If this fails, {} is returned.
 	"""
@@ -61,10 +62,10 @@ def _parseURI(uri):
 
 class DBError(Exception): pass
 
-class Connection:
-	"""Connection(uri) -> new connection
+class Session:
+	"""Session(uri) -> new database session
 
-	Create a new connection object to the database specified
+	Create a new session object to the database specified
 	by the uri.
 	"""
 
@@ -174,13 +175,15 @@ class Connection:
 				return []
 			else:
 				return self.__buildResult__(fields)
-		except sqlite.Error, e:
+		except Exception, e:
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
 	def do(self, sql, *args):
 		"""Synonym of execute"""
 
 		return self.execute(sql, *args)
+
+Connection = Session
 
 class _Record(OrderedDict):
 	"""_Recird(row) -> a new multi-access row

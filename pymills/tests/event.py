@@ -11,7 +11,7 @@
 import unittest
 
 from pymills.event import filter, listener, Component, \
-		Event, EventError, EventManager
+		Event, EventError, FilteredEvent, EventManager
 
 class FilterComponent(Component):
 
@@ -112,26 +112,10 @@ class EventTestCase(unittest.TestCase):
 
 		#2
 		self.assertTrue(
-				self.event._filters.has_key("foo") or
-				self.event._listeners.has_key("foo"))
+				self.event._handlers.has_key("foo"))
 		self.assertTrue(
-				self.event._filters.has_key("bar") or
-				self.event._listeners.has_key("bar"))
+				self.event._handlers.has_key("bar"))
 
-		#3
-		self.assertTrue(
-				filter.onFOO in 
-				self.event._filters["foo"])
-		self.assertTrue(
-				filter.onBAR in
-				self.event._filters["bar"])
-		self.assertTrue(
-				listener.onFOO in
-				self.event._listeners["foo"])
-		self.assertTrue(
-				listener.onBAR in
-				self.event._listeners["bar"])
-	
 	def testEvent(self):
 		"""Test event.Event
 
@@ -177,8 +161,7 @@ class EventTestCase(unittest.TestCase):
 
 		#1
 		self.assertTrue(
-				self.event._filters.has_key("global") and
-				self.event._listeners.has_key("global"))
+				self.event._handlers.has_key("global"))
 
 		#2
 		self.assertTrue(self.event._queue == [])
@@ -213,15 +196,13 @@ class EventTestCase(unittest.TestCase):
 		self.event.add(onFOO)
 		self.event.add(onBAR)
 		self.assertTrue(
-				onFOO in self.event._filters["global"] and
-				onBAR in self.event._listeners["global"])
+				onFOO in self.event._handlers["global"])
 
 		#2
 		self.event.add(onFOO, "test")
 		self.event.add(onBAR, "test")
 		self.assertTrue(
-				onFOO in self.event._filters["test"] and
-				onBAR in self.event._listeners["test"])
+				onFOO in self.event._handlers["test"])
 
 		#3
 		try:
@@ -233,14 +214,12 @@ class EventTestCase(unittest.TestCase):
 		#4
 		self.event.remove(onFOO)
 		self.assertTrue(
-				onFOO not in self.event._filters.values() and
-				onFOO not in self.event._listeners.values())
+				onFOO not in self.event._handlers.values())
 
 		#5
 		self.event.remove(onBAR, "test")
 		self.assertTrue(
-				onBAR in self.event._listeners["global"] and
-				onBAR not in self.event._listeners["test"])
+				onBAR in self.event._handlers["global"])
 
 	def testEventManagerPushFlushSend(self):
 		"""Test EventManager's push, flush and send
@@ -310,8 +289,11 @@ class EventTestCase(unittest.TestCase):
 		self.flag = False
 
 		#7
-		self.event.send(Event(self, time.time(), stop=True),
-				"test")
+		try:
+			self.event.send(Event(self, time.time(), stop=True),
+					"test")
+		except FilteredEvent:
+			pass
 		self.assertTrue(self.flag == False)
 
 def suite():

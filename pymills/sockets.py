@@ -235,10 +235,12 @@ class TCPClient(Client):
 	def __init__(self, event):
 		Client.__init__(self, event)
 	
-	def open(self, host, port, ssl=False):
+	def open(self, host, port, ssl=False, bind=None):
 		self._sock = socket.socket(
 				socket.AF_INET,
 				socket.SOCK_STREAM)
+		if bind is not None:
+			self._sock.bind((bind, 0))
 		Client.open(self, host, port, ssl)
 
 class UDPClient(Client):
