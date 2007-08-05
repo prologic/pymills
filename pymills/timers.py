@@ -52,20 +52,25 @@ class Timers(Component):
 
 		del self._timers[x]
 
-	def add(self, n, channel="timer", forever=False, **kwargs):
+	def add(self, n, channel="timer", forever=False,
+			initial=False, **kwargs):
 		"""T.add(n, channel="timer", forever=False,
-		      **kwargs) -> None
+		      initial=False, **kwargs) -> None
 
 		Add a new event to be timed and triggered of length
 		n seconds. By default this will add the event to
 		the "timer" channel and is a once-only timer unless
 		forever is True.
 
+		If initial=True and forever=True then this timer
+		will trigger once when it's created, then wait n
+		seconds before triggering again.
+
 		Any additional data can be provided by kwargs.
 		"""
 
 		self._timers.append(
-				Timer(n, channel, forever, **kwargs))
+				Timer(n, channel, forever, initial, **kwargs))
 	
 	def process(self):
 		"""T.process() -> None
@@ -84,7 +89,7 @@ class Timers(Component):
 
 class Timer:
 	"""Timer(n, channel="timer", forever=False,
-	      **kwargs) -> new timer object
+	      initial=False, **kwargs) -> new timer object
 	
 	Creates a new timer object which when triggered
 	will return an event to be pushed onto the event
@@ -92,12 +97,13 @@ class Timer:
 	"""
 
 	def __init__(self, n, channel="timer", forever=False,
-			**kwargs):
+			initial=False, **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self._n = n
 		self._channel = channel
 		self._forever = forever
+		self._initial = initial
 		self._kwargs = kwargs
 
 		self.reset()
@@ -127,4 +133,10 @@ class Timer:
 			return True, TimerEvent(self._n, **self._kwargs), \
 					self._channel
 		else:
+			if self._initial and self._forever:
+				self._initial = False
+				return True, TimerEvent(
+						self._n,
+						**self._kwargs), \
+								self._channel
 			return False, None, None

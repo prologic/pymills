@@ -17,6 +17,7 @@ with multiple access interfaces. (See example below)
 Supprted:
  * SQLite
  * MySQL
+ * Oracle
 
 Example Usage:
 >>> import db
@@ -38,6 +39,9 @@ u'James'
 u'Mills'
 """
 
+from time import time
+
+from misc import duration
 from datatypes import OrderedDict
 from event import Component, listener
 
@@ -51,7 +55,7 @@ def _parseURI(uri):
 
 	import re
 
-	m = re.match("(?P<schema>mysql|sqlite)://"
+	m = re.match("(?P<schema>oracle|mysql|sqlite)://"
 			"((?P<username>.*?):(?P<password>.*?)@(?P<hostname>.*?)/)?"
 			"(?P<database>.*)",
 			uri, re.IGNORECASE)
@@ -69,8 +73,15 @@ class Session:
 	by the uri.
 	"""
 
-	def __init__(self, uri):
+	def __init__(self, uri, log=None, dryrun=False, debug=False):
 		"initializes x; see x.__class__.__doc__ for signature"
+
+		self._log = log
+		self._dryrun = dryrun
+		self._debug = debug
+
+		if self._dryrun and (self._log is not None):
+			self._log.info("dryrun mode enabled")
 
 		self._cx = None
 		self._cu = None
@@ -78,7 +89,22 @@ class Session:
 		for k, v in _parseURI(uri).iteritems():
 			setattr(self, "_%s" % k, v)
 
-		if self._schema.lower() == "mysql":
+		if self._schema.lower() == "oracle":
+			try:
+				import cx_Oracle as oracle
+			except:
+				raise DBError("No Oracle support available.")
+
+			try:
+				self._cx = oracle.connect(
+						dsn=self._hostname,
+						user=self._username,
+						password=self._password)
+				self._cu = self._cx.cursor()
+			except Exception, e:
+				raise DBError("Could not open connection: %s" % str(e))
+
+		elif self._schema.lower() == "mysql":
 			try:
 				import MySQLdb as mysql
 			except:
@@ -121,7 +147,8 @@ class Session:
 		"""
 
 		try:
-			self._cx.commit()
+			if not self._dryrun:
+				self._cx.commit()
 			self._cu.close()
 			self._cx.close()
 		except:
@@ -157,31 +184,61 @@ class Session:
 		Perform a manual commit.
 		"""
 
-		self._cx.commit()
+		if not self._dryrun:
+			if self._debug and (self._log is not None):
+				self._log.debug("Commiting to database...")
+			self._cx.commit()
 	
-	def execute(self, sql, *args):
-		"""C.execute(sql) -> list of rows, or []
+	def execute(self, sql, commit=False, *args, **kwargs):
+		"""C.execute(sql, commit=False, *args, **kwargs) -> list of rows, or []
 
 		Execute the given SQL statement in sql and return
 		a list of rows (if appropiate) or return an empty list.
-		If this fails, a DBError exception will be thrown.
+		If this fails, a DBError exception will be raised.
+
+		If commit=True, any outstanding changes to the database will
+		be committed. "commit" is False by default.
 		"""
 
 		try:
-			self._cu.execute(sql, args)
-			self._cx.commit()
-			fields = self.__getFields__()
-			if fields == []:
-				return []
+			if not self._dryrun:
+				if self._debug and (self._log is not None):
+					st = time()
+					self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
+						sql,
+						str(args),
+						str(kwargs)))
+				self._cu.execute(sql, *args, **kwargs)
+				if commit:
+					self.commit()
+				fields = self.__getFields__()
+				if fields == []:
+					r = []
+				else:
+					r = self.__buildResult__(fields)
+				if self._debug and (self._log is not None):
+					et = time()
+					self._log.debug("Result: %s" % str(r))
+					if (et - st) < 1:
+						self._log.debug("Time: %0.2f" % (et - st))
+					else:
+						self._log.debug("Time: %s+%s:%s:%s" % duration(et - st))
+				return r
 			else:
-				return self.__buildResult__(fields)
+				if self._debug and (self._log is not None):
+					self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
+						sql,
+						str(args),
+						str(kwargs)))
+				return []
 		except Exception, e:
+			raise
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
-	def do(self, sql, *args):
+	def do(self, sql, commit=False, *args, **kwargs):
 		"""Synonym of execute"""
 
-		return self.execute(sql, *args)
+		return self.execute(sql, commit, *args, **kwargs)
 
 Connection = Session
 
