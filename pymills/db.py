@@ -189,15 +189,12 @@ class Session:
 				self._log.debug("Commiting to database...")
 			self._cx.commit()
 	
-	def execute(self, sql, commit=False, *args, **kwargs):
-		"""C.execute(sql, commit=False, *args, **kwargs) -> list of rows, or []
+	def execute(self, sql, *args, **kwargs):
+		"""C.execute(sql, *args, **kwargs) -> list of rows, or []
 
 		Execute the given SQL statement in sql and return
 		a list of rows (if appropiate) or return an empty list.
 		If this fails, a DBError exception will be raised.
-
-		If commit=True, any outstanding changes to the database will
-		be committed. "commit" is False by default.
 		"""
 
 		try:
@@ -208,9 +205,7 @@ class Session:
 						sql,
 						str(args),
 						str(kwargs)))
-				self._cu.execute(sql, *args, **kwargs)
-				if commit:
-					self.commit()
+				self._cu.execute(sql, args, **kwargs)
 				fields = self.__getFields__()
 				if fields == []:
 					r = []
@@ -235,10 +230,10 @@ class Session:
 			raise
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
-	def do(self, sql, commit=False, *args, **kwargs):
+	def do(self, sql, *args, **kwargs):
 		"""Synonym of execute"""
 
-		return self.execute(sql, commit, *args, **kwargs)
+		return self.execute(sql, *args, **kwargs)
 
 Connection = Session
 

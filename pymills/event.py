@@ -1,4 +1,3 @@
-# Filename: event.py
 # Module:	event
 # Date:		2nd April 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
@@ -23,8 +22,8 @@ will receive '''all''' events. Any filter/listener on this
 channel has first priority.
 
 WHen an event is sent to either a filter or listener's
-callable, the event manager will '''try''' to apply the
-event's date (args and kwargs) to that callable. The callable
+handler, the event manager will '''try''' to apply the
+event's date (args and kwargs) to that handler. The handler
 of a filter or listener thus becomes an API which must be
 conformed to.
 
@@ -105,6 +104,75 @@ def listener(*args):
 		return f
 	return decorate
 
+def call(handler, event):
+
+	args, vargs, kwargs = handler._argspec
+
+	try:
+		if len(args) > 0 and args[0] == "event":
+			if len(args) == 1:
+				if kwargs == {}:
+					return handler(event)
+				else:
+					return handler(event, **event._kwargs)
+			else:
+				return handler(event, *event._args,
+						**event._kwargs)
+		else:
+			return handler(*event._args,
+					**event._kwargs)
+	except UnhandledEvent:
+		raise
+	except Exception, e:
+		raise
+		raise EventError(
+				"Error with %s: %s" % (
+					handler, e))
+
+def send(handlers, event, channel, source=None):
+	"""send(handlers event, channel, source=None) -> None
+
+	Given a list of handlers of the given channel (plus the
+	global channel), send the given event.
+	source is expected to be an object.
+
+	Filters are processed first.
+	Filters must return a tuple (halt, event)
+	A filter may:
+	 * Return a new event
+	 * Return the same event in tact
+	If halt is True, the event is discarded and no
+	further filters or listeners can recieve this event.
+	"""
+
+	if hasattr(source, "__channelPrefix__"):
+		channel = "%s:%s" % (source.__channelPrefix__, channel)
+
+	if channel == "global":
+		return # Not allowed
+
+	event._time = time.time()
+	event._source = source
+	event._channel = channel
+
+	if handlers == []:
+		raise UnhandledEvent(event, channel)
+
+	r = []
+	for handler in handlers:
+		filter = getattr(handler, "filter", False)
+		if filter:
+			try:
+				halt, event = call(handler, event)
+			except Exception, e:
+				raise EventError(
+						"Error in return for '%s'" % handler)
+			if halt:
+				raise FilteredEvent(event, channel)
+		else:
+			r.append(call(handler, event))
+	return r
+
 class Component(object):
 	"""Component(event) -> new component object
 
@@ -142,24 +210,78 @@ class Component(object):
 		
 		self = super(cls.__class__, cls).__new__(cls, *args,
 				**kwargs)
+#		self.__init__(self, *args, **kwargs)
 
 		self.event = event
+		self._handlers = CaselessDict({"global": []})
+		self._links = []
 
-		events = [(x[0], x[1]) for x in getmembers(
+		handlers = [x[1] for x in getmembers(
 			self, lambda x: ismethod(x) and
-			callable(x) and
+			callable(x) and #x.__name__.startswith("on") and
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
-		for event, handler in events:
+		for handler in handlers:
 			if hasattr(self, "__channelPrefix__"):
-				self.event.add(handler, "%s:%s" % (
-					self.__channelPrefix__,
-					handler.channel))
+				channel = "%s:%s" % (
+						self.__channelPrefix__,
+						handler.channel)
 			else:
-				self.event.add(handler, handler.channel)
+				channel = handler.channel
+
+			self.event.add(handler, channel)
+
+			if self._handlers.has_key(channel):
+				self._handlers[channel].append(handler)
+				self._handlers[channel].sort(
+						cmp=lambda x, y: hasattr(x, "filter"))
+			else:
+				self._handlers[channel] = [handler]
 
 		self.instances[cls] = self
 		return self
+
+	def __del__(self):
+		self.unregister()
+
+	def getHandlers(self, channel=None):
+		"""C.getHandlers(channel=None) -> list
+
+		Givan a channel return all handlers on that channel.
+		If channel is None, then return all handlers.
+		"""
+
+		if channel is not None:
+			return self._handlers.get(channel, [])
+		else:
+			handlers = []
+			for x in self._handlers.values():
+				handlers += x
+			return handlers
+
+	def getLinks(self):
+		"""C.getLinks() -> list
+
+		Return a list of all links.
+		"""
+
+		return self._links
+
+	def link(self, component):
+		"""C.link(component) -> None
+
+		Link the given component to the current component.
+		"""
+
+		self._links.append(component)
+
+	def send(self, event, channel, source=None):
+		if source is None:
+			source = self
+		handlers = []
+		for link in self.getLinks():
+			handlers += link.getHandlers("global") + link.getHandlers(channel)
+		return send(handlers, event, channel, source)
 
 	def unregister(self):
 		"""C.unregister() -> None
@@ -168,15 +290,10 @@ class Component(object):
 		this component
 		"""
 
-		events = [(x[0], x[1]) for x in getmembers(
-			self, lambda x: ismethod(x) and
-			callable(x) and
-			(hasattr(x, "filter") or hasattr(x, "listener")))]
-
-		for event, handler in events:
+		for handler in self.getHandlers():
 			self.event.remove(handler, handler.channel)
 
-class ThreadedComponent(Component, Thread):
+class Worker(Component, Thread):
 
 	def __init__(self, event):
 		Component.__init__(self)
@@ -224,8 +341,11 @@ class Event(object):
 		attrs = ((k, v) for k, v in self.__dict__.items()
 				if not k.startswith("_"))
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
-		return "<%s %s {%s}>" % (
-				self.__class__.__name__,	self._args, ", ".join(attrStrings))
+		channel = getattr(self, "_channel", "None")
+		return "<%s/%s %s {%s}>" % (
+				self.__class__.__name__,
+				channel,
+				self._args, ", ".join(attrStrings))
 
 	__str__ = __repr__
 
@@ -247,8 +367,23 @@ class EventManager(object):
 	def __len__(self):
 		return len(self._queue)
 
-	def add(self, callable, *channels):
-		"""E.add(callable, *channels) -> None
+	def getHandlers(self, channel=None):
+		"""C.getHandlers(channel=None) -> list
+
+		Givan a channel return all handlers on that channel.
+		If channel is None, then return all handlers.
+		"""
+
+		if channel is not None:
+			return self._handlers.get(channel, [])
+		else:
+			handlers = []
+			for x in self._handlers.values():
+				handlers += x
+			return handlers
+
+	def add(self, handler, *channels):
+		"""E.add(handler, *channels) -> None
 
 		Add a new filter or listener to the event manager
 		adding it to all channels specified. if no channels
@@ -260,20 +395,20 @@ class EventManager(object):
 
 		for channel in channels:
 			if self._handlers.has_key(channel):
-				self._handlers[channel].append(callable)
+				self._handlers[channel].append(handler)
 				self._handlers[channel].sort(
 						cmp=lambda x, y: hasattr(x, "filter"))
 			else:
-				self._handlers[channel] = [callable]
-	
-	def remove(self, callable, *channels):
-		"""E.remove(callable, *channels) -> None
+				self._handlers[channel] = [handler]
+
+	def remove(self, handler, *channels):
+		"""E.remove(handler, *channels) -> None
 		
 		Remove the given filter or listener from the
 		event manager removing it from all channels
 		specified. If no channels are given, '''all'''
 		instnaces are removed. This will succeed even
-		if the specified callable has already been
+		if the specified handler has already been
 		removed.
 		"""
 
@@ -283,14 +418,7 @@ class EventManager(object):
 			keys = channels
 
 		for channel in keys:
-			try:
-				try:
-					self._handlers[channel].remove(callable)
-				except ValueError:
-					pass
-			except KeyError:
-				raise EventError(
-						"Channel %s not found" % channel)
+			self._handlers[channel].remove(handler)
 
 	def push(self, event, channel, source=None):
 		"""E.push(event, channel, source=None) -> None
@@ -315,78 +443,31 @@ class EventManager(object):
 		for event, channel, source in queue[:]:
 			try:
 				self.send(event, channel, source)
-			except:
-				raise
 			finally:
 				queue.remove((event, channel, source))
 
 	def send(self, event, channel, source=None):
 		"""E.send(event, channel, source=None) -> None
 
-		Send the given event to listeners on the given channel.
-		source is expected to be an object.
-
-		Filters are processed first.
-		Filters must return a tuple (halt, event)
-		A filter may:
-		 * Return a new event
-		 * Return the same event in tact
-		If halt is True, the event is discarded and no
-		further filters or listeners can recieve this event.
+		Send the given event to filters/listeners on the
+		channel specified.
 		"""
 
-		def call(callable, event):
+		#TODO: Fix this
 
-			args, vargs, kwargs = callable._argspec
+		"""
+  File "/home/prologic/lib/python/pymills/event.py", line 547, in flush
+    s = pickle.dumps((event, channel, source))
+  File "/usr/lib/python2.5/copy_reg.py", line 76, in _reduce_ex
+    raise TypeError("a class that defines __slots__ without "
+TypeError: a class that defines __slots__ without defining __getstate__ cannot be pickled
+		"""
+		
+#		if source is None:
+#			source = self
 
-			try:
-				if len(args) > 0 and args[0] == "event":
-					if len(args) == 1:
-						if kwargs == {}:
-							return callable(event)
-						else:
-							return callable(event, **event._kwargs)
-					else:
-						return callable(event, *event._args,
-								**event._kwargs)
-				else:
-					return callable(*event._args,
-							**event._kwargs)
-			except Exception, e:
-				raise EventError(
-						"Error with %s: %s" % (
-							callable, e))
-
-		if hasattr(source, "__channelPrefix__"):
-			channel = "%s:%s" % (source.__channelPrefix__, channel)
-
-		if channel == "global":
-			raise EventError(
-					"You cannot send events to the global channel")
-
-		event._time = time.time()
-		event._source = source
-		event._channel = channel
-
-		handlers = self._handlers.get("global", []) + \
-				self._handlers.get(channel, [])
-
-		if handlers == []:
-			raise UnhandledEvent(event, channel)
-
-		for handler in handlers:
-			filter = getattr(handler, "filter", False)
-			if filter:
-				try:
-					halt, event = call(handler, event)
-				except Exception, e:
-					raise
-					raise EventError(
-							"Error in return for '%s'" % handler)
-				if halt:
-					raise FilteredEvent(event, channel)
-			else:
-				return call(handler, event)
+		handlers = self.getHandlers("global") + self.getHandlers(channel)
+		return send(handlers, event, channel, source)
 
 class RemoteManager(EventManager):
 
@@ -422,20 +503,18 @@ class RemoteManager(EventManager):
 	def __del__(self):
 		self.__close__()
 
-	def __poll__(self, wait=0.001):
+	def __poll__(self, wait=0.0):
 		try:
 			r, w, e = select.select([self._ssock], [], [], wait)
 			return not r == []
 		except socket.error, error:
-			raise
 			self.__close__()
 			return False
 
-	def __read__(self, bufsize=16384):
+	def __read__(self, bufsize=8192):
 		try:
 			data, addr = self._ssock.recvfrom(bufsize)
 		except socket.error, e:
-			raise
 			self.__close__()
 
 		if addr[0] not in self._nodes:
@@ -467,8 +546,6 @@ class RemoteManager(EventManager):
 	def process(self):
 		if self.__poll__():
 			self.__read__()
-			#while self.__poll__():
-			#	self.__read__()
 
 	def flush(self):
 		queue = self._queue
@@ -479,12 +556,10 @@ class RemoteManager(EventManager):
 
 				if not self._nodes == []:
 					s = pickle.dumps((event, channel, source))
-					if len(self._buffer) + len(s) > 1460:
+					if len(self._buffer) + len(s) > 8192:
 						self.__write__(self._buffer)
 						self._buffer = ""
 					self._buffer += s
-			except:
-				raise
 			finally:
 				queue.remove((event, channel, source))
 		if not self._buffer == "":

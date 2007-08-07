@@ -50,19 +50,6 @@ class EventTestCase(unittest.TestCase):
 	def tearDown(self):
 		pass
 	
-	def testEventError(self):
-		"""Test event.EvenerError
-
-		1. Test that raising an exception of type EventError
-		   works and a message is shown
-		"""
-
-		try:
-			raise EventError("test")
-		except EventError, msg:
-			#1
-			self.assertEquals(str(msg), "test")
-
 	def testComponentIDs(self):
 		"""Test event.Component
 
@@ -101,8 +88,6 @@ class EventTestCase(unittest.TestCase):
 		   Component are automatically added to the EventManager
 		2. Test that channels are added for these filters and
 		   listeners automatically
-		3. Test that the filters/listeners are being added to
-		   the right container
 		"""
 
 		#1
@@ -147,7 +132,7 @@ class EventTestCase(unittest.TestCase):
 
 		#4
 		self.assertEquals(str(a),
-				"<Event (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
+				"<Event/None (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
 
 		#5
 		self.assertEquals(str(a), repr(a))
@@ -239,6 +224,7 @@ class EventTestCase(unittest.TestCase):
 		import time
 
 		self.flag = False
+		self.foo = False
 
 		@filter()
 		def onCHECK(event, test, time):
@@ -253,6 +239,16 @@ class EventTestCase(unittest.TestCase):
 		@listener("test")
 		def onTEST(test, time):
 			test.flag = True
+			return "test"
+
+		@listener("test")
+		def onFOO(test, time):
+			test.foo = True
+			return "foo"
+		
+		@listener("bar")
+		def onBAR(test, time):
+			return "bar"
 
 		@filter()
 		def onSTOP(event, test, time, stop=False):
@@ -261,12 +257,16 @@ class EventTestCase(unittest.TestCase):
 		self.event.add(onSTOP)
 		self.event.add(onCHECK)
 		self.event.add(onTEST, "test")
+		self.event.add(onFOO, "test")
+		self.event.add(onBAR, "bar")
 
 		#1 & #2
 		self.event.push(Event(self, time.time()), "test")
 		self.event.flush()
 		self.assertTrue(self.flag == True)
 		self.flag = False
+		self.assertTrue(self.foo == True)
+		self.foo = False
 
 		#3
 		self.assertTrue(self.event._queue == [])
@@ -296,8 +296,17 @@ class EventTestCase(unittest.TestCase):
 			pass
 		self.assertTrue(self.flag == False)
 
+		r = self.event.send(Event(self, time.time()), "test")
+		self.assertEquals(r[0], "test")
+		self.assertEquals(r[1], "foo")
+
+		self.assertEquals(
+				self.event.send(Event(self, time.time()), "bar"),
+				["bar"])
+
 def suite():
 	return unittest.makeSuite(EventTestCase, "test")
+
 
 if __name__ == "__main__":
 	unittest.main()

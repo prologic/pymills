@@ -622,8 +622,9 @@ class IRC(Component):
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			newNick = strip(tokens[2]).lower()
 
-			if source[0].lower() == self.getNick().lower():
-				self._info["nick"] = newNick
+			if self.getNick() is not None:
+				if source[0].lower() == self.getNick().lower():
+					self._info["nick"] = newNick
 
 			if len(tokens) == 4:
 				ctime = strip(tokens[3])

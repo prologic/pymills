@@ -1,124 +1,94 @@
-# Filename: ann.py
 # Module:	ann
 # Date:		18th March 2006
 # Author:	James Mills <prologic@shortcircuit.net.au>
 
 """Artificial Neural Networking Library
 
-This library contains classes for use with developing
-artificial neural networks.
-
-         InputNode   Node     OutputNode    Neuron
-Inputs:     0         1           1          many
-Outputs:   many      many       many         many
-
-Types of Neurons:
- * Linear
- * Step
- * Error Calc
- * Sigmoid
+...
 """
 
-from threading import Thread
+from time import sleep
 
-class SynapseError(Exception):
-	pass
+from event import listener, Event, Worker, \
+		EventManager
 
-class LinkError(Exception):
-	pass
+class SignalEvent(Event):
 
-class Synapse(Thread):
+	def __init__(self, source, level):
+		Event.__init__(self, source=source, level=level)
 
-	def __init__(self, source, target, weight=50.0, decay=False):
+class Node(Worker):
 
-		Thread.__init__(self)
+	def __repr__(self):
+		return "<Node>"
 
-		if not isinstance(source, Node):
-			raise SynapseError("source must be an instance of Node")
-		if not isinstance(target, Node):
-			raise SynapseError("target must be an instance of Node")
+	def fire(self, level=1.0):
+		self.send(SignalEvent(self, level), "signal")
 
-		self._source = source
-		self._target = target
+def new_node(*args, **kwargs):
+	class NewNode(Node):
+		pass
+	return NewNode(*args, **kwargs)
+	
+class Synapse(Node):
+
+	def __init__(self, event, weight=0.0):
+		Node.__init__(self, event)
 		self._weight = weight
-		self._decay = decay
+
+	def __repr__(self):
+		return "<Synapse weight=%0.2f>" % self._weight
+
+	def _get_weight(self):
+		return self._weight
+
+	def _set_weight(self, weight):
+		self._weight = weight
+
+	@listener("signal")
+	def onSIGNAL(self, source, level):
+		self.fire(level * self._weight)
 	
-	def fire(self, value=0.0):
-		self._target.fire(value * self._weight)
+#	weight = property(_get_weight, _set_weight)
 
-class Node(Thread):
+def new_synapse(*args, **kwargs):
+	class NewSynapse(Synapse):
+		pass
+	return NewSynapse(*args, **kwargs)
 
-	def __init__(self, output=0.0):
-
-		Thread.__init__(self)
-
-		self._inputs = []
-		self._outputs = []
-		self._output = output
-	
-	def getOutput(self):
-		return self._output
-
-	def setOutput(self, output):
-		self._output = output
-
-	def link(self, synapse):
-
-		if (synapse._target == self) and (len(self._inputs) == 1):
-			raise LinkError("Node can only have maximum of 1 inputs")
-
-		if synapse._source == self:
-			self._outputs.append(synapse)
-		if synapse._target == self:
-			self._inputs.append(synapse)
-
-	def fire(self, value=0.0):
-		self.setOutput(value)
-		for output in self._outputs:
-			output.fire(self._output)
-	
-class InputNode(Node):
-
-	def link(self, synapse):
-
-		if (synapse._target == self):
-			raise LinkError("InputNode cannot have any inputs")
-
-		if synapse._source == self:
-			self._outputs.append(synapse)
-
-	def fire(self, value=0.0):
-		Node.fire(self, value)
-
-	def run(self):
-		self.fire(self.getOutput())
-
-class OutputNode(Node):
-
-	def __init__(self, output=0.0, func=None, *args):
-		Node.__init__(self, output)
-		self._func = func
-		self._args = args
-
-	def fire(self, value=0.0):
-		if callable(self._func):
-			self._func(value, self._args)
-		Node.fire(self, value)
-	
 class Neuron(Node):
 
-	def __init__(self, _threshold):
-		Node.__init__(self)
-		self.__threshold = _threshold
+	def __init__(self, event, threshold=1.0):
+		Node.__init__(self, event)
+		self._threshold = threshold
+		self._level = 0.0
+
+	def __repr__(self):
+		return "<Neuron threshold=%0.2f level=%0.2f>" % (
+				self._threshold, self._level)
 	
-	def getThreshold(self):
+	def _get_threshold(self):
 		return self._threshold
 
-	def setThreshold(self, threshold):
+	def _set_threshold(self, threshold):
 		self._threshold = threshold
 
-	def fire(self, value=0.0):
-		self.setOutput(self.getOutput() + value)
-		if self.getOutput() > self.__threshold:
-			for output in self._outputs:
-				output.fire(self._output)
+	@listener("signal")
+	def onSIGNAL(self, source, level):
+		self._level += level
+		if self._level > self._threshold:
+			self.fire()
+			self._level = 0.0
+
+	def run(self):
+		while self.isRunning():
+			sleep(0.1)
+			self._level = 0.0
+		print "%s terminating..." % self
+	
+#	threshold = property(_get_threshold, _set_threshold)
+
+def new_neuron(*args, **kwargs):
+	class NewNeuron(Neuron):
+		pass
+	return NewNeuron(*args, **kwargs)
