@@ -4,11 +4,11 @@
 
 """Event Library
 
-Library for developing Event Driven Applications. This library
-supports listeners, filters and the queuing of events.
-Events are formed by constructing a new Event object, which
-could be sub-classes. Really any object could be used as
-the 'event'.
+Library for developing Event Driven Applications.
+This library supports listeners, filters and the 
+queuing of events. Events are formed by constructing
+a new Event object, which could be sub-classes.
+Really any object could be used as the 'event'.
 
 Channels are automatically registered by each Component
 that is linked to an EventManager. All methods/functions
@@ -30,12 +30,13 @@ conformed to.
 If any error occurs, an EventError is raised with the
 appropiate message.
 
-A Component is an object that holds a copy of the EventManager
-instnace and automatically sets up any filters/listeners
-found in the class. Filter/listener methods must start with
-"on" and must have the attribute "filter" or "listener"
-set to True. All components are singletons, that is they can
-only be instantiated once.
+A Component is an object that holds a copy of the 
+EventManager instnace and automatically sets up any
+filters/listeners found in the class. Filter/listener
+methods must start with "on" and must have the
+attribute "filter" or "listener" set to True. All
+components are singletons, that is they can only be
+instantiated once.
 """
 
 import time
@@ -54,12 +55,6 @@ class EventError(Exception):
 
 class UnhandledEvent(EventError):
 	"Unhandled Event Error"
-
-	def __init__(self, event, channel):
-		EventError.__init__(self, event, channel)
-
-class FilteredEvent(EventError):
-	"Filtered Event Error"
 
 	def __init__(self, event, channel):
 		EventError.__init__(self, event, channel)
@@ -165,10 +160,11 @@ def send(handlers, event, channel, source=None):
 			try:
 				halt, event = call(handler, event)
 			except Exception, e:
+				raise
 				raise EventError(
 						"Error in return for '%s'" % handler)
 			if halt:
-				raise FilteredEvent(event, channel)
+				return r
 		else:
 			r.append(call(handler, event))
 	return r
@@ -251,6 +247,9 @@ class Component(object):
 		If channel is None, then return all handlers.
 		"""
 
+		print type(self._handlers)
+		print self._handlers
+
 		if channel is not None:
 			return self._handlers.get(channel, [])
 		else:
@@ -280,7 +279,8 @@ class Component(object):
 			source = self
 		handlers = []
 		for link in self.getLinks():
-			handlers += link.getHandlers("global") + link.getHandlers(channel)
+			handlers += link.getHandlers("global") + \
+					link.getHandlers(channel)
 		return send(handlers, event, channel, source)
 
 	def unregister(self):
@@ -300,6 +300,7 @@ class Worker(Component, Thread):
 		Thread.__init__(self)
 
 		self.__running = True
+		self.setDaemon(True)
 		self.start()
 	
 	def stop(self):
@@ -326,15 +327,6 @@ class Event(object):
 		self._kwargs = kwargs
 		self.__dict__.update(kwargs)
 	
-	def __getitem__(self, x):
-		if type(x) == int:
-			return self._args[x]
-		elif type(x) == str:
-			return self._kwargs[x]
-		else:
-			raise TypeError(
-					"x: expected int or str type, got %s" % type(x))
-	
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
 
@@ -346,8 +338,6 @@ class Event(object):
 				self.__class__.__name__,
 				channel,
 				self._args, ", ".join(attrStrings))
-
-	__str__ = __repr__
 
 class EventManager(object):
 	"""EventManager() -> new event manager
@@ -466,7 +456,8 @@ TypeError: a class that defines __slots__ without defining __getstate__ cannot b
 #		if source is None:
 #			source = self
 
-		handlers = self.getHandlers("global") + self.getHandlers(channel)
+		handlers = self.getHandlers("global") + \
+				self.getHandlers(channel)
 		return send(handlers, event, channel, source)
 
 class RemoteManager(EventManager):
@@ -528,8 +519,6 @@ class RemoteManager(EventManager):
 			EventManager.send(self, event, channel, source)
 		except UnhandledEvent:
 			pass
-		except FilteredEvent:
-			pass
 
 	def __close__(self):
 		self._ssock.shutdown(2)
@@ -541,7 +530,8 @@ class RemoteManager(EventManager):
 		for node in self._nodes:
 			bytes = self._csock.sendto(data, (node, 64000))
 			if bytes < len(data):
-				raise EventError("Couldn't send event to %s" % str(node))
+				raise EventError(
+						"Couldn't send event to %s" % str(node))
 
 	def process(self):
 		if self.__poll__():
@@ -571,8 +561,6 @@ class RemoteManager(EventManager):
 			r = EventManager.send(self, event, channel, source)
 		except UnhandledEvent:
 			r = None
-		except FilteredEvent:
-			return None
 		if not caller() == "flush":
 			self.__write__(pickle.dumps((event, channel, source)))
 		return r

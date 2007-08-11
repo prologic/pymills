@@ -4,9 +4,9 @@ import threading
 from time import sleep
 
 from pymills.event import listener, filter, Component, \
-		ThreadedComponent, Event, RemoteManager
+		Worker, Event, RemoteManager
 
-class ThreadOne(ThreadedComponent):
+class ThreadOne(Worker):
 
 	@listener("hello")
 	def onHELLO(self, event, message=""):
@@ -20,7 +20,7 @@ class ThreadOne(ThreadedComponent):
 			except KeyboardInterrupt:
 				self.stop()
 
-class ThreadTwo(ThreadedComponent):
+class ThreadTwo(Worker):
 
 	@listener("hello")
 	def onHELLO(self, event, message=""):
