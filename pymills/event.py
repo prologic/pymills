@@ -39,10 +39,12 @@ components are singletons, that is they can only be
 instantiated once.
 """
 
+import copy
 import time
 import socket
 import select
 import cPickle as pickle
+from pprint import pprint
 from threading import Thread
 from StringIO import StringIO
 from inspect import getmembers, ismethod, getargspec
@@ -144,7 +146,7 @@ def send(handlers, event, channel, source=None):
 		channel = "%s:%s" % (source.__channelPrefix__, channel)
 
 	if channel == "global":
-		return # Not allowed
+		raise EventError("Events cannot be sent to the global channel")
 
 	event._time = time.time()
 	event._source = source
@@ -169,8 +171,145 @@ def send(handlers, event, channel, source=None):
 			r.append(call(handler, event))
 	return r
 
-class Component(object):
-	"""Component(event) -> new component object
+class EventManager(object):
+	"""EventManager() -> new event manager
+
+	Create a new event manager which manages events.
+	If server=True, this will listen on the default port
+	of 64000 allowing events to be to other connected
+	remote event managers.
+	"""
+
+	def __new__(cls, *args, **kwargs):
+		"Creates x; see x.__class__.__doc__ for signature"
+
+		objList = [sup.__new__(cls, *args, **kwargs)
+				for sup in EventManager.__bases__]
+		for obj in objList[1:]:
+			objList[0].__dict__.update(copy.deepcopy(obj.__dict__))
+
+		self = objList[0]
+
+#		self = super(cls.__class__, cls).__new__(cls, *args,
+#				**kwargs)
+
+		self._handlers = CaselessDict({"global": []})
+		self._queue = []
+
+		return self
+
+	def __len__(self):
+		return len(self._queue)
+
+	def getHandlers(self, channel=None):
+		"""E.getHandlers(channel=None) -> list
+
+		Givan a channel return all handlers on that channel.
+		If channel is None, then return all handlers.
+		"""
+
+		if channel is not None:
+			return self._handlers.get(channel, [])
+		else:
+			handlers = []
+			for x in self._handlers.values():
+				handlers += x
+			return handlers
+
+	def add(self, handler, *channels):
+		"""E.add(handler, *channels) -> None
+
+		Add a new filter or listener to the event manager
+		adding it to all channels specified. if no channels
+		are given, add it to the global channel.
+		"""
+
+		if len(channels) == 0:
+			channels = ["global"]
+
+		if not hasattr(handler, "filter") and \
+				not hasattr(handler, "listener"):
+			raise EventError(
+					"%s is not a filter or listener" % handler)
+
+		for channel in channels:
+			if self._handlers.has_key(channel):
+				self._handlers[channel].append(handler)
+				self._handlers[channel].sort(
+						cmp=lambda x, y: hasattr(x, "filter"))
+			else:
+				self._handlers[channel] = [handler]
+
+	def remove(self, handler, *channels):
+		"""E.remove(handler, *channels) -> None
+		
+		Remove the given filter or listener from the
+		event manager removing it from all channels
+		specified. If no channels are given, '''all'''
+		instnaces are removed. This will succeed even
+		if the specified handler has already been
+		removed.
+		"""
+
+		if len(channels) == 0:
+			keys = self._handlers.keys()
+		else:
+			keys = channels
+
+		for channel in keys:
+			if handler in self._handlers[channel]:
+				self._handlers[channel].remove(handler)
+
+	def push(self, event, channel, source=None):
+		"""E.push(event, channel, source=None) -> None
+
+		Push the given event onto the given channel.
+		This will queue the event up to be processed later
+		by flushEvents. source is expected to be an object.
+		"""
+
+		self._queue.append((event, channel, source))
+	
+	def flush(self):
+		"""E.flushEvents() -> None
+
+		Flush all events waiting in the queue.
+		Any event waiting in the queue will be sent out
+		to filters/listeners.
+		"""
+
+		for event, channel, source in self._queue[:]:
+			try:
+				self.send(event, channel, source)
+			finally:
+				self._queue.remove((event, channel, source))
+
+	def send(self, event, channel, source=None):
+		"""E.send(event, channel, source=None) -> None
+
+		Send the given event to filters/listeners on the
+		channel specified.
+		"""
+
+		#TODO: Fix this
+
+		"""
+  File "/home/prologic/lib/python/pymills/event.py", line 547, in flush
+    s = pickle.dumps((event, channel, source))
+  File "/usr/lib/python2.5/copy_reg.py", line 76, in _reduce_ex
+    raise TypeError("a class that defines __slots__ without "
+TypeError: a class that defines __slots__ without defining __getstate__ cannot be pickled
+		"""
+		
+#		if source is None:
+#			source = self
+
+		handlers = self.getHandlers("global") + \
+				self.getHandlers(channel)
+		return send(handlers, event, channel, source)
+
+class Component(EventManager):
+	"""Component(EventManager) -> new component object
 
 	This should be sub-classed with methods defined for filters
 	and listeners. Only one instance of any component can be
@@ -198,41 +337,65 @@ class Component(object):
 
 	instances = {}
 
-	def __new__(cls, event, *args, **kwargs):
+	def __new__(cls, *args, **kwargs):
 		"Creates x; see x.__class__.__doc__ for signature"
 
 		if cls in cls.instances:
 			return cls.instances[cls]
+
+		if len(args) > 0 and isinstance(args[0], EventManager):
+			event = args[0]
+			args = args[1:]
+		else:
+			event = None
 		
-		self = super(cls.__class__, cls).__new__(cls, *args,
-				**kwargs)
-#		self.__init__(self, *args, **kwargs)
+		objList = [sup.__new__(cls, *args, **kwargs)
+				for sup in Component.__bases__]
+		for obj in objList[1:]:
+			objList[0].__dict__.update(copy.deepcopy(obj.__dict__))
 
-		self.event = event
-		self._handlers = CaselessDict({"global": []})
-		self._links = []
+		self = objList[0]
 
-		handlers = [x[1] for x in getmembers(
-			self, lambda x: ismethod(x) and
-			callable(x) and #x.__name__.startswith("on") and
-			(hasattr(x, "filter") or hasattr(x, "listener")))]
+#		self = super(cls.__class__, cls).__new__(cls, *args,
+#				**kwargs)
 
-		for handler in handlers:
-			if hasattr(self, "__channelPrefix__"):
-				channel = "%s:%s" % (
-						self.__channelPrefix__,
-						handler.channel)
-			else:
-				channel = handler.channel
+		if event is None:
+			self.event = self
+		else:
+			self.event = event
 
-			self.event.add(handler, channel)
+#		self._handlers = CaselessDict({"global": []})
 
-			if self._handlers.has_key(channel):
-				self._handlers[channel].append(handler)
-				self._handlers[channel].sort(
-						cmp=lambda x, y: hasattr(x, "filter"))
-			else:
-				self._handlers[channel] = [handler]
+		if self.event is not self:
+			handlers = [x[1] for x in getmembers(
+				self, lambda x: ismethod(x) and
+				callable(x) and x.__name__.startswith("on") and
+				(hasattr(x, "filter") or hasattr(x, "listener")))]
+
+			for handler in handlers:
+				if hasattr(self, "__channelPrefix__"):
+					channel = "%s:%s" % (
+							self.__channelPrefix__,
+							handler.channel)
+				else:
+					channel = handler.channel
+
+				self.event.add(handler, channel)
+
+				if self._handlers.has_key(channel):
+					self._handlers[channel].append(handler)
+					self._handlers[channel].sort(
+							cmp=lambda x, y: hasattr(x, "filter"))
+				else:
+					self._handlers[channel] = [handler]
+
+#			if self.event is not self:
+#				if self._handlers.has_key(channel):
+#					self._handlers[channel].append(handler)
+#					self._handlers[channel].sort(
+#							cmp=lambda x, y: hasattr(x, "filter"))
+#				else:
+#					self._handlers[channel] = [handler]
 
 		self.instances[cls] = self
 		return self
@@ -240,48 +403,26 @@ class Component(object):
 	def __del__(self):
 		self.unregister()
 
-	def getHandlers(self, channel=None):
-		"""C.getHandlers(channel=None) -> list
-
-		Givan a channel return all handlers on that channel.
-		If channel is None, then return all handlers.
-		"""
-
-		print type(self._handlers)
-		print self._handlers
-
-		if channel is not None:
-			return self._handlers.get(channel, [])
-		else:
-			handlers = []
-			for x in self._handlers.values():
-				handlers += x
-			return handlers
-
-	def getLinks(self):
-		"""C.getLinks() -> list
-
-		Return a list of all links.
-		"""
-
-		return self._links
-
 	def link(self, component):
 		"""C.link(component) -> None
 
 		Link the given component to the current component.
 		"""
 
-		self._links.append(component)
+		handlers = [x[1] for x in getmembers(
+			component, lambda x: ismethod(x) and
+			callable(x) and x.__name__.startswith("on") and
+			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
-	def send(self, event, channel, source=None):
-		if source is None:
-			source = self
-		handlers = []
-		for link in self.getLinks():
-			handlers += link.getHandlers("global") + \
-					link.getHandlers(channel)
-		return send(handlers, event, channel, source)
+		for handler in handlers:
+			if hasattr(component, "__channelPrefix__"):
+				channel = "%s:%s" % (
+						component.__channelPrefix__,
+						handler.channel)
+			else:
+				channel = handler.channel
+
+			self.add(handler, channel)
 
 	def unregister(self):
 		"""C.unregister() -> None
@@ -291,11 +432,12 @@ class Component(object):
 		"""
 
 		for handler in self.getHandlers():
-			self.event.remove(handler, handler.channel)
+			self.event.remove(handler)
+			self.remove(handler)
 
 class Worker(Component, Thread):
 
-	def __init__(self, event):
+	def __init__(self, *args):
 		Component.__init__(self)
 		Thread.__init__(self)
 
@@ -339,126 +481,6 @@ class Event(object):
 				channel,
 				self._args, ", ".join(attrStrings))
 
-class EventManager(object):
-	"""EventManager() -> new event manager
-
-	Create a new event manager which manages events.
-	If server=True, this will listen on the default port
-	of 64000 allowing events to be to other connected
-	remote event managers.
-	"""
-
-	def __init__(self):
-		"initializes x; see x.__class__.__doc__ for signature"
-
-		self._handlers = CaselessDict({"global": []})
-		self._queue = []
-
-	def __len__(self):
-		return len(self._queue)
-
-	def getHandlers(self, channel=None):
-		"""C.getHandlers(channel=None) -> list
-
-		Givan a channel return all handlers on that channel.
-		If channel is None, then return all handlers.
-		"""
-
-		if channel is not None:
-			return self._handlers.get(channel, [])
-		else:
-			handlers = []
-			for x in self._handlers.values():
-				handlers += x
-			return handlers
-
-	def add(self, handler, *channels):
-		"""E.add(handler, *channels) -> None
-
-		Add a new filter or listener to the event manager
-		adding it to all channels specified. if no channels
-		are given, add it to the global channel.
-		"""
-
-		if len(channels) == 0:
-			channels = ["global"]
-
-		for channel in channels:
-			if self._handlers.has_key(channel):
-				self._handlers[channel].append(handler)
-				self._handlers[channel].sort(
-						cmp=lambda x, y: hasattr(x, "filter"))
-			else:
-				self._handlers[channel] = [handler]
-
-	def remove(self, handler, *channels):
-		"""E.remove(handler, *channels) -> None
-		
-		Remove the given filter or listener from the
-		event manager removing it from all channels
-		specified. If no channels are given, '''all'''
-		instnaces are removed. This will succeed even
-		if the specified handler has already been
-		removed.
-		"""
-
-		if len(channels) == 0:
-			keys = self._handlers.keys()
-		else:
-			keys = channels
-
-		for channel in keys:
-			self._handlers[channel].remove(handler)
-
-	def push(self, event, channel, source=None):
-		"""E.push(event, channel, source=None) -> None
-
-		Push the given event onto the given channel.
-		This will queue the event up to be processed later
-		by flushEvents. source is expected to be an object.
-		"""
-
-		self._queue.append((event, channel, source))
-	
-	def flush(self):
-		"""E.flushEvents() -> None
-
-		Flush all events waiting in the queue.
-		Any event waiting in the queue will be sent out
-		to filters/listeners.
-		"""
-
-		queue = self._queue
-
-		for event, channel, source in queue[:]:
-			try:
-				self.send(event, channel, source)
-			finally:
-				queue.remove((event, channel, source))
-
-	def send(self, event, channel, source=None):
-		"""E.send(event, channel, source=None) -> None
-
-		Send the given event to filters/listeners on the
-		channel specified.
-		"""
-
-		#TODO: Fix this
-
-		"""
-  File "/home/prologic/lib/python/pymills/event.py", line 547, in flush
-    s = pickle.dumps((event, channel, source))
-  File "/usr/lib/python2.5/copy_reg.py", line 76, in _reduce_ex
-    raise TypeError("a class that defines __slots__ without "
-TypeError: a class that defines __slots__ without defining __getstate__ cannot be pickled
-		"""
-		
-#		if source is None:
-#			source = self
-
-		handlers = self.getHandlers("global") + \
-				self.getHandlers(channel)
-		return send(handlers, event, channel, source)
 
 class RemoteManager(EventManager):
 

@@ -19,3 +19,8 @@ __url__ = "http://shortcircuit.net.au/~prologic/"
 __copyright__ = "CopyRight (C) 2005 by %s" % __author__
 __license__ = "GPL"
 __str__ = "%s-%s" % (__name__, __version__)
+
+__all__ = (
+		"ports",
+		)
+

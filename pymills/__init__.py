@@ -31,7 +31,7 @@ JamesMills
 
 __name__ = "pymills"
 __description__ = "James Mills Python Library"
-__version__ = "3.2.12-git1"
+__version__ = "3.2.12-git2"
 __author__ = "James Mills"
 __author_email__ = "%s, prologic at shortcircuit dot net dot au" % __author__
 __maintainer__ = __author__
@@ -44,6 +44,8 @@ __platform__ = ""
 __keywords__ = "James Mills Python Library General Purpose"
 __classifiers__ = [
 		"Development Status :: 3 - Alpha",
+		"Development Status :: 4 - Beta",
+		"Development Status :: 5 - Production/Stable",
 		"Environment :: Other Environment",
 		"Intended Audience :: Developers",
 		"Intended Audience :: End Users/Desktop",
@@ -63,7 +65,6 @@ __str__ = "%s-%s" % (__name__, __version__)
 
 __all__ = (
 		"ann",
-		"crux",
 		"datatypes",
 		"db",
 		"env",
@@ -77,7 +78,6 @@ __all__ = (
 		"sockets",
 		"spider",
 		"test",
-		"tests",
 		"timers",
 		"utils",
 		"ver",
