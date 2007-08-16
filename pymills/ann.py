@@ -7,8 +7,8 @@
 ...
 """
 
-from time import sleep
-from pprint import pprint
+import math
+from time import time, sleep
 
 from event import listener, Event, UnhandledEvent, Worker, \
 		EventManager
@@ -32,7 +32,7 @@ class Node(Worker):
 				self.flush()
 			except UnhandledEvent:
 				pass
-			sleep(1)
+			sleep(0.01)
 
 def new_node(*args, **kwargs):
 	class NewNode(Node):
@@ -68,12 +68,36 @@ def new_synapse(*args, **kwargs):
 		pass
 	return NewSynapse(*args, **kwargs)
 
+class _StepNeuron(object):
+
+	def compute(self):
+		if self._level > self._threshold:
+			self.fire(1.0)
+		else:
+			self.fire(0.0)
+
+class _SigmoidNeuron(object):
+
+	def compute(self):
+		self.fire(math.exp(-1 * self._level))
+
 class Neuron(Node):
 
-	def __init__(self, event=None, threshold=1.0):
+	def __init__(self, event=None, threshold=1.0, type="step"):
 		Node.__init__(self)
+
 		self._threshold = threshold
 		self._level = 0.0
+		self._ls = None
+
+		if type == "step":
+			base = _StepNeuron
+		elif type == "sigmoid":
+			base = _SigmoidNeuron
+		else:
+			raise TypeError("Invalid type")
+
+		self.__class__.__bases__ += (base,)
 
 	def __repr__(self):
 		return "<Neuron threshold=%0.2f level=%0.2f>" % (
@@ -90,21 +114,20 @@ class Neuron(Node):
 
 	@listener("signal")
 	def onSIGNAL(self, source, level):
+		self._ls = time()
 		self._level += level
-		if self._level > self._threshold:
-			self.fire()
-			self._level = 0.0
 
 	def run(self):
 		while self.isRunning():
+			if self._ls is not None and (time() - self._ls > 0.01):
+				self.compute()
+				self._level = 0.0
+				self._ls = None
 			try:
-				pprint(self.event._queue)
 				self.event.flush()
-				pprint(self.event._queue)
 			except UnhandledEvent:
 				pass
-			self._level = 0.0
-			sleep(1)
+			sleep(0.01)
 	
 	threshold = property(_get_threshold, _set_threshold)
 
