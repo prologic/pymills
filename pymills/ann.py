@@ -20,8 +20,20 @@ class SignalEvent(Event):
 
 class Node(Worker):
 
+	def __init__(self, event=None):
+		Worker.__init__(self, event)
+
+		self._inputs = []
+
 	def __repr__(self):
 		return "<Node running=%s>" % self.isRunning()
+
+	def _getInputs(self):
+		return self._inputs
+
+	def link(self, node):
+		Worker.link(self, node)
+		node._inputs.append(self)
 
 	def fire(self, level=1.0):
 		self.event.push(SignalEvent(self, level), "signal")
@@ -33,6 +45,8 @@ class Node(Worker):
 			except UnhandledEvent:
 				pass
 			sleep(0.01)
+	
+	inputs = property(_getInputs)
 
 def new_node(*args, **kwargs):
 	class NewNode(Node):
@@ -79,8 +93,14 @@ class _StepNeuron(object):
 class _SigmoidNeuron(object):
 
 	def compute(self):
-		self.fire(math.exp(-1 * self._level))
-
+		self.fire(
+				1.0 / (
+					1.0 + math.exp(-1 * (
+						self._level + self._threshold)
+						)
+					)
+				)
+	
 class Neuron(Node):
 
 	def __init__(self, event=None, threshold=1.0, type="step"):
@@ -91,8 +111,10 @@ class Neuron(Node):
 		self._ls = None
 
 		if type == "step":
+			self._type = "Step"
 			base = _StepNeuron
 		elif type == "sigmoid":
+			self._type = "Sigmoid"
 			base = _SigmoidNeuron
 		else:
 			raise TypeError("Invalid type")
@@ -100,8 +122,8 @@ class Neuron(Node):
 		self.__class__.__bases__ += (base,)
 
 	def __repr__(self):
-		return "<Neuron threshold=%0.2f level=%0.2f>" % (
-				self._threshold, self._level)
+		return "<Neuron type=%s threshold=%0.2f level=%0.2f>" % (
+				self._type, self._threshold, self._level)
 	
 	def _get_threshold(self):
 		try:
