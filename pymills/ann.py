@@ -53,14 +53,14 @@ def new_node(*args, **kwargs):
 		pass
 	return NewNode(*args, **kwargs)
 	
-class Synapse(Node):
+class Connection(Node):
 
 	def __init__(self, event=None, weight=1.0):
 		Node.__init__(self)
 		self._weight = weight
 
 	def __repr__(self):
-		return "<Synapse weight=%0.2f>" % self._weight
+		return "<Connection weight=%0.2f>" % self._weight
 
 	def _get_weight(self):
 		try:
@@ -77,10 +77,10 @@ class Synapse(Node):
 	
 	weight = property(_get_weight, _set_weight)
 
-def new_synapse(*args, **kwargs):
-	class NewSynapse(Synapse):
+def new_connection(*args, **kwargs):
+	class NewConnection(Connection):
 		pass
-	return NewSynapse(*args, **kwargs)
+	return NewConnection(*args, **kwargs)
 
 class _StepNeuron(object):
 
@@ -89,6 +89,11 @@ class _StepNeuron(object):
 			self.fire(1.0)
 		else:
 			self.fire(0.0)
+
+class _LinearNeuron(object):
+
+	def compute(self):
+		self.fire(self._level + self._threshold)
 
 class _SigmoidNeuron(object):
 
@@ -113,6 +118,9 @@ class Neuron(Node):
 		if type == "step":
 			self._type = "Step"
 			base = _StepNeuron
+		elif type == "linear":
+			self._type = "Linear"
+			base = _LinearNeuron
 		elif type == "sigmoid":
 			self._type = "Sigmoid"
 			base = _SigmoidNeuron
@@ -160,12 +168,23 @@ def new_neuron(*args, **kwargs):
 
 class Output(Node):
 
+	def __init__(self, event=None):
+		Node.__init__(self)
+
+		self._output = None
+
+	def _getOutput(self):
+		return self._output
+
 	def do(self):
-		pass
+		print "%0.2f" % self.output
 
 	@listener("signal")
 	def onSIGNAL(self, source, level):
+		self._output = level
 		self.do()
+	
+	output = property(_getOutput)
 
 def new_output(*args, **kwargs):
 	class NewOutput(Output):
