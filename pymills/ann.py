@@ -85,7 +85,7 @@ def new_connection(*args, **kwargs):
 class _StepNeuron(object):
 
 	def compute(self):
-		if self._level > self._threshold:
+		if self._level >= self._threshold:
 			self.fire(1.0)
 		else:
 			self.fire(0.0)
@@ -168,21 +168,19 @@ def new_neuron(*args, **kwargs):
 
 class Output(Node):
 
-	def __init__(self, event=None):
+	def __init__(self, event=None, f=lambda n: None):
 		Node.__init__(self)
 
+		self._f = f
 		self._output = None
 
 	def _getOutput(self):
 		return self._output
 
-	def do(self):
-		print "%0.2f" % self.output
-
 	@listener("signal")
 	def onSIGNAL(self, source, level):
 		self._output = level
-		self.do()
+		self._f(self)
 	
 	output = property(_getOutput)
 
