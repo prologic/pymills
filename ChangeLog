@@ -1,0 +1,1523 @@
+2007-08-25  James Mills <prologic@shortcircuit.net.au>
+
+	* AUTHORS, CHANGES: Added docs for authors, changes
+
+2007-08-25  James Mills <prologic@shortcircuit.net.au>
+
+	* setup.py: More generic setup/build
+
+2007-08-25  James Mills <prologic@shortcircuit.net.au>
+
+	* Makefile: General helper Makefile
+
+2007-08-25  James Mills <prologic@shortcircuit.net.au>
+
+	* ez_setup.py: Added setuptools bootstrap
+
+2007-08-19  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/andnn.py, examples/nandnn.py, examples/nornn.py,
+	examples/notnn.py, examples/ornn.py, examples/xornn.py:  * Addex examples using ann library  Examples of logic gates using
+	 perceptrons:  * AND  * OR  * NOT  * NAND  * NOR  In the words:  *
+	 XOR (not working yet)
+
+2007-08-19  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/ann.py:  * Changed activation function for StepNeuron  * Added kwarg f to
+	 Output to specify function to execute on output.
+
+2007-08-18  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/ann.py:  * Changed Synapse to Connection  * Added LinearNeuron  * Improved
+	 Output node
+
+2007-08-18  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/ann.py:  * Improved __repr__ output  * Nodes now store copies of their input
+	 nodes   * This is accessible via the "inputs" property.
+
+2007-08-16  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/ann.py, pymills/irc.py: Version:
+	3.2.12-git3  New Features:  * Added Step and Sigmoid Neurons to ann
+	library  * Improved time-slicing of inputs  Bug Fixes:  * Fixed nick
+	change event in irc library
+
+2007-08-13  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/anntest.py, pymills/__init__.py, pymills/ann.py,
+	pymills/crux/__init__.py, pymills/event.py, pymills/tests/event.py: 
+	Version: 3.2.12-git2  New Features:  * re-structured event library
+	* a Component is now based on EventManager    * a Component can
+	push/send/flush events    * Components can be linked to each other.
+	* NEW ANN Library (based on linked components)   * No learning yet
+	Bug Fixes:  ''None''  Other:  * Other minor coesmetic changes
+
+2007-08-12  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/threadtest.py, pymills/__init__.py, pymills/event.py: 
+	Version: 3.2.12-git1  event:  * Fixed bugs with getHandlers  *
+	Removed Event.__getitem__ and Event.__str__  * Minor cosmetic
+	changes  examples:  * Fixed threadtest
+
+2007-08-07  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/anntest.py, examples/linktest.py, pymills/__init__.py,
+	pymills/ann.py, pymills/db.py, pymills/event.py, pymills/irc.py,
+	pymills/tests/event.py: Version: 3.2.12  * Feature Release  New
+	Features:  * New and Improved ann library   * Actually works :)   *
+	Nodes are pymills.event.Worker objects  * New and Improved event
+	library   * Abstracted call/send   * Components can now send events
+	to other components   * Components can be linked (this is how ann
+	works)   * _all_ return results will be returned when sending (send)
+	* Improved performance   * Complete unit test  Bug Fixes:  * Fixed
+	do/execute bug in db library.  * Fixed issue with nick changes in
+	irc library when self.nick = None  New Examples:  * anntest (testing
+	pymills.ann)  * linktest (testing pymills.event)
+
+2007-08-05  James Mills <prologic@shortcircuit.net.au>
+
+	Merge branch 'pymills-ng' of /home/prologic/tmp/pymills into
+	pymills-ng  Conflicts:  	pymills/datatypes.py 	pymills/db.py
+
+2007-08-05  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, examples/calc.py, examples/eventclient.py,
+	examples/eventserver.py, examples/loops.py, examples/threadtest.py,
+	pymills/datatypes.py, pymills/db.py, pymills/event.py,
+	pymills/irc.py, pymills/sockets.py, pymills/tests/event.py,
+	pymills/timers.py:  * Examples updated  * Performance Improved event.RemoteManager  *
+	 New db.Session (db.Connection for backward compat)  * irc and
+	 sockets updated
+
+2007-08-01  James Mills <James.Mills@au.pwc.com>
+
+	* pymills/datatypes.py, pymills/db.py, pymills/io.py,
+	pymills/timers.py: datetypes:  * Improved Queue and Stack classes
+	* Added __len__ and __getitem__  db:  * Added Oracle support  *
+	Added debug logging support  * Added timing support (debug logs)  *
+	Added dryrun support  io:  * s/'/" :) Cosmetic changes  timers:  *
+	Added "initial" support.   * This will cause a "forever" timer to
+	fire once only at startup.
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/calc.py:  * Added a really simply calculator (client) for the remote adder
+
+2007-07-12  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/adder.py:  * Added a really simple remote adder
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py:  * Version: 3.2.11-git1
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	Merge branch 'pymills-ng' of
+	git.shortcircuit.net.au:/data/git/public/pymills into pymills-ng
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/eventclient.py:  * Minor cosmetic changes
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/eventserver.py:  * Minor cosmetic changes
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/eventclient.py, pymills/event.py:  * Minor fixed to RemoteManager and eventclient example
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/db.py:  * Tidied up module importing of sqlite, mysql, etc  * Throw a
+	 DBError if no support is available for desired rdbms
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/db.py:  * Updated docs
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py:  * Updated event's docstring
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py:  * Added __all__
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py:  * Removed __all__
+
+2007-07-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/spider.py:  * Updated to latest web api changes
+
+2007-07-10  James Mills <prologic@shortcircuit.net.au>
+
+	* .gitignore:  * Updated .gitignore
+
+2007-07-10  James Mills <prologic@shortcircuit.net.au>
+
+	* setup.py:  * Fixed setup.py
+
+2007-07-10  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, setup.py:  * Version: 3.2.11  * Updated deps (pysqlite is no longer needed for
+	 python-2.5)
+
+2007-07-10  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, update:  * Version: 3.2.10 (3.2.9 is broken with setuptools)  * Removed
+	 bdist from update script
+
+2007-07-10  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py:  * Version: 3.2.9
+
+2007-07-10  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/web.py:  web:: Changed HTML decode/encode functions to escape/unescape
+
+2007-07-10  James Mills <prologic@shortcircuit.net.au>
+
+	* .gitignore:  * Added GIT ignore file
+
+2007-06-11  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/db.py: db: Added MySQL support
+
+2007-05-08  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py: Version: 3.2.8
+
+2007-05-08  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/datatypes.py:  * Fixed values() in OrderedDict
+
+2007-04-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/datatypes.py, pymills/event.py, pymills/irc.py:  * Fixed default keys/values in CaselessDict  * Event's
+	 channels/filters are now caseless
+
+2007-04-07  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/sockets.py: sockets:: Removed
+	print/debug code
+
+2007-04-07  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/irc.py, pymills/sockets.py: Version:
+	3.2.7  sockets:: Removed linsep code - This should be handled by
+	protocols. irc:: Added linsep code (see above).  Basically this
+	commit removes line separation and splitting code from te sockets
+	library inot the irc library. I believe that this should be handled
+	by implemented protocols and not the underlying socket code. A new
+	project that's being worked on that uses pymills (antaria) uses
+	linesep of \0 rather than \r\n so it makes sense that it should be
+	handled by the protocol.
+
+2007-04-07  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/db.py, pymills/timers.py: Version:
+	3.2.6  db:: Fixed erroneous import on Ubuntu systems. tiemrs:: Fixed
+	oudated use of getChannelID
+
+2007-04-07  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/db.py: db:: Fixed issue with
+	importing sqlite on Ubuntu.
+
+2007-04-07  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/web.py: web: Added more HTML entities to encode/decode
+	functions
+
+2007-03-29  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/subchannels.py: examples/subchannels.py:: Added to
+	demonstrate sub-channels using __channelPrefix__ on Components
+
+2007-03-29  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event:: Removed debug print
+
+2007-03-29  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, examples/irc.py, examples/todo.py,
+	pymills/db.py, pymills/event.py, pymills/irc.py,
+	pymills/sockets.py, pymills/tests/event.py,
+	pymills/tests/sockets.py, pymills/utils.py: db:: Updated to use
+	python-2.5's built-in sqlite3 module event:: Major changes...  *
+	Removed synonym method names  * Removed _channels dict  * Removed
+	addChannel, removeChannel, getChannelID  * channels are now just
+	stinrgs - no need for fancy unnecessary checks.  * Support for
+	"channel prefix" for Components. See: examples/subchannels.py irc::
+	Updated to event API changes sockets:: Updated to event API changes
+	tests:: Updated to event API changes utils:: Improved State class
+	and added notags function  * States can now be compared with < > and
+	==  * Cleaner implementation  * notags is a state machine that
+	strips HTML tags
+
+2007-03-17  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/pygameex.py: examples/pygamex.py: Fixed __init__
+
+2007-03-16  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/irc.py:  * Fixed lines/ListBox - urwid now caches objects
+
+2007-03-16  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/irc.py:  * Updated to work with latest urwid and non-blocking I/O.
+
+2007-03-05  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/irc.py, pymills/event.py: examples/irc.py:  * Fixed use
+	of Component(...)  event:  * Removed __init__ and __del__ of
+	Component.   * This caused more problems than it was worth.
+
+2007-03-02  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/mem.py, pymills/misc.py: mem:  * NEW module that has
+	functions to return memory usage of an applciation.  misc:  *
+	Cosmetic syntactic change in return for bytes()
+
+2007-03-01  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py: Version: 3.2.5-2007030100
+
+2007-03-01  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/pygameex.py, pymills/crux/ports.py, pymills/event.py,
+	pymills/spider.py: crux.ports:  * Fixed a few defects - Works now :)
+	spider:  * Fixed a defect when there is no html. html == None :/  *
+	TODO: Fix unicode problems  event:  * Added PyGameManager  examples:
+	* Added pygameex.py that uses PyGameManager
+
+2007-02-28  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/spider.py: spider:  * Updated to write links to stdout and
+	stats to stderr.
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/eventclient.py, examples/eventserver.py:  * Updated eventserver and eventclient examples.
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/eventclient.py: examples/eventclient.py:  bugfix: Fixed
+	nodes list.
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event:  bugfix:: Fixed syntax error
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, pymills/event.py: event:  * Removed port from
+	nodes. nodes only contains hosts now.  examples:  * Updated bench
+	example.
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event:  * Send event to remote side even if
+	local filters halted it.
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event:  * Process local events first in
+	RemoteManager  * Allow local filters to still halt events and not
+	proceed.
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event:  * Removed "print"/debug statements
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/eventclient.py, pymills/event.py: event:  bugfix:: Fixed
+	the bug where an infinite loop of events would occur.
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event:  * Don't add new nodes when receiving
+	data
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: bugfix: Append (addr[0], 64000) by default to
+	_nodes
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: bugfix: Fixed RemoteManager's sendEvent
+
+2007-02-26  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/ann.py, pymills/event.py: ann:  mod:: Removed unused
+	doctests in ann module.  event:  bugfix:: Added csock to
+	RemoteManager.  mod:: Added poll check to see if we can write.
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py: Version 3.2.4-2007022500
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py, pymills/log.py, pymills/sockets.py,
+	pymills/tests/event.py, pymills/tests/sockets.py: bugfix: Fixed
+	errors found by pyflakes
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/tests/event.py, pymills/tests/sockets.py: bugfix: Fixed
+	tests
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/irc.py, examples/ircbot.py, examples/telnet-ssl.py,
+	pymills/sockets.py: new: Removed ssl support for UDPClient - Doesn't
+	make much sense. new: Moved ssl=True to the open method rather than
+	__init__ of Client and TCpClient new: Updated irc and ircbot
+	examples to use new ssl options.
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/ircbot.py: new: Enabled ssl support in example ircbot
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: cosmetic: Removed extra "raise" statemetns in
+	event.
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, pymills/event.py: new: Added -e and -t options
+	to bench example. new: Improved RemoteManager's __read__ method in
+	event library.
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py: new: bench mark example now supports -l and -c.
+	See --help for uage.
+
+2007-02-25  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py: cosmetic: updated variable names in
+	examples/bench.py
+
+2007-02-24  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event: Added __len__, returns number of events
+	left in queue
+
+2007-02-24  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, examples/loops.py, examples/todo.py,
+	pymills/irc.py, pymills/sockets.py, pymills/timers.py:  * Fixed irc, sockets, timers and examples.  I broke a lot of code
+	 by removing the keyword argument from push and send in the
+	 EventManager. I thought that since I've never used them, they can't
+	 really be useful for anything. And it was causing pickling problems
+	 with the RemoteManager when source as an instnace of EventManager.
+	 :/
+
+2007-02-24  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py: event: Enabled broadcast. event: Send remote
+	events first, then local. Return for local events.  NOTE: With
+	broadcast events, please be _very_ careful. You must be careful not
+	to have a situation where: A sends an event to broadcast nodes A, B,
+	C, D and A processes the same event it sent out. An infinite loop of
+	events will occur between the nodes.
+
+2007-02-24  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/eventclient.py, examples/eventserver.py,
+	pymills/event.py: event: This now supports Remote Events.  Basically
+	this means a new class called RemoteManager which listens by default
+	on 0.0.0.0:64000 on the UDP protocol for nodes to send it events.
+	Event are processed locally first, then sent over the remote
+	channel. In essence, this creats a kind of a mesh event network
+	where RemoteManager's are able to send and receive events to each
+	other.  In theory it would be possible to build distributed apps
+	with this, and build apps whoose parts need not run on the same
+	machine. (ie: Agents)
+
+2007-02-24  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/sockets.py, test:  * test file deleted.  * Updated ErrorEvent to contain only error
+	 string.
+
+2007-02-24  James Mills <prologic@shortcircuit.net.au>
+
+	* test: test: test file
+
+2007-02-23  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/sockets.py: pymills: 3.2.2-2007022301
+	-> 3.2.3-2007022300  * Fixed reconnecting isuses with Client
+	sockets.
+
+2007-02-23  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/telnet-ssl.py, examples/udpclient.py,
+	examples/udpserver.py, pymills/__init__.py, update:  * Added udp server and client examples  * Added telnet (ssL)
+	 example  * Added update script to update PyPi
+
+2007-02-23  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/crux/ports.py, pymills/event.py,
+	pymills/sockets.py, pymills/utils.py: pymills: 3.2.1-2007020402 ->
+	3.2.2-2007022300  crux.ports:: Added dict-like method to Repository
+	class.  event: Started work on server/remote support for
+	EventManager  sockets: Added UDPClient, UDPServer and SSL support.
+	utils: Use A-Z + a-z + 0-9 in mkpasswd
+
+2007-02-04  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py: Bumped build ver
+
+2007-02-04  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, setup.py: Updated setup
+
+2007-02-04  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, setup.py: Updated license, keywords, deps.
+	Bumped build ver
+
+2007-02-04  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/timers.py: timers: Only delete timer
+	if it's still there
+
+2007-01-28  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/csv.py: csv: Removed (use python std
+	csv module)
+
+2007-01-28  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py: Updated author email address
+
+2007-01-28  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/__init__.py, pymills/csv.py: csv: New module to handle CSV
+	files
+
+2007-01-28  James Mills <prologic@shortcircuit.net.au>
+
+	* PKG-INFO: PKG-INFO: Removed - auto generated
+
+2007-01-27  James Mills <prologic@shortcircuit.net.au>
+
+	* PKG-INFO, examples/irc.py, pymills/__init__.py,
+	pymills/spider.py, setup.py: Minor updates and fixes.   * Added pypi
+	PKG-INFO  * Added setuptools support in setup.py  * Fixed spider  *
+	Tidied up irc example.
+
+2006-12-19  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, examples/loops.py, pymills/misc.py: misc:  *
+	Added beat() - Swatch time exampels:  * Added simple bench example
+	* Added an infinite loop example - just for kicks :)
+
+2006-12-18  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/timers.py:  * Tidied up  * Removed name, channel from TimerEvent data  *
+	 Renamed length to n  * Added support for finding a Timer -->
+	 Timers.find(**kwargs)
+
+2006-12-16  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/db.py: db:  * All retrieved strings are now converted to
+	UTF-8
+
+2006-12-12  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/irc.py:  * Added NETINFO support and NetInfoEvent
+
+2006-12-09  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/irc.py:  irc:: Added support for TOPIC events
+
+2006-12-08  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/ircbot.py:  examples/ircbot:: Added
+
+2006-12-08  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/irc.py:  irc:: Added support for multi-channel joins
+
+2006-11-28  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/db.py, pymills/irc.py:  db:: Disabled setAutoCommit - Not available in DB-API2 :/  irc::
+	 Added MOTD / MotdEvent support
+
+2006-11-27  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/irc.py:  irc:: Fixed ircCTCP and ircCTCPREPLY messages
+
+2006-11-27  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py, pymills/irc.py, pymills/sockets.py:  event:: Cleanup by removing event from queue if exception occured.
+	 irc:: push raw events instead of doing nothing.  sockets:: sleep
+	 for 0.001 using time.sleep waiting for connection
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/__init__.py: pymills: 2.0.1 -> 2.1.0
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/utils.py: utils: added __safe_import__, added ConfigParser
+	layer
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/sockets.py: sockets: Removed Id tags
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/io.py: io: Removed Id tag, Removed use of deprecated
+	Tokenizer
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/crux/ports.py: crux/ports: Removed Id tags, Updated
+	Pkgfile format
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/event.py: event: added support for returning values from
+	listeners, added unregister to Component
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/misc.py: misc: added strToBool function
+
+2006-11-20  James Mills <prologic@daisy.(none)>
+
+	* pymills/ann.py, pymills/crux/__init__.py, pymills/datatypes.py,
+	pymills/db.py, pymills/env.py, pymills/log.py, pymills/semnet.py,
+	pymills/spider.py, pymills/test.py, pymills/tests/__init__.py,
+	pymills/tests/event.py, pymills/tests/sockets.py,
+	pymills/timers.py, pymills/ver.py, pymills/web.py:  * Removed Id tags
+
+2006-11-19  James Mills <prologic@daisy.(none)>
+
+	* pymills/__init__.py, pymills/misc.py: misc: Added getTotalTime and
+	hmsToSeconds
+
+2006-07-14  prologic <prologic>
+
+	* pymills/irc.py: r178:  * Closes #45
+
+2006-07-01  prologic <prologic>
+
+	* pymills/env.py: r177:  * Fixes #54  * Enhancements    * Added
+	reload method 	* Improved create and verify
+
+2006-06-29  prologic <prologic>
+
+	* pymills/utils.py: r176:  * Closes #41
+
+2006-06-29  prologic <prologic>
+
+	* pymills/env.py: r175:  * Closes #25
+
+2006-06-29  prologic <prologic>
+
+	* pymills/event.py: r174:  * Fixes #53
+
+2006-06-29  prologic <prologic>
+
+	* examples/event.py: r173:  * Closes #52
+
+2006-06-29  prologic <prologic>
+
+	* examples/event.py: r172:  * Closes #16
+
+2006-06-29  prologic <prologic>
+
+	* examples/timers.py, pymills/timers.py: r171:  * Closes #39
+
+2006-06-29  prologic <prologic>
+
+	* pymills/config.py, pymills/test.py, pymills/tests/__init__.py,
+	pymills/tests/config.py: r170:  * Closes #51
+
+2006-06-29  prologic <prologic>
+
+	* pymills/config.py: r169:  * Closes #21
+
+2006-06-29  prologic <prologic>
+
+	* examples/echoserer.py, examples/irc.py, pymills/event.py,
+	pymills/irc.py, pymills/sockets.py, pymills/test.py,
+	pymills/tests/__init__.py, pymills/tests/sockets.py,
+	pymills/timers.py: r168: timers:  * Fixed to comply with event API
+	tests:  * sockets unittest done -> Closes #20 irc (See #45):  *
+	Fixed to comply with event API  * Added example irc client that uses
+	urwid for it's ui event:  * Improved filter/listener call function
+	* Added __getitem__ to Event making it dict-lie  * Improved
+	Component.__new__ exampels/echoserver:  * Fixed
+
+2006-06-28  prologic <prologic>
+
+	* Pkgfile, clean, dist/pymills-0.1.0.tar.gz,
+	dist/pymills-0.2.0.tar.gz, dist/pymills-0.2.1.tar.gz,
+	dist/pymills-0.2.2.tar.gz, dist/pymills-0.4.0.tar.gz,
+	dist/pymills-0.4.1.tar.gz, dist/pymills-0.4.2.tar.gz,
+	dist/pymills-0.5.2.tar.gz, dist/pymills-0.5.3.tar.gz,
+	dist/pymills-0.5.7.tar.gz, dist/pymills-0.8.0.tar.gz,
+	dist/pymills-0.8.4.tar.gz, dist/pymills-0.9.0.tar.gz,
+	dist/pymills-0.9.1.tar.gz, dist/pymills-0.9.2.tar.gz,
+	dist/pymills-0.9.3.tar.gz, dist/pymills-1.0.0.tar.gz, dist/sync,
+	docs/AUTHORS, docs/INSTALL, docs/README, docs/RELEASE, docs/THANKS,
+	docs/pymills/index.html, docs/pymills/pymills.ann.html,
+	docs/pymills/pymills.cmdopt.html, docs/pymills/pymills.crux.html,
+	docs/pymills/pymills.crux.ports.html,
+	docs/pymills/pymills.datatypes.html, docs/pymills/pymills.db.html,
+	docs/pymills/pymills.event.html, docs/pymills/pymills.html,
+	docs/pymills/pymills.io.html, docs/pymills/pymills.irc.html,
+	docs/pymills/pymills.ircbot.core.html,
+	docs/pymills/pymills.ircbot.html,
+	docs/pymills/pymills.ircbot.timers.html,
+	docs/pymills/pymills.logic.html, docs/pymills/pymills.misc.html,
+	docs/pymills/pymills.optparsex.html, docs/pymills/pymills.rit.html,
+	docs/pymills/pymills.semnet.html,
+	docs/pymills/pymills.sockets.html,
+	docs/pymills/pymills.spider.html, docs/pymills/pymills.time.html,
+	docs/pymills/pymills.timemath.html,
+	docs/pymills/pymills.timers.html, docs/pymills/pymills.url.html,
+	docs/pymills/pymills.utils.html, docs/pymills/pymills.ver.html,
+	docs/pymills/pymills.web.html, getver, makedocs, update: r167:  *
+	Closes #50
+
+2006-06-26  prologic <prologic>
+
+	* examples/echoserer.py, pymills/event.py, pymills/sockets.py: r166:
+	* Closes #49  * Improved handler call in event module  * Fixed
+	__new__ signature in event.Component  * Added echoserver example
+	See: Examples
+
+2006-06-25  prologic <prologic>
+
+	* examples/telnet.py, examples/todo.py, tests/demo1.py,
+	tests/demo2.py, tests/demo3.py, tests/tostr.py: r165:  * Closes #48
+	* Removed redundant tests/
+
+2006-06-25  prologic <prologic>
+
+	* pymills/event.py, pymills/io.py, pymills/sockets.py,
+	pymills/tests/event.py: r164:  * Closes #19  * Fixed
+	io.SelectInput.poll to by non-blocking by default  * Changed the way
+	filters/listeners are created in the event module by using
+	decorators instead.    * Event test suite updated as a result.  See:
+	[wiki:Examples/Telnet Telnet Example]
+
+2006-06-25  prologic <prologic>
+
+	* pymills/event.py: r163:  * Closes #13
+
+2006-06-24  prologic <prologic>
+
+	* pymills/event.py, pymills/tests/__init__.py,
+	pymills/tests/event.py: r162:  * Closes #16  * Fixed a few defects
+	found in the event module as a result of writing the event unittest.
+
+
+2006-06-22  prologic <prologic>
+
+	* docs/trac_banner.png: r161:  * Added Trac Logo (Closes #18)
+
+2006-06-18  prologic <prologic>
+
+	* pymills/db.py: r160:  * Fixes #17
+
+2006-06-18  prologic <prologic>
+
+	* pymills/config.py, pymills/env.py, pymills/log.py,
+	pymills/spider.py, pymills/test.py, pymills/tests/__init__.py,
+	pymills/tests/config.py: r159:  * Closes #14 and #15
+
+2006-06-17  prologic <prologic>
+
+	* pymills/event.py: r158:  * Closes #11 and #12
+
+2006-06-17  prologic <prologic>
+
+	* pymills/log.py: r157:  * Closes #10
+
+2006-06-17  prologic <prologic>
+
+	* pymills/config.py, pymills/env.py, pymills/log.py: r156:  * Closes
+	#7, #8 and #9
+
+2006-06-17  prologic <prologic>
+
+	* pymills/ann.py: r155:  * Closes #6
+
+2006-06-17  prologic <prologic>
+
+	* pymills/db.py: r154:  * Closes #5
+
+2006-06-17  prologic <prologic>
+
+	* pymills/ircbot.py: r153:  * Closes #4
+
+2006-06-17  prologic <prologic>
+
+	* pymills/irc.py: r152:  * Closes #3
+
+2006-06-12  prologic <prologic>
+
+	* pymills/logic.py, pymills/rit.py, pymills/timemath.py: r151:  *
+	Removed
+
+2006-06-11  prologic <prologic>
+
+	* pymills/ann.py, pymills/db.py, pymills/event.py, pymills/irc.py,
+	pymills/ircbot.py, pymills/sockets.py, pymills/spider.py,
+	pymills/timers.py: r150:  * Added event support for Timers  *
+	Removed Traffic class from sockets library  * Added event support to
+	sockets.TCPClient    * TCPClient is a complete re-work. 	* TODO:
+	TCPServer  * Starting to add thread support to ann library  *
+	Removed IRCServer, IRCClient form irc library.  * The irc library
+	now just contains a single IRC class that implements the protocol.
+	* Added event support to irc  * Started to update ircbot to amtch
+	new irc api  * Removed MySQLdb import from db (not being used yet).
+	* Removed unused import from spider
+
+2006-06-07  prologic <prologic>
+
+	* pymills/url.py, pymills/web.py: r149:  * Renamed escape/unescape
+	to '''encode/decode'''HTMLEntities  * Removed url module, merged
+	into web module.
+
+2006-06-07  prologic <prologic>
+
+	* pymills/db.py: r148:  * Removed % python string subsitutions in
+	place of ? (handled by db-api2)
+
+2006-06-07  prologic <prologic>
+
+	* pymills/optparsex.py, pymills/utils.py: r147:  * Merged optparsex
+	into utils
+
+2006-06-07  prologic <prologic>
+
+	* pymills/datatypes.py: r146:  * Fixed a problem in OrderedDict    *
+	The interators weren't returning keys, items or values in the right
+	order.
+
+2006-05-21  prologic <prologic>
+
+	* pymills/irc.py: r138: irc: Fixed strip function.  It was stripping
+	_all_ :'s instead of just the first one. This closes #1
+
+2006-04-05  prologic <prologic>
+
+	* pymills/db.py: r137: db: Removed commented (old) code and updated
+	doc string for _getFields
+
+2006-04-05  prologic <prologic>
+
+	* pymills/db.py, pymills/utils.py: r136: utils: Improved loadCOnfig
+	function to throw an IOError when it was unable to load any config
+	file.  db: Improved the way field names are retrieved. Instead of
+	parsing the sql query string, I've found that they _must_ exist in
+	Cursot.description according to the AB API specification. This makes
+	thie module much more flexible and nicer to use :)
+
+2006-04-03  prologic <prologic>
+
+	* : r135: Ignore *.pyc files
+
+2006-04-03  prologic <prologic>
+
+	* tests/demo1.py, tests/demo2.py, tests/demo3.py: r134: Fixed
+	imports for demos
+
+2006-04-03  prologic <prologic>
+
+	* docs/pymills/pymills.adt.html,
+	docs/pymills/pymills.datatypes.html,
+	docs/pymills/pymills.event.html, docs/pymills/pymills.html: r133:
+	Updated docs
+
+2006-04-03  prologic <prologic>
+
+	* pymills/demo1.py, pymills/demo2.py, pymills/demo3.py,
+	pymills/tostr.py, tests/demo1.py, tests/demo2.py, tests/demo3.py,
+	tests/tostr.py: r132: Moved to tests
+
+2006-04-03  prologic <prologic>
+
+	* : r131: Added
+
+2006-04-03  prologic <prologic>
+
+	* pymills/adt.py, pymills/datatypes.py: r130: Moved classes from adt
+	into datatypes.
+
+2006-04-03  prologic <prologic>
+
+	* pymills/event.py: r129: * Updated formatting of points in
+	sendEvent's doc string.
+
+2006-04-03  prologic <prologic>
+
+	* pymills/event.py: r128: * Added documentation
+
+2006-04-03  prologic <prologic>
+
+	* pymills/event.py: r127: * Changed source to _source * Added _time
+	I didn't want these to conflict with attributes of the event, where
+	you might want to use "source" and "time", etc.
+
+2006-04-02  prologic <prologic>
+
+	* docs/pymills/pymills.db.html, docs/pymills/pymills.event.html,
+	docs/pymills/pymills.html, docs/pymills/pymills.semnet.html,
+	docs/pymills/pymills.spider.html,
+	docs/pymills/pymills.timemath.html,
+	docs/pymills/pymills.timers.html: r126: * Updated docs
+
+2006-04-02  prologic <prologic>
+
+	* pymills/event.py: r125: * Added synonyms for pushEVent,
+	flushEvents and sendEvent
+
+2006-04-02  prologic <prologic>
+
+	* pymills/demo3.py, pymills/event.py: r124: * Added support for
+	_all_ listeners and filters.  THis means if you add a listener or a
+	filter but don't specify any channels, it'll listen/filter all
+	events.  Also added a nice __repr__ to the Event class thanks to
+	code from spineless.
+
+2006-04-02  prologic <prologic>
+
+	* pymills/demo3.py, pymills/event.py: r123: Added filters.  Filters
+	are processed before Listeners. Filters are able to discard an
+	event.
+
+2006-04-02  prologic <prologic>
+
+	* pymills/db.py: r122: * Added doctest to test examples. * Fixed up
+	example for Record
+
+2006-04-02  prologic <prologic>
+
+	* pymills/demo3.py, pymills/event.py: r121: event: Fixed up queue
+	demo: Re-wrote to test pushing of events - Also fixed a defect
+	causing a loop of events.
+
+2006-04-02  prologic <prologic>
+
+	* pymills/demo3.py, pymills/event.py: r120: * Fixed a bad typo :)
+
+2006-04-02  prologic <prologic>
+
+	* pymills/demo3.py, pymills/event.py: r119: event: Added an internal
+	queue with pushEvent and flushEvents methods. demo3: Updated to test
+	queued events.
+
+2006-04-02  prologic <prologic>
+
+	* pymills/demo3.py, pymills/event.py: r118: Added a general purpose
+	event system and demo.  This event-system uses listeners to listen
+	on channels for events.
+
+2006-04-02  prologic <prologic>
+
+	* pymills/time.py, pymills/timemath.py: r117: Renamed - becuase it's
+	name conflicts with std lib time
+
+2006-04-02  prologic <prologic>
+
+	* pymills/semnet.py: r116: Just some tidying up
+
+2006-04-02  prologic <prologic>
+
+	* pymills/demo1.py, pymills/demo2.py, pymills/tostr.py: r115: tostr:
+	Added only temporarily for demo1 and demo2 whiel I play with semnet.
+	demo1: Demo for demnet demo2: Demo for semnet
+
+2006-04-01  prologic <prologic>
+
+	* pymills/db.py: r114: * Added more detail to DBError thrown on
+	connection failure for sqlite.
+
+2006-04-01  prologic <prologic>
+
+	* pymills/db.py: r113: * Fixed up manual commit method
+
+2006-04-01  prologic <prologic>
+
+	* pymills/db.py: r112: * Fixed do synonym: forgot it had to actually
+	return something :)
+
+2006-04-01  prologic <prologic>
+
+	* pymills/db.py: r111: * Removed debug print for checking fields *
+	Fixed up do synonym.
+
+2006-04-01  prologic <prologic>
+
+	* docs/pymills/pymills.adt.html, docs/pymills/pymills.ann.html,
+	docs/pymills/pymills.crux.html,
+	docs/pymills/pymills.crux.ports.html,
+	docs/pymills/pymills.datatypes.html, docs/pymills/pymills.db.html,
+	docs/pymills/pymills.html, docs/pymills/pymills.io.html,
+	docs/pymills/pymills.irc.html, docs/pymills/pymills.ircbot.html,
+	docs/pymills/pymills.logic.html, docs/pymills/pymills.misc.html,
+	docs/pymills/pymills.optparsex.html, docs/pymills/pymills.rit.html,
+	docs/pymills/pymills.semnet.html,
+	docs/pymills/pymills.sockets.html,
+	docs/pymills/pymills.spider.html, docs/pymills/pymills.time.html,
+	docs/pymills/pymills.timers.html, docs/pymills/pymills.url.html,
+	docs/pymills/pymills.utils.html, docs/pymills/pymills.ver.html,
+	docs/pymills/pymills.web.html: r110: * Updated HTML documentation
+
+2006-03-31  prologic <prologic>
+
+	* pymills/__init__.py, pymills/ann.py, pymills/datatypes.py,
+	pymills/db.py, pymills/logic.py, pymills/rit.py, pymills/semnet.py,
+	pymills/time.py: r109: Added new modules:  semnet    - Semantic
+	Network Module (AI) logic     - Collection of various logic
+	functions datatypes - Various Data Types (ADT to be merged in). time
+	- Various time related functions rit       - Relational Information
+	Tress Module ann       - Artificial Neural Network Module
+	Re-Writes: db        - New and improved :) See documentation for db
+	This is the start of version 2!
+
+2006-03-31  prologic <prologic>
+
+	* : r108: New branch of pymills -> Next Generation
+
+2006-03-31  prologic <prologic>
+
+	* dist/pymills-1.0.0.tar.gz: r106: Added
+
+2006-03-31  prologic <prologic>
+
+	* docs/pymills/pymills.adt.html, docs/pymills/pymills.crux.html,
+	docs/pymills/pymills.crux.ports.html, docs/pymills/pymills.db.html,
+	docs/pymills/pymills.html, docs/pymills/pymills.io.html,
+	docs/pymills/pymills.irc.html, docs/pymills/pymills.ircbot.html,
+	docs/pymills/pymills.misc.html,
+	docs/pymills/pymills.optparsex.html,
+	docs/pymills/pymills.sockets.html,
+	docs/pymills/pymills.spider.html, docs/pymills/pymills.timers.html,
+	docs/pymills/pymills.url.html, docs/pymills/pymills.utils.html,
+	docs/pymills/pymills.ver.html, docs/pymills/pymills.web.html: r105:
+	Updated documentation
+
+2006-03-31  prologic <prologic>
+
+	* pymills/__init__.py: r104: Stable Release
+
+2006-03-31  prologic <prologic>
+
+	* TODO: r103: Removed
+
+2006-03-31  prologic <prologic>
+
+	* pymills/db.py: r102: Updated
+
+2006-03-19  prologic <prologic>
+
+	* pymills/crux/__init__.py, pymills/crux/ports.py: r101: * Fixed
+	total repos and ports
+
+2006-01-01  prologic <prologic>
+
+	* dist/pymills-0.9.3.tar.gz: r100: Added
+
+2006-01-01  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py: r99: * Fixed up Record.get
+	method so that values are returned in 	the same order as they are
+	specified in fields.
+
+2005-11-28  prologic <prologic>
+
+	* dist/pymills-0.9.2.tar.gz: r98: Added
+
+2005-11-28  prologic <prologic>
+
+	* pymills/__init__.py, pymills/io.py: r97: * Majorly modified the
+	way io.Table works (simplified)
+
+2005-11-25  prologic <prologic>
+
+	* dist/pymills-0.9.1.tar.gz: r96: Added
+
+2005-11-25  prologic <prologic>
+
+	* pymills/__init__.py, pymills/web.py: r95: * Removed Template and
+	Theme classes * Documented setupPaths function
+
+2005-11-25  prologic <prologic>
+
+	* dist/pymills-0.9.0.tar.gz: r94: Added
+
+2005-11-25  prologic <prologic>
+
+	* pymills/__init__.py: r93: * New )forced) Release
+
+2005-11-25  prologic <prologic>
+
+	* dist/pymills-0.8.4.tar.gz, update: r92: * Changed update script to
+	force MANIFEST update * UPdated 0.8.4 package
+
+2005-11-25  prologic <prologic>
+
+	* dist/pymills-0.8.4.tar.gz: r91: Added
+
+2005-11-25  prologic <prologic>
+
+	* pymills/__init__.py, pymills/irc.py: r90: * Fixed sourceSplit *
+	Documented sourceSplit
+
+2005-11-11  prologic <prologic>
+
+	* pymills/__init__.py, pymills/adt.py: r89: * Removed __contains__
+	support from CaselessDict  * Not needed ( Now I know why )
+
+2005-11-11  prologic <prologic>
+
+	* pymills/__init__.py, pymills/adt.py, pymills/misc.py: r88: * misc:
+	Added backMerge function  * Used to backwardly merge a list of
+	tokens  * See: pydoc documentation * Added __contains__ support for
+	CaselessDict
+
+2005-11-11  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py, pymills/irc.py: r87: * irc:
+	Added TOPIC event * db: Modified Records class so that get is able
+	to   return given fields, or all fields, or one given field.
+
+2005-11-08  prologic <prologic>
+
+	* dist/pymills-0.8.0.tar.gz: r86: Added
+
+2005-11-08  prologic <prologic>
+
+	* pymills/__init__.py, pymills/adt.py, pymills/cmdopt.py,
+	pymills/crux/__init__.py, pymills/crux/ports.py, pymills/db.py,
+	pymills/io.py, pymills/irc.py, pymills/ircbot.py, pymills/misc.py,
+	pymills/optparsex.py, pymills/sockets.py, pymills/spider.py,
+	pymills/timers.py, pymills/url.py, pymills/utils.py,
+	pymills/ver.py, pymills/web.py: r85: * Removed cmdopt - not really
+	necessary now ...  * Use optparse (stdlib) instead or optparsex *
+	spider module is complete and working * db: complete modification.
+	* SQLObject  * SQLite (Connection) * Added: optparsex (some extra
+	optparse features like   CaselessOptionParser and a "Required
+	Option" Parser. * ircbot: cleanup * Added: web module used for web
+	applications  * setupPaths function  * Template class  * Theme class
+	(not finished)  * Will probably scrap this module and learn/use:
+	clearsilver * irc: Added a Server class (non-listening, client
+	based) * adt: Added CaselessList and CaselessDict * io: cleanup *
+	timers: tidied up and restructured API (see: pydoc tiemrs) * Added:
+	url (extra misc url functions not available in the   stdlib) * utils
+	* Tidied up a bit  * NEW loadConfig (uses ConfigParser now)  *
+	Added: mkpasswd (create random passwords)  * Added: caller (return
+	the n'th called function)  * Added: sendEmail (sends an email) *
+	ver: cleanup * misc: cleanup * crux/ports: cleanup
+
+2005-10-05  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py: r84: * Fixed quoting of sql
+	strings
+
+2005-09-23  prologic <prologic>
+
+	* pymills/__init__.py, pymills/spider.py: r83: * Completed basic
+	Crawler
+
+2005-09-23  prologic <prologic>
+
+	* pymills/__init__.py, pymills/spider.py: r82: * Added new module
+	"spider" the beginnings of a Web Crawler Module * Exported _all_
+	modules in package (__init__)
+
+2005-09-12  prologic <prologic>
+
+	* pymills/__init__.py: r81: Added crux package
+
+2005-09-12  prologic <prologic>
+
+	* pymills/crux/__init__.py, pymills/crux/ports.py: r80: Ignore *.pyc
+
+
+2005-09-12  prologic <prologic>
+
+	* pymills/crux/__init__.py, pymills/crux/crux.py,
+	pymills/crux/ports.py: r79: Log Message: Added ports module handling
+	Ports Tree and individual Ports and their Pkgfile's
+
+2005-09-12  prologic <prologic>
+
+	* pymills/utils.py: r78: Added getFiles and isReadable functions
+
+2005-09-12  prologic <prologic>
+
+	* pymills/crux.py, pymills/crux/crux.py: r77: Added crux package and
+	moved crux.py
+
+2005-09-12  prologic <prologic>
+
+	* : r76: Ignore *.pyc
+
+2005-09-04  prologic <prologic>
+
+	* dist/pymills-0.5.7.tar.gz: r75: Added
+
+2005-09-04  prologic <prologic>
+
+	* docs/pymills/pymills.adt.html, docs/pymills/pymills.cmdopt.html,
+	docs/pymills/pymills.crux.html, docs/pymills/pymills.db.html,
+	docs/pymills/pymills.html, docs/pymills/pymills.io.html,
+	docs/pymills/pymills.irc.html, docs/pymills/pymills.ircbot.html,
+	docs/pymills/pymills.ver.html: r74: Updated
+
+2005-09-04  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py: r73: Fixed quoting of strings
+	literals
+
+2005-08-01  prologic <prologic>
+
+	* pymills/__init__.py, pymills/misc.py: r72: Updated duration to
+	return a tuple vs. a string
+
+2005-06-27  prologic <prologic>
+
+	* pymills/__init__.py, pymills/irc.py: r71: Modified to also strip
+	colors, simplidifed code
+
+2005-06-26  prologic <prologic>
+
+	* pymills/__init__.py, pymills/irc.py: r70: Made strip and
+	parseSource public functions
+
+2005-06-14  prologic <prologic>
+
+	* dist/pymills-0.5.3.tar.gz: r69: Added
+
+2005-06-14  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py: r68: Added cx.commit as class
+	destructor (no autocommit anymore\!)
+
+2005-06-14  prologic <prologic>
+
+	* dist/pymills-0.5.2.tar.gz: r67: Added
+
+2005-06-14  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py: r66: Fixed db.SQLite to comply
+	with pysqlite2
+
+2005-06-14  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py: r65: Updated db to use new
+	version of pysqlite (pysqlite2 in conjunction with sqlite3)
+
+2005-06-07  prologic <prologic>
+
+	* pymills/crux.py, pymills/ver.py: r64: Added
+
+2005-06-06  prologic <prologic>
+
+	* pymills/__init__.py: r63: Added crux module
+
+2005-06-06  prologic <prologic>
+
+	* pymills/io.py: r62: Updated header comments
+
+2005-06-05  prologic <prologic>
+
+	* pymills/__init__.py, pymills/cmdopt.py: r61: Fixed some errors in
+	the Options class
+
+2005-05-31  prologic <prologic>
+
+	* pymills/adt.py: r60: Added __getitem__ methods making Stack and
+	Queue iterable.
+
+2005-05-19  prologic <prologic>
+
+	* pymills/cmdopt.py: r59: Removed usage and allowEmpty, not really
+	needed
+
+2005-05-16  prologic <prologic>
+
+	* pymills/__init__.py, pymills/ircbot.py: r58: Added status checking
+	after each plugin has processed the event and wether or not to stop
+	other plugins from processing the same event.
+
+2005-05-16  prologic <prologic>
+
+	* pymills/__init__.py, pymills/ircbot.py: r57: Added support to call
+	__del__ of plugins if available.
+
+2005-05-16  prologic <prologic>
+
+	* pymills/__init__.py, pymills/db.py: r56: Added quoting support
+
+2005-05-14  prologic <prologic>
+
+	* dist/pymills-0.4.2.tar.gz: r55: Added
+
+2005-05-14  prologic <prologic>
+
+	* pymills/__init__.py: r54: Updated version
+
+2005-05-14  prologic <prologic>
+
+	* pymills/io.py: r53: Fixed Input, Command. Re-added test function.
+
+
+2005-05-14  prologic <prologic>
+
+	* dist/pymills-0.4.1.tar.gz: r52: Added
+
+2005-05-14  prologic <prologic>
+
+	* pymills/__init__.py, setup.py: r51: Updated
+
+2005-05-14  prologic <prologic>
+
+	* .footprint, .md5sum: r50: Removed
+
+2005-05-14  prologic <prologic>
+
+	* Pkgfile: r49: Updated
+
+2005-05-14  prologic <prologic>
+
+	* Pkgfile: r48: Updated deps
+
+2005-05-14  prologic <prologic>
+
+	* update: r47: Updated
+
+2005-05-14  prologic <prologic>
+
+	* docs/pymills/pymills.timers.html: r46: Added
+
+2005-05-14  prologic <prologic>
+
+	* docs/pymills/pymills.adt.html, docs/pymills/pymills.cmdopt.html,
+	docs/pymills/pymills.db.html, docs/pymills/pymills.html,
+	docs/pymills/pymills.io.html, docs/pymills/pymills.irc.html,
+	docs/pymills/pymills.ircbot.html, docs/pymills/pymills.misc.html,
+	docs/pymills/pymills.sockets.html, docs/pymills/pymills.utils.html,
+	makedocs: r45: Updated
+
+2005-05-14  prologic <prologic>
+
+	* TODO: r44: Updated
+
+2005-05-14  prologic <prologic>
+
+	* update: r43: Added
+
+2005-05-14  prologic <prologic>
+
+	* dist/pymills-0.4.0.tar.gz: r42: Added
+
+2005-05-14  prologic <prologic>
+
+	* pymills/db.py: r41: Made Records public
+
+2005-05-14  prologic <prologic>
+
+	* pymills/sockets.py: r40: Cleaned up and remove debug statements
+
+2005-05-14  prologic <prologic>
+
+	* pymills/misc.py: r39: Fixed defect: wrong variable used
+
+2005-05-14  prologic <prologic>
+
+	* pymills/__init__.py: r38: Updated version
+
+2005-05-14  prologic <prologic>
+
+	* pymills/adt.py, pymills/cmdopt.py, pymills/db.py,
+	pymills/misc.py, pymills/sockets.py, pymills/utils.py: r37: Updated
+
+
+2005-05-14  prologic <prologic>
+
+	* pymills/ircbot.py, pymills/timers.py: r36: Added
+
+2005-05-14  prologic <prologic>
+
+	* pymills/ircbot/__init__.py, pymills/ircbot/core.py,
+	pymills/ircbot/timers.py: r35: Removed, ircbot now a module not a
+	package
+
+2005-05-14  prologic <prologic>
+
+	* pymills/utils.py: r34: Removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/sockets.py: r33: Removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/misc.py: r32: Removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/irc.py: r31: Removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/io.py: r30: Removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/db.py: r29: Removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/cmdopt.py: r28: Removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/adt.py: r27: Fixed and removed docs for now
+
+2005-05-14  prologic <prologic>
+
+	* pymills/ircbot/core.py: r26: Removed debug print statements
+
+2005-05-14  prologic <prologic>
+
+	* pymills/__init__.py: r25: Updated version
+
+2005-05-14  prologic <prologic>
+
+	* pymills/ircbot/core.py: r24: Made isAddressed case-insensitive
+
+2005-05-14  prologic <prologic>
+
+	* pymills/irc.py: r23: Fixed to use new modifications to Tokenizer
+
+2005-05-14  prologic <prologic>
+
+	* pymills/utils.py: r22: Added copy method, Fixed copy method
+
+2005-05-14  prologic <prologic>
+
+	* .md5sum: r21: Updated
+
+2005-05-14  prologic <prologic>
+
+	* dist/pymills-0.2.2.tar.gz: r20: Added
+
+2005-05-14  prologic <prologic>
+
+	* pymills/__init__.py: r19: Updated version
+
+2005-05-14  prologic <prologic>
+
+	* pymills/ircbot/__init__.py: r18: Removed ircbot and timers imports
+
+
+2005-05-14  prologic <prologic>
+
+	* .footprint, .md5sum: r17: Updated
+
+2005-05-14  prologic <prologic>
+
+	* dist/pymills-0.2.1.tar.gz: r16: Added
+
+2005-05-14  prologic <prologic>
+
+	* pymills/__init__.py, setup.py: r15: Added ircbot package, Updated
+	version
+
+2005-05-13  prologic <prologic>
+
+	* docs/pymills/index.html, docs/pymills/pymills.adt.html,
+	docs/pymills/pymills.cmdopt.html, docs/pymills/pymills.db.html,
+	docs/pymills/pymills.html, docs/pymills/pymills.io.html,
+	docs/pymills/pymills.irc.html,
+	docs/pymills/pymills.ircbot.core.html,
+	docs/pymills/pymills.ircbot.html,
+	docs/pymills/pymills.ircbot.timers.html,
+	docs/pymills/pymills.misc.html, docs/pymills/pymills.sockets.html,
+	docs/pymills/pymills.utils.html: r14: Added
+
+2005-05-13  prologic <prologic>
+
+	* makedocs: r13: Added script to make HTMl documentation
+
+2005-05-13  prologic <prologic>
+
+	* pymills/io.py: r12: Fixed import convention
+
+2005-05-13  prologic <prologic>
+
+	* .footprint, .md5sum: r11: Updated
+
+2005-05-13  prologic <prologic>
+
+	* dist/pymills-0.2.0.tar.gz: r10: Added
+
+2005-05-13  prologic <prologic>
+
+	* TODO: r9: Updated
+
+2005-05-13  prologic <prologic>
+
+	* pymills/adt.py, pymills/cmdopt.py, pymills/db.py, pymills/io.py,
+	pymills/irc.py, pymills/ircbot/__init__.py, pymills/ircbot/core.py,
+	pymills/ircbot/timers.py, pymills/misc.py, pymills/sockets.py,
+	pymills/utils.py: r8: Added - Fixed some naming conventions
+
+2005-05-13  prologic <prologic>
+
+	* pymills/__init__.py: r7: Updated version
+
+2005-05-13  prologic <prologic>
+
+	* pymills/__init__.py: r6: Added more documentation
+
+2005-05-13  prologic <prologic>
+
+	* pymills/ADT.py, pymills/CmdOpt.py, pymills/DB.py, pymills/IO.py,
+	pymills/IRC.py, pymills/IRCBot/Core.py, pymills/IRCBot/Timers.py,
+	pymills/IRCBot/__init__.py, pymills/IRCBot/test.py,
+	pymills/Math.py, pymills/Sockets.py, pymills/Tokenizer.py,
+	pymills/Utils.py: r5: Removed
+
+2005-05-11  prologic <prologic>
+
+	* Pkgfile: r4: Fixed depends line
+
+2005-05-11  prologic <prologic>
+
+	* .footprint, .md5sum: r3: Added
+
+2005-05-11  prologic <prologic>
+
+	* Pkgfile, TODO, clean, dist/pymills-0.1.0.tar.gz, dist/sync,
+	getver, pymills/ADT.py, pymills/CmdOpt.py, pymills/DB.py,
+	pymills/IO.py, pymills/IRC.py, pymills/IRCBot/Core.py,
+	pymills/IRCBot/Timers.py, pymills/IRCBot/__init__.py,
+	pymills/IRCBot/test.py, pymills/Math.py, pymills/Sockets.py,
+	pymills/Tokenizer.py, pymills/Utils.py, pymills/__init__.py,
+	setup.py: r2: Added
+
