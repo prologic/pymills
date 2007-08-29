@@ -281,23 +281,34 @@ class OptionParser(optparse.OptionParser):
 				self.error("%s not supplied" % option)
 		return (values, args)
 
-def getFiles(path, tests=[os.path.isfile], pattern=".*"):
-	"""getFiles(path, tests=[os.path.isfile], pattern=".*") ->
-			list or []
+def getFiles(path, tests=[os.path.isfile], pattern=".*", \
+		include_path=True):
+	"""getFiles(path, tests=[os.path.isfile], pattern=".*", \
+			include_path=True) -> list of files
 	
 	Return a list of files in the specified path
 	applying the predicates listed in tests returning
 	only the files that match the pattern.
 	"""
 
+	def testFile(file):
+		for test in tests:
+			if not test(file):
+				print "%s dit not satisfy %s" % (file, test)
+				return False
+		return True
+
 	files = os.listdir(path)
 	list = []
 	for file in files:
-		if reduce(lambda x, y: x and y, tests[1:], tests[0]) and \
+		if testFile(os.path.join(path, file)) and \
 				re.match(pattern, file):
-					list.append(file)
+			if include_path:
+				list.append(os.path.join(path, file))
+			else:
+				list.append(file)
 	return list
-	
+
 def isReadable(file):
 	"""isReadable(file) -> bool
 

@@ -87,14 +87,14 @@ def parse_options():
 class Sender(Component):
 
 	@listener("received")
-	def onRECEIVED(self, event, message=""):
+	def onRECEIVED(self, message=""):
 		#print message
 		self.event.push(Event(message="hello"), "hello")
 
 class Receiver(Component):
 
 	@listener("hello")
-	def onHELLO(self, event, message=""):
+	def onHELLO(self, message=""):
 		self.event.push(Event(message="Got: %s" % message),
 				"received")
 
@@ -116,9 +116,9 @@ class Monitor(Component):
 		return self._eventCount
 
 	@filter()
-	def onDEBUG(self, event):
+	def onDEBUG(self, *args, **kwargs):
 		self._eventCount += 1
-		return False, event
+		return False
 
 def main():
 

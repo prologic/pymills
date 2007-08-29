@@ -40,17 +40,14 @@ instantiated once.
 """
 
 import copy
-import time
 import socket
 import select
+from time import sleep
 import cPickle as pickle
-from pprint import pprint
 from threading import Thread
-from StringIO import StringIO
-from inspect import getmembers, ismethod, getargspec
+from inspect import getmembers, ismethod
 
 from utils import caller
-from datatypes import CaselessDict
 
 class EventError(Exception):
 	"Event Error"
@@ -61,67 +58,33 @@ class UnhandledEvent(EventError):
 	def __init__(self, event, channel):
 		EventError.__init__(self, event, channel)
 
-def filter(*args):
+class FilterEvent(Exception):
+	"Filter Event Exception"
+
+def filter(channel="global"):
 	"Decorator function for a filter"
 
 	def decorate(f):
-		_args, _vargs, _kwargs, _defaults = getargspec(f)
-		if "self" in _args:
-			_args.remove("self")
-		if _vargs is None:
-			_vargs = ()
-		if _kwargs is None:
-			_kwargs = {}
-		f._argspec = _args, _vargs, _kwargs
 		f.filter = True
-		if len(args) == 1:
-			setattr(f, "channel", args[0])
-		else:
-			setattr(f, "channel", "global")
+		f.channel = channel
 		return f
 	return decorate
 
-def listener(*args):
+def listener(channel="global"):
 	"Decorator function for a listener"
 
 	def decorate(f):
-		_args, _vargs, _kwargs, _defaults = getargspec(f)
-		if "self" in _args:
-			_args.remove("self")
-		if _vargs is None:
-			_vargs = ()
-		if _kwargs is None:
-			_kwargs = {}
-		f._argspec = _args, _vargs, _kwargs
 		f.listener = True
-		if len(args) == 1:
-			setattr(f, "channel", args[0])
-		else:
-			setattr(f, "channel", "global")
+		f.channel = channel
 		return f
 	return decorate
 
 def call(handler, event):
-
-	args, vargs, kwargs = handler._argspec
-
 	try:
-		if len(args) > 0 and args[0] == "event":
-			if len(args) == 1:
-				if kwargs == {}:
-					return handler(event)
-				else:
-					return handler(event, **event._kwargs)
-			else:
-				return handler(event, *event._args,
-						**event._kwargs)
-		else:
-			return handler(*event._args,
-					**event._kwargs)
-	except UnhandledEvent:
+		return handler(*event._args, **event._kwargs)
+	except FilterEvent:
 		raise
 	except Exception, e:
-		raise
 		raise EventError(
 				"Error with %s: %s" % (
 					handler, e))
@@ -148,7 +111,6 @@ def send(handlers, event, channel, source=None):
 	if channel == "global":
 		raise EventError("Events cannot be sent to the global channel")
 
-	event._time = time.time()
 	event._source = source
 	event._channel = channel
 
@@ -157,19 +119,11 @@ def send(handlers, event, channel, source=None):
 
 	r = []
 	for handler in handlers:
-		filter = getattr(handler, "filter", False)
-		if filter:
-			try:
-				halt, event = call(handler, event)
-			except Exception, e:
-				raise
-				raise EventError(
-						"Error in return for '%s'" % handler)
-			if halt:
-				return r
-		else:
+		try:
 			r.append(call(handler, event))
-	return r
+		except FilterEvent:
+			return
+	return tuple(r)
 
 class EventManager(object):
 	"""EventManager() -> new event manager
@@ -193,7 +147,7 @@ class EventManager(object):
 #		self = super(cls.__class__, cls).__new__(cls, *args,
 #				**kwargs)
 
-		self._handlers = CaselessDict({"global": []})
+		self._handlers = {"global": []}
 		self._queue = []
 
 		return self
@@ -356,15 +310,10 @@ class Component(EventManager):
 
 		self = objList[0]
 
-#		self = super(cls.__class__, cls).__new__(cls, *args,
-#				**kwargs)
-
 		if event is None:
 			self.event = self
 		else:
 			self.event = event
-
-#		self._handlers = CaselessDict({"global": []})
 
 		if self.event is not self:
 			handlers = [x[1] for x in getmembers(
@@ -388,14 +337,6 @@ class Component(EventManager):
 							cmp=lambda x, y: hasattr(x, "filter"))
 				else:
 					self._handlers[channel] = [handler]
-
-#			if self.event is not self:
-#				if self._handlers.has_key(channel):
-#					self._handlers[channel].append(handler)
-#					self._handlers[channel].sort(
-#							cmp=lambda x, y: hasattr(x, "filter"))
-#				else:
-#					self._handlers[channel] = [handler]
 
 		self.instances[cls] = self
 		return self
@@ -453,7 +394,7 @@ class Worker(Component, Thread):
 
 	def run(self):
 		while self.isRunning():
-			time.sleep(1)
+			sleep(1)
 
 class Event(object):
 	"""Event(*args, **kwargs) -> new event object
@@ -480,7 +421,14 @@ class Event(object):
 				self.__class__.__name__,
 				channel,
 				self._args, ", ".join(attrStrings))
-
+	
+	def __getitem__(self, x):
+		if type(x) == int:
+			return self._args[x]
+		elif type(x) == str:
+			return self._kwargs[x]
+		else:
+			raise KeyError(x)
 
 class RemoteManager(EventManager):
 
@@ -537,10 +485,8 @@ class RemoteManager(EventManager):
 
 		if source is None:
 			source = addr[0]
-		try:
-			EventManager.send(self, event, channel, source)
-		except UnhandledEvent:
-			pass
+
+		EventManager.send(self, event, channel, source)
 
 	def __close__(self):
 		self._ssock.shutdown(2)
@@ -574,15 +520,13 @@ class RemoteManager(EventManager):
 					self._buffer += s
 			finally:
 				queue.remove((event, channel, source))
+
 		if not self._buffer == "":
 			self.__write__(self._buffer)
 			self._buffer = ""
 
 	def send(self, event, channel, source=socket.gethostname()):
-		try:
-			r = EventManager.send(self, event, channel, source)
-		except UnhandledEvent:
-			r = None
+		r = EventManager.send(self, event, channel, source)
 		if not caller() == "flush":
 			self.__write__(pickle.dumps((event, channel, source)))
 		return r

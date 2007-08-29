@@ -31,7 +31,7 @@ JamesMills
 
 __name__ = "pymills"
 __description__ = "James Mills Python Library"
-__version__ = "3.2.12-git3"
+__version__ = "3.2"
 __author__ = "James Mills"
 __author_email__ = "%s, prologic at shortcircuit dot net dot au" % __author__
 __maintainer__ = __author__
@@ -40,7 +40,7 @@ __url__ = "http://trac.shortcircuit.net.au/pymills/"
 __download_url__ = "http://shortcircuit.net.au/~prologic/downloads/software/%s-%s.tar.gz" % (__name__, __version__)
 __copyright__ = "CopyRight (C) 2005-2007 by %s" % __author__
 __license__ = "GPL"
-__platform__ = ""
+__platforms__ = "POSIX"
 __keywords__ = "James Mills Python Library General Purpose"
 __classifiers__ = [
 		"Development Status :: 3 - Alpha",
@@ -62,6 +62,21 @@ __classifiers__ = [
 		"Topic :: Software Development :: Libraries :: Python Modules",
 		]
 __str__ = "%s-%s" % (__name__, __version__)
+
+__package_data__ = {
+		}
+
+__install_requires__ = [
+		]
+
+__setup_requires__ = [
+		]
+
+__extras_require__ = {
+		}
+
+__entry_points__ = """
+"""
 
 __all__ = (
 		"ann",
