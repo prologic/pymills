@@ -39,6 +39,7 @@ components are singletons, that is they can only be
 instantiated once.
 """
 
+import sys
 import copy
 import socket
 import select
@@ -79,16 +80,6 @@ def listener(channel="global"):
 		return f
 	return decorate
 
-def call(handler, event):
-	try:
-		return handler(*event._args, **event._kwargs)
-	except FilterEvent:
-		raise
-	except Exception, e:
-		raise EventError(
-				"Error with %s: %s" % (
-					handler, e))
-
 def send(handlers, event, channel, source=None):
 	"""send(handlers event, channel, source=None) -> None
 
@@ -120,7 +111,7 @@ def send(handlers, event, channel, source=None):
 	r = []
 	for handler in handlers:
 		try:
-			r.append(call(handler, event))
+			r.append(handler(*event._args, **event._kwargs))
 		except FilterEvent:
 			return
 	return tuple(r)
@@ -144,13 +135,14 @@ class EventManager(object):
 
 		self = objList[0]
 
-#		self = super(cls.__class__, cls).__new__(cls, *args,
-#				**kwargs)
-
 		self._handlers = {"global": []}
 		self._queue = []
 
 		return self
+
+	def __init__(self, log=None, debug=False):
+		self._log = log
+		self._debug = debug
 
 	def __len__(self):
 		return len(self._queue)
@@ -260,6 +252,13 @@ TypeError: a class that defines __slots__ without defining __getstate__ cannot b
 
 		handlers = self.getHandlers("global") + \
 				self.getHandlers(channel)
+
+		if self._debug:
+			if self._log is not None:
+				self._log.debug(event)
+			else:
+				print >> sys.stderr, event
+
 		return send(handlers, event, channel, source)
 
 class Component(EventManager):
