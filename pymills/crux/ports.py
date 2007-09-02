@@ -59,14 +59,14 @@ class Error(Exception):
 	pass
 
 class PortsTree:
-	
+
 	def __init__(self, path):
-		
+
 		self._path = path
 		self._repos = []
 
 		self.__build__()
-		
+
 	def __str__(self):
 		f = StringIO.StringIO()
 		f.write("Ports Tree: %s\n" % self._path)
@@ -81,7 +81,7 @@ class PortsTree:
 
 	def __build__(self):
 		dirs = getFiles(self._path, [os.path.isdir], "^[^.].*")
-		
+
 		for dir in dirs:
 			repo = Repository(self._path, dir)
 			if not repo == []:
@@ -96,7 +96,7 @@ class Repository:
 		self._portsList = []
 
 		self.__build__()
-		
+
 	def __str__(self):
 		f = StringIO.StringIO()
 		f.write("%s:\n" % self._name)
@@ -120,7 +120,7 @@ class Repository:
 	def __build__(self):
 		path = os.path.join(self._root, self._name)
 		dirs = getFiles(path, [os.path.isdir], "^[^.].*")
-		
+
 		for dir in dirs:
 			port = Port(path, dir)
 			self._portsList.append(port)
@@ -131,7 +131,7 @@ class Port:
 	def __init__(self, root, name):
 		self._root= root
 		self._name = name
-	
+
 	def __str__(self):
 		return "   %s\n" % self._name
 
@@ -159,7 +159,7 @@ class Pkgfile:
 
 
 		self.__parse(file)
-	
+
 	def __repr__(self):
 		return STRFORMAT % self.__dict
 
@@ -188,12 +188,12 @@ class Pkgfile:
 					self.__dict["%sStr" % key] = m.group(1)
 				else:
 					self.__dict[key] = m.group(1).strip()
-	
+
 	def writeTo(self, file):
 		fd = open(file, "w")
 		fd.write(FILEFORMAT % self.__dict)
 		fd.close()
-	
+
 if __name__ == "__main__":
 	portsTree = PortsTree("/usr/ports")
 	portsTree.buildTree()

@@ -43,7 +43,7 @@ class Crawler:
 		self._startTime = 0
 		self._countLinks = 0
 		self._countFollowed = 0
-	
+
 	def getStats(self):
 		return (self._startTime, self._countLinks, self._countFollowed)
 
@@ -71,7 +71,7 @@ class Crawler:
 					page = Fetcher(url)
 					page.fetch()
 					for i, url in enumerate(page):
-						if not url in urls:
+						if url not in urls:
 							self._countLinks += 1
 							urls.append(url)
 							print "New: %s" % url
@@ -85,7 +85,7 @@ class Fetcher:
 		self._root = self._url
 		self._tags = []
 		self._urls = []
-	
+
 	def __getitem__(self, y):
 		return self._urls[y]
 
@@ -132,7 +132,7 @@ class Fetcher:
 				except KeyError:
 					continue
 				self._urls.append(url)
-	
+
 ### Test Functions
 
 def testFetcher():
@@ -151,7 +151,8 @@ def testCrawler():
 	crawler.crawl()
 	print >> sys.stderr, "DONE"
 	startTime, countLinks, countFollowed = crawler.getStats()
-	print >> sys.stderr, "Found %d links, following %d urls in %s+%s:%s:%s" % ((countLinks, countFollowed,) + duration(time.time() - startTime))
+	print >> sys.stderr, "Found %d links, following %d urls in %s+%s:%s:%s" % (
+			(countLinks, countFollowed,) + duration(time.time() - startTime))
 
 ### Main
 

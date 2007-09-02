@@ -5,13 +5,13 @@
 """Event Library
 
 Library for developing Event Driven Applications.
-This library supports listeners, filters and the 
+This library supports listeners, filters and the
 queuing of events. Events are formed by constructing
 a new Event object, which could be sub-classes.
 Really any object could be used as the 'event'.
 
 Channels are automatically registered by each Component
-that is linked to an EventManager. All methods/functions
+that is linked to an Manager. All methods/functions
 of the component that are marked with a filter or listener
 decorator are added to the appropiate channel of the
 event manager given to it.
@@ -30,8 +30,8 @@ conformed to.
 If any error occurs, an EventError is raised with the
 appropiate message.
 
-A Component is an object that holds a copy of the 
-EventManager instnace and automatically sets up any
+A Component is an object that holds a copy of the
+Manager instnace and automatically sets up any
 filters/listeners found in the class. Filter/listener
 methods must start with "on" and must have the
 attribute "filter" or "listener" set to True. All
@@ -116,8 +116,8 @@ def send(handlers, event, channel, source=None):
 			return
 	return tuple(r)
 
-class EventManager(object):
-	"""EventManager() -> new event manager
+class Manager(object):
+	"""Manager() -> new event manager
 
 	Create a new event manager which manages events.
 	If server=True, this will listen on the default port
@@ -129,7 +129,7 @@ class EventManager(object):
 		"Creates x; see x.__class__.__doc__ for signature"
 
 		objList = [sup.__new__(cls, *args, **kwargs)
-				for sup in EventManager.__bases__]
+				for sup in Manager.__bases__]
 		for obj in objList[1:]:
 			objList[0].__dict__.update(copy.deepcopy(obj.__dict__))
 
@@ -188,7 +188,7 @@ class EventManager(object):
 
 	def remove(self, handler, *channels):
 		"""E.remove(handler, *channels) -> None
-		
+
 		Remove the given filter or listener from the
 		event manager removing it from all channels
 		specified. If no channels are given, '''all'''
@@ -215,7 +215,7 @@ class EventManager(object):
 		"""
 
 		self._queue.append((event, channel, source))
-	
+
 	def flush(self):
 		"""E.flushEvents() -> None
 
@@ -246,7 +246,7 @@ class EventManager(object):
     raise TypeError("a class that defines __slots__ without "
 TypeError: a class that defines __slots__ without defining __getstate__ cannot be pickled
 		"""
-		
+
 #		if source is None:
 #			source = self
 
@@ -261,8 +261,8 @@ TypeError: a class that defines __slots__ without defining __getstate__ cannot b
 
 		return send(handlers, event, channel, source)
 
-class Component(EventManager):
-	"""Component(EventManager) -> new component object
+class Component(Manager):
+	"""Component(Manager) -> new component object
 
 	This should be sub-classed with methods defined for filters
 	and listeners. Only one instance of any component can be
@@ -296,12 +296,12 @@ class Component(EventManager):
 		if cls in cls.instances:
 			return cls.instances[cls]
 
-		if len(args) > 0 and isinstance(args[0], EventManager):
+		if len(args) > 0 and isinstance(args[0], Manager):
 			event = args[0]
 			args = args[1:]
 		else:
 			event = None
-		
+
 		objList = [sup.__new__(cls, *args, **kwargs)
 				for sup in Component.__bases__]
 		for obj in objList[1:]:
@@ -384,7 +384,7 @@ class Worker(Component, Thread):
 		self.__running = True
 		self.setDaemon(True)
 		self.start()
-	
+
 	def stop(self):
 		self.__running = False
 
@@ -408,7 +408,7 @@ class Event(object):
 		self._args = args
 		self._kwargs = kwargs
 		self.__dict__.update(kwargs)
-	
+
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
 
@@ -420,7 +420,7 @@ class Event(object):
 				self.__class__.__name__,
 				channel,
 				self._args, ", ".join(attrStrings))
-	
+
 	def __getitem__(self, x):
 		if type(x) == int:
 			return self._args[x]
@@ -429,12 +429,21 @@ class Event(object):
 		else:
 			raise KeyError(x)
 
-class RemoteManager(EventManager):
+class Remote(Manager):
 
-	def __init__(self, nodes=[]):
-		EventManager.__init__(self)
+	def __init__(self, nodes=(), address="0.0.0.0", port=64000):
+		Manager.__init__(self)
 
-		self._nodes = nodes
+		self._nodes = []
+		for node in nodes:
+			if ":" in node:
+				x = node.split(":")
+				self._nodes.append((x[0], int(x[1]),))
+			else:
+				self._nodes.append((node, port,))
+
+		self._address = address
+		self._port = port
 		self._buffer = ""
 
 		self._ssock = socket.socket(
@@ -445,7 +454,7 @@ class RemoteManager(EventManager):
 				socket.SO_REUSEADDR,
 				1)
 		self._ssock.setblocking(False)
-		self._ssock.bind(("0.0.0.0", 64000))
+		self._ssock.bind((address, port))
 
 		self._csock = socket.socket(
 				socket.AF_INET,
@@ -463,7 +472,7 @@ class RemoteManager(EventManager):
 	def __del__(self):
 		self.__close__()
 
-	def __poll__(self, wait=0.0):
+	def __poll__(self, wait=0.01):
 		try:
 			r, w, e = select.select([self._ssock], [], [], wait)
 			return not r == []
@@ -477,25 +486,25 @@ class RemoteManager(EventManager):
 		except socket.error, e:
 			self.__close__()
 
-		if addr[0] not in self._nodes:
-			self._nodes.append(addr[0])
-
 		event, channel, source = pickle.loads(data)
 
-		if source is None:
-			source = addr[0]
+		if source not in self._nodes:
+			self._nodes.append(source)
 
-		EventManager.send(self, event, channel, source)
+		try:
+			Manager.send(self, event, channel, source)
+		except UnhandledEvent:
+			pass
 
 	def __close__(self):
 		self._ssock.shutdown(2)
 		self._ssock.close()
 		self._csock.shutdown(2)
 		self._csock.close()
-	
+
 	def __write__(self, data):
 		for node in self._nodes:
-			bytes = self._csock.sendto(data, (node, 64000))
+			bytes = self._csock.sendto(data, node)
 			if bytes < len(data):
 				raise EventError(
 						"Couldn't send event to %s" % str(node))
@@ -507,25 +516,32 @@ class RemoteManager(EventManager):
 	def flush(self):
 		queue = self._queue
 
-		for event, channel, source in queue[:]:
+		for i, (event, channel, source) in enumerate(queue[:]):
 			try:
-				EventManager.send(self, event, channel, source)
+				try:
+					Manager.send(self, event, channel, source)
+				except UnhandledEvent:
+					pass
 
-				if not self._nodes == []:
+				if len(self._nodes) > 0:
+					if source is None:
+						source = (socket.gethostname(), self._port,)
 					s = pickle.dumps((event, channel, source))
 					if len(self._buffer) + len(s) > 8192:
 						self.__write__(self._buffer)
 						self._buffer = ""
 					self._buffer += s
 			finally:
-				queue.remove((event, channel, source))
+				del queue[i]
 
 		if not self._buffer == "":
 			self.__write__(self._buffer)
 			self._buffer = ""
 
-	def send(self, event, channel, source=socket.gethostname()):
-		r = EventManager.send(self, event, channel, source)
+	def send(self, event, channel, source=None):
+		r = Manager.send(self, event, channel, source)
 		if not caller() == "flush":
+			if source is None:
+				source = (socket.gethostname(), self._port,)
 			self.__write__(pickle.dumps((event, channel, source)))
 		return r

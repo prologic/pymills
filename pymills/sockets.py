@@ -67,7 +67,7 @@ class WriteEvent(Event):
 
 class Client(Component):
 
-	def __init__(self, event):
+	def __init__(self):
 		self.ssl = False
 		self.server = {}
 		self.issuer = {}
@@ -85,7 +85,7 @@ class Client(Component):
 		except select.error, e:
 			if e[0] == 4:
 				pass
-		
+
 	def __poll__(self, wait=POLL_INTERVAL):
 		try:
 			return not select.select(
@@ -168,14 +168,14 @@ class Client(Component):
 			self.event.push(ErrorEvent(e[1]), "error", self)
 		self.connected = False
 		self.event.push(DisconnectEvent(), "disconnect", self)
-	
+
 	def write(self, data):
 		self.event.push(WriteEvent(data), "write", self)
 
 	def process(self):
 		if self.__poll__():
 			self.__read__()
-	
+
 	@listener("connect")
 	def onCONNECT(self, host, port):
 		"""Connect Event
@@ -185,7 +185,7 @@ class Client(Component):
 		"""
 
 		pass
-	
+
 	@listener("disconnect")
 	def onDISCONNECT(self):
 		"""Disconnect Event
@@ -207,7 +207,7 @@ class Client(Component):
 		pass
 
 	@filter("write")
-	def onWRITE(self, event, data):
+	def onWRITE(self, data):
 		"""Write Event
 
 		Typically this should NOT be overridden by sub-classes.
@@ -228,13 +228,12 @@ class Client(Component):
 				self.close()
 			else:
 				self.event.push(ErrorEvent(e[1]), "error", self)
-		return False, event
 
 class TCPClient(Client):
 
 	def __init__(self, event):
-		Client.__init__(self, event)
-	
+		Client.__init__(self)
+
 	def open(self, host, port, ssl=False, bind=None):
 		self._sock = socket.socket(
 				socket.AF_INET,
@@ -264,7 +263,7 @@ class UDPClient(Client):
 		self.event.push(ConnectEvent(host, port), "connect", self)
 
 	@filter("write")
-	def onWRITE(self, event, data):
+	def onWRITE(self, data):
 		"""Write Event
 
 		Typically this should NOT be overridden by sub-classes.
@@ -280,23 +279,25 @@ class UDPClient(Client):
 				self.close()
 			else:
 				self.event.push(ErrorEvent(e[1]), "error", self)
-		return False, event
-	
+
 class Server(Component):
 
-	def __init__(self, event, port, address=""):
+	def __init__(self):
 		self._clients = []
 
 	def __del__(self):
 		self.close()
 
 	def __poll__(self, wait=POLL_INTERVAL):
+		if self._sock is None:
+			return
 		try:
 			r, w, e = select.select(
 					[self._sock] + self._clients, [], self._clients,
 					wait)
 			return r
 		except socket.error, error:
+			print error
 			if error[0] == 9:
 				for sock in e:
 					self.close(sock)
@@ -332,7 +333,6 @@ class Server(Component):
 						ReadEvent(data, sock), "read", self)
 
 	def close(self, sock=None):
-
 		if sock is not None:
 			try:
 				sock.shutdown(2)
@@ -350,13 +350,13 @@ class Server(Component):
 			try:
 				self._sock.shutdown(2)
 				self._sock.close()
+				self._sock = None
 			except socket.error, e:
 				self.event.push(ErrorEvent(e[1]), "error", self)
-			self.event.push(DisconnectEvent(), "disconnect", self)
-	
+
 	def write(self, sock, data):
 		self.event.push(WriteEvent(data, sock), "write", self)
-	
+
 	def broadcast(self, data):
 		for sock in self._clients:
 			self.write(sock, data)
@@ -364,7 +364,7 @@ class Server(Component):
 	def process(self):
 		if self.__poll__():
 			self.__read__()
-	
+
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
 		"""Connect Event
@@ -374,7 +374,7 @@ class Server(Component):
 		"""
 
 		pass
-	
+
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
 		"""Disconnect Event
@@ -396,10 +396,10 @@ class Server(Component):
 		pass
 
 	@filter("write")
-	def onWRITE(self, event, sock, data):
+	def onWRITE(self, sock, data):
 		"""Write Event
 
-		
+
 		Typically this should NOT be overridden by sub-classes.
 		If it is, this should be called by the sub-class first.
 		"""
@@ -414,12 +414,12 @@ class Server(Component):
 			else:
 				self.event.push(
 						ErrorEvent(e[1], sock), "error", self)
-		return False, event
 
 class TCPServer(Server):
 
 	def __init__(self, event, port, address=""):
-		Server.__init__(self, event, port, address)
+		Server.__init__(self)
+
 		self._sock = socket.socket(
 				socket.AF_INET, socket.SOCK_STREAM)
 		self._sock.setsockopt(

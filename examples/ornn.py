@@ -1,6 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
+
+from time import sleep, time
 from random import seed, random
 
-from pymills.ann import *
+from pymills.ann import new_node, new_connection, \
+		new_neuron, new_output
 
 a = new_node()
 b = new_node()

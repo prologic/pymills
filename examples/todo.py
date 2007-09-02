@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-from pymills.event import *
+from pymills.event import listener, Component, Manager, \
+		Event
 
 class TodoList(Component):
 
@@ -8,7 +11,7 @@ class TodoList(Component):
 		self.todos = {}
 
 	def add(self, name, description):
-		assert not name in self.todos, "To-do already in list"
+		assert name not in self.todos, "To-do already in list"
 		self.todos[name] = description
 		self.event.push(
 				Event(name, description),
@@ -16,13 +19,13 @@ class TodoList(Component):
 
 class TodoPrinter(Component):
 
-#	@listener("TodoAdded")
+	@listener("TodoAdded")
 	def onTodoAdded(self, name, description):
 		print "TODO:", name
 		print "	  ", description
 
 def main():
-	manager = EventManager()
+	manager = Manager()
 
 	todo = TodoList(manager)
 	todo2 = TodoList(manager)

@@ -24,7 +24,7 @@ class BaseEnvironment:
 	      version=VERSION, defaultConfig=[], defaultDB=([], []),
 	      url="http://trac.shortcircuit.net.au/projects/pymills/",
 	      create=False) -> new environment object
-	
+
 	Creates a new environment object that by default only
 	holds a config file, log file and database.
 
@@ -168,7 +168,7 @@ class BaseEnvironment:
 				self.path, "conf", "%s.ini") % self.name
 		self.config = ConfigParser()
 		self.config.read(configfile)
-	
+
 	def setupLog(self):
 		"""E.setupLog() -> None
 
@@ -191,7 +191,7 @@ class BaseEnvironment:
 
 		self.log = newLogger(name, logType,
 				logFile, logLevel, logID)
-	
+
 	def loadDB(self):
 		"""E.loadDB() -> None
 

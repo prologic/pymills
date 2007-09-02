@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-from pymills.event import *
+from pymills.event import listener, Manager
 from pymills.sockets import UDPServer
 
 class EchoServer(UDPServer):
@@ -9,7 +11,7 @@ class EchoServer(UDPServer):
 	def onCONNECT(self, sock, host, port):
 		print "New connection: %s:%d" % (host, port)
 		self.write(sock, "Ready\r\n")
-	
+
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
 		print "Disconnection: %s" % sock
@@ -20,7 +22,7 @@ class EchoServer(UDPServer):
 		self.write(sock, line + "\r\n")
 
 def main():
-	event = EventManager()
+	event = Manager()
 	server = EchoServer(event, 1234)
 
 	while True:

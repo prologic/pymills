@@ -10,7 +10,7 @@ require access to Relational Database Management Systems
 such as MySQL and SQLite.
 
 NOTE: This library is not an Object Relational Mapper, it is
-simply a library that hides some of the interfaces of the 
+simply a library that hides some of the interfaces of the
 Python DB API and gives you nicer access to results
 with multiple access interfaces. (See example below)
 
@@ -43,7 +43,6 @@ from time import time
 
 from misc import duration
 from datatypes import OrderedDict
-from event import Component, listener
 
 def _parseURI(uri):
 	"""_parseURI(uri) -> dict
@@ -177,7 +176,7 @@ class Session:
 
 		rows = self._cu.fetchall()
 		return [_Record(zip(fields, row)) for row in rows]
-	
+
 	def commit(self):
 		"""C.commit() -> None
 
@@ -188,7 +187,7 @@ class Session:
 			if self._debug and (self._log is not None):
 				self._log.debug("Commiting to database...")
 			self._cx.commit()
-	
+
 	def execute(self, sql, *args, **kwargs):
 		"""C.execute(sql, *args, **kwargs) -> list of rows, or []
 
@@ -229,7 +228,7 @@ class Session:
 		except Exception, e:
 			raise
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
-	
+
 	def do(self, sql, *args, **kwargs):
 		"""Synonym of execute"""
 

@@ -10,8 +10,7 @@
 import math
 from time import time, sleep
 
-from event import listener, Event, UnhandledEvent, Worker, \
-		EventManager
+from event import listener, Event, UnhandledEvent, Worker
 
 class SignalEvent(Event):
 
@@ -37,7 +36,7 @@ class Node(Worker):
 
 	def fire(self, level=1.0):
 		self.event.push(SignalEvent(self, level), "signal")
-	
+
 	def run(self):
 		while self.isRunning():
 			try:
@@ -45,14 +44,14 @@ class Node(Worker):
 			except UnhandledEvent:
 				pass
 			sleep(0.01)
-	
+
 	inputs = property(_getInputs)
 
 def new_node(*args, **kwargs):
 	class NewNode(Node):
 		pass
 	return NewNode(*args, **kwargs)
-	
+
 class Connection(Node):
 
 	def __init__(self, event=None, weight=1.0):
@@ -74,7 +73,7 @@ class Connection(Node):
 	@listener("signal")
 	def onSIGNAL(self, source, level):
 		self.fire(level * self._weight)
-	
+
 	weight = property(_get_weight, _set_weight)
 
 def new_connection(*args, **kwargs):
@@ -105,7 +104,7 @@ class _SigmoidNeuron(object):
 						)
 					)
 				)
-	
+
 class Neuron(Node):
 
 	def __init__(self, event=None, threshold=1.0, type="step"):
@@ -132,7 +131,7 @@ class Neuron(Node):
 	def __repr__(self):
 		return "<Neuron type=%s threshold=%0.2f level=%0.2f>" % (
 				self._type, self._threshold, self._level)
-	
+
 	def _get_threshold(self):
 		try:
 			return self._threshold
@@ -158,7 +157,7 @@ class Neuron(Node):
 			except UnhandledEvent:
 				pass
 			sleep(0.01)
-	
+
 	threshold = property(_get_threshold, _set_threshold)
 
 def new_neuron(*args, **kwargs):
@@ -181,7 +180,7 @@ class Output(Node):
 	def onSIGNAL(self, source, level):
 		self._output = level
 		self._f(self)
-	
+
 	output = property(_getOutput)
 
 def new_output(*args, **kwargs):

@@ -1,15 +1,18 @@
+#!/usr/bin/env python
 
+from time import sleep
 from random import seed, random
 
-from pymills.ann import *
-from pymills.event import *
+from pymills.ann import new_node, new_connection, \
+		new_neuron, Output
+from pymills.event import Manager
 
 class MyOutput(Output):
 
 	def do(self):
 		print "Oh Yeah!"
 
-event = EventManager()
+event = Manager()
 
 i1 = new_node(event)
 i2 = new_node(event)
@@ -18,9 +21,9 @@ n1 = new_neuron(event, 2.0)
 
 o1 = MyOutput()
 
-s1 = new_synapse(event, 2.0)
-s2 = new_synapse(event, 3.0)
-#s3 = new_synapse(event, 5.0)
+s1 = new_connection(event, 2.0)
+s2 = new_connection(event, 3.0)
+#s3 = new_connection(event, 5.0)
 
 i1.link(s1)
 i2.link(s2)

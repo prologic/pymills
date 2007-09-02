@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
 from pymills.irc import IRC
-from pymills.event import EventManager, filter, listener
+from pymills.event import Manager, filter, listener
 from pymills.sockets import TCPClient
 
 class TestBot(TCPClient, IRC):
@@ -26,7 +28,7 @@ class TestBot(TCPClient, IRC):
 
 def main():
 
-	event = EventManager()
+	event = Manager()
 	testbot = TestBot(event)
 
 	testbot.open("localhost", 6667, ssl=True)

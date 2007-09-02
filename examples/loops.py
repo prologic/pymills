@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-from pymills.event import *
+from pymills.event import listener, Component, Manager, \
+		Event
 
 class InfiniteLoop(Component):
 
@@ -10,7 +13,7 @@ class InfiniteLoop(Component):
 
 def main():
 
-	event = EventManager()
+	event = Manager()
 
 	infiniteLoop = InfiniteLoop(event)
 

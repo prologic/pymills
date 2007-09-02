@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-import pygame 
+import pygame
 from pygame import *
 
 from pymills.event import filter, listener, Component, \
@@ -29,7 +31,7 @@ class Test(Component):
 	@listener("quit")
 	def onQUIT(self):
 		raise SystemExit, 0
-	
+
 def main():
 
 	event = PyGameManager()

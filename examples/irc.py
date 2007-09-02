@@ -1,12 +1,11 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
 import re
 import os
-import sys
 import urwid
-import curses
 import socket
-from time import sleep
 from select import select
 from inspect import getargspec
 from traceback import format_exc
@@ -16,7 +15,7 @@ from pymills.misc import backMerge
 from pymills.sockets import TCPClient
 from pymills.irc import sourceSplit, IRC, ERR_NICKNAMEINUSE
 from pymills.event import filter, listener, Component, \
-		EventManager
+		Manager
 
 MAIN_TITLE = "PyMills IRC Client"
 
@@ -32,12 +31,12 @@ class Client(TCPClient, IRC):
 
 	def ircRAW(self, data):
 		self.write(data + "\r\n")
-	
+
 	@listener("read")
 	def onREAD(self, line):
 		TCPClient.onREAD(self, line)
 		IRC.onREAD(self, line)
-	
+
 class MainWindow(Screen, Component):
 
 	def __init__(self, event, client):
@@ -77,7 +76,7 @@ class MainWindow(Screen, Component):
 
 		self.top = urwid.Frame(self.body, self.header,
 				self.footer)
-	
+
 	def process(self):
 		size = self.get_cols_rows()
 
@@ -88,7 +87,7 @@ class MainWindow(Screen, Component):
 			timeout, keys, raw = self.get_input_nonblocking()
 
 			for k in keys:
-	
+
 				if k == "window resize":
 					size = self.get_cols_rows()
 					continue
@@ -107,7 +106,7 @@ class MainWindow(Screen, Component):
 		self.lines.append(
 				urwid.Text(
 					"Unknown command: %s" % command))
-	
+
 	def syntaxError(self, command, args, expected):
 		self.lines.append(
 				urwid.Text(
@@ -185,7 +184,7 @@ class MainWindow(Screen, Component):
 				self.lines.append(urwid.Text(message))
 
 		return True, None
-	
+
 	@filter("notice")
 	def onNOTICE(self, source, target, message):
 		if type(source) == str:
@@ -206,7 +205,7 @@ class MainWindow(Screen, Component):
 		self.lines.append(urwid.Text(
 				"<%s> %s" % (nick, message)))
 		return True, None
-	
+
 	def cmdEXIT(self, message=""):
 		if self.client.connected:
 			self.cmdQUIT(message)
@@ -236,14 +235,14 @@ class MainWindow(Screen, Component):
 
 		self.client.ircJOIN(channel)
 		self.channel = channel
-	
+
 	def cmdPART(self, channel=None, message="Leaving"):
 		if channel is None:
 			channel = self.channel
 		if channel is not None:
 			self.client.ircPART(channel, message)
 			self.channel = None
-		
+
 	def cmdQUOTE(self, message):
 		self.client.ircRAW(message)
 
@@ -255,9 +254,9 @@ class MainWindow(Screen, Component):
 		self.body.set_focus(len(self.lines))
 		canvas = self.top.render(size, focus=True)
 		self.draw_screen(size, canvas)
-	
+
 def main():
-	event = EventManager()
+	event = Manager()
 	client = Client(event)
 	window = MainWindow(event, client)
 

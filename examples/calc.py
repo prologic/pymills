@@ -1,26 +1,21 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-from pymills.event import listener, filter, Component, \
-		Event, RemoteManager
+from pymills.event import listener, Component, \
+		Event, Remote
 
 class Calc(Component):
 
-	@filter()
-	def onDEBUG(self, event):
-		print "DEBUG: %s" % event
-		return False, event
-
 	@listener("result")
-	def onRESULT(self, event, r):
+	def onRESULT(self, r):
 		print "Result: %s" % r
 
 def main():
 
-	nodes = (
-			"202.63.43.98",
-			)
+	nodes = ("daisy:12000",)
 
-	event = RemoteManager(nodes)
+	event = Remote(nodes)
 	calc = Calc(event)
 
 	x = float(raw_input("x: "))
@@ -36,5 +31,4 @@ def main():
 			break
 
 if __name__ == "__main__":
-	import sys
 	main()

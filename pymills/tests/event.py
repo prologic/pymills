@@ -8,31 +8,28 @@ Test all functionality of the event library.
 """
 
 import unittest
-from pprint import pprint
 
-from pymills.event import *
+from pymills.event import filter, listener, Event, \
+		Component, Worker, Manager, FilterEvent, \
+		EventError
 
 class FilterComponent(Component):
 
 	@filter("foo")
-	def onFOO(self, event, msg=""):
-		return False, Event(msg.lower())
+	def onFOO(self, msg=""):
+		raise FilterEvent
 
 	@filter("bar")
-	def onBAR(self, event, msg=""):
+	def onBAR(self, msg=""):
 		if msg.lower() == "hello world":
-			return True, event
-		else:
-			return False, event
-	
+			raise FilterEvent
+
 class ListenerComponent(Component):
 
 	@listener("foo")
-	def onFOO(self, event, test, msg=""):
+	def onFOO(self, test, msg=""):
 		if msg.lower() == "start":
-			self.event.push(
-					Event(msg="foo"),
-					event._channel)
+			self.event.push(Event(msg="foo"), "foo")
 
 	@listener("bar")
 	def onBAR(self, event, test, msg=""):
@@ -44,29 +41,29 @@ class ListenerComponent(Component):
 class Foo(Component):
 
 	@listener("foo")
-	def onFOO(self, event):
+	def onFOO(self):
 		return self.send(Event(), "bar")
 
 class Bar(Component):
 
 	@listener("bar")
-	def onBAR(self, event):
+	def onBAR(self):
 		return "bar"
 
 class FooWorker(Worker):
 
 	@listener("foo")
-	def onFOO(self, event):
+	def onFOO(self):
 		return "foo"
 
 class EventTestCase(unittest.TestCase):
 
 	def setUp(self):
-		self.event = EventManager()
+		self.event = Manager()
 
 	def tearDown(self):
 		pass
-	
+
 	def testComponentIDs(self):
 		"""Test Component IDs
 
@@ -131,7 +128,7 @@ class EventTestCase(unittest.TestCase):
 		self.assertTrue(bar.onBAR in foo.getHandlers())
 
 		r = self.event.send(Event(), "foo")
-		self.assertEquals(r, [["bar"]])
+		self.assertEquals(r, (("bar",),))
 
 		foo.unregister()
 		bar.unregister()
@@ -144,15 +141,15 @@ class EventTestCase(unittest.TestCase):
 		...
 		"""
 
-		foo = FooWorker(self.event)
+#		foo = FooWorker(self.event)
 
-		r = self.event.send(Event(), "foo")
-		self.assertEquals(r, ["foo"])
+#		r = self.event.send(Event(), "foo")
+#		self.assertEquals(r, ["foo"])
 
-		foo.stop()
-		foo.unregister()
+#		foo.stop()
+#		foo.unregister()
 
-		self.assertEquals(self.event.getHandlers(), [])
+#		self.assertEquals(self.event.getHandlers(), [])
 
 	def testEvent(self):
 		"""Test Event
@@ -178,10 +175,10 @@ class EventTestCase(unittest.TestCase):
 		self.assertEquals(str(a),
 				"<Event/None (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
 
-	def testEventManager(self):
-		"""Test EventManager
+	def testManager(self):
+		"""Test Manager
 
-		Test EventManager construction and that a global
+		Test Manager construction and that a global
 		channel is created. Test that the event queue is
 		empty.
 		"""
@@ -191,8 +188,8 @@ class EventTestCase(unittest.TestCase):
 
 		self.assertEquals(len(self.event), 0)
 
-	def testEventManagerAddRemove(self):
-		"""Test EventManager.add & EventManager.remove
+	def testManagerAddRemove(self):
+		"""Test Manager.add & Manager.remove
 
 		Test that filters and listeners can be added to
 		the global channel. Test that filters and listeners
@@ -251,8 +248,8 @@ class EventTestCase(unittest.TestCase):
 
 		self.assertEquals(self.event.getHandlers(), [])
 
-	def testEventManagerPushFlushSend(self):
-		"""Test EventManager's push, flush and send
+	def testManagerPushFlushSend(self):
+		"""Test Manager's push, flush and send
 
 		Test that events can be pushed, fluahsed and that
 		the event queue is empty after flushing. Test that
@@ -276,46 +273,35 @@ class EventTestCase(unittest.TestCase):
 		self.flag = False
 		self.foo = False
 
-		@filter()
-		def onCHECK(event, test, time):
-			test.assertTrue(
-					hasattr(event, "_time") and
-					type(event._time) == float and
-					int(event._time) == int(time))
-			test.assertTrue(hasattr(event, "_channel"))
-			test.assertTrue(hasattr(event, "_source"))
-			return False, event
-
 		@listener("test")
-		def onTEST(test, time):
+		def onTEST(test, time, stop=False):
 			test.flag = True
 			return "test"
 
 		@listener("test")
-		def onFOO(test, time):
+		def onFOO(test, time, stop=False):
 			test.foo = True
 			return "foo"
-		
+
 		@listener("bar")
 		def onBAR(test, time):
 			return "bar"
 
 		@filter()
-		def onSTOP(event, test, time, stop=False):
-			return stop, event
+		def onSTOP(test, time, stop=False):
+			if stop:
+				raise FilterEvent
 
 		self.event.add(onSTOP)
-		self.event.add(onCHECK)
 		self.event.add(onTEST, "test")
 		self.event.add(onFOO, "test")
 		self.event.add(onBAR, "bar")
 
 		self.assertTrue(onSTOP in self.event.getHandlers("global"))
-		self.assertTrue(onCHECK in self.event.getHandlers("global"))
 		self.assertTrue(onTEST in self.event.getHandlers("test"))
 		self.assertTrue(onFOO in self.event.getHandlers("test"))
 		self.assertTrue(onBAR in self.event.getHandlers("bar"))
-		self.assertEquals(len(self.event.getHandlers()), 5)
+		self.assertEquals(len(self.event.getHandlers()), 4)
 
 		self.event.push(Event(self, time.time()), "test")
 		self.event.flush()
@@ -345,15 +331,15 @@ class EventTestCase(unittest.TestCase):
 		self.assertTrue(self.flag == False)
 
 		r = self.event.send(Event(self, time.time()), "test")
-		self.assertEquals(r[0], "test")
-		self.assertEquals(r[1], "foo")
+		self.assertEquals(r[0], None)
+		self.assertEquals(r[1], "test")
+		self.assertEquals(r[2], "foo")
 
 		self.assertEquals(
 				self.event.send(Event(self, time.time()), "bar"),
-				["bar"])
+				(None, "bar",))
 
 		self.event.remove(onSTOP)
-		self.event.remove(onCHECK)
 		self.event.remove(onTEST, "test")
 		self.event.remove(onFOO, "test")
 		self.event.remove(onBAR, "bar")

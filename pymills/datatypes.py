@@ -68,7 +68,7 @@ class OrderedDict(dict):
 	def iterkeys(self):
 		for key in self._keys:
 			yield key
-	
+
 	def index(self, key):
 		if not self.has_key(key):
 			raise KeyError(key)
@@ -78,7 +78,7 @@ class Stack:
 
 	def __init__(self):
 		self._stack = []
-	
+
 	def __len__(self):
 		return len(self._stack)
 
@@ -90,19 +90,19 @@ class Stack:
 
 	def push(self, item):
 		self._stack.append(item)
-	
+
 	def pop(self):
 		if not self.empty():
 			return self._stack.pop()
 		else:
 			return None
-	
+
 	def peek(self, n=0):
 		if (not self.empty()) and (0 <= (n + 1) <= len(self._stack)):
 			return self._stack[(len(self._stack) - (n + 1))]
 		else:
 			return None
-	
+
 	def empty(self):
 		return self._stack == []
 
@@ -119,10 +119,10 @@ class Queue(object):
 			return self._queue[(len(self._queue) - (n + 1))]
 		else:
 			raise StopIteration
-	
+
 	def push(self, item):
 		self._queue.insert(0, item)
-	
+
 	def get(self, n=0, remove=False):
 		if (not self.empty()) and (0 <= (n + 1) <= len(self._queue)):
 			r = self._queue[(len(self._queue) - (n + 1))]
@@ -131,13 +131,13 @@ class Queue(object):
 			return r
 		else:
 			return None
-	
+
 	def pop(self, n=0):
 		return self.get(n, True)
-	
+
 	def peek(self, n=0):
 		return self.get(n)
-	
+
 	def empty(self):
 		return self._queue == []
 
@@ -151,13 +151,13 @@ class CaselessList(list):
 
 #	def setdefault(self):
 #		pass
-	
+
 	def __contains__(self, y):
 		return list.__contains__(self, y.lower())
 
 	def __delitem__(self, y):
 		list.__delitem__(self, y.lower())
-	
+
 	def __setitem__(self, y):
 		list.__setitem__(self, y.lower())
 
@@ -172,7 +172,7 @@ class CaselessList(list):
 			list.append(self, obj.lower())
 		else:
 			list.append(self, y)
-	
+
 	def remove(self, value):
 		if type(value) is str:
 			list.remove(self, value.lower())
@@ -189,10 +189,10 @@ class CaselessDict(dict):
 
 #	def setdefault(self):
 #		pass
-	
+
 	def __delitem__(self, key):
 		dict.__delitem__(self, key.lower())
-	
+
 	def __setitem__(self, key, value):
 		dict.__setitem__(self, key.lower(), value)
 

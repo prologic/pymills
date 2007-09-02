@@ -1,17 +1,18 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-import threading
 from time import sleep
 
-from pymills.event import listener, filter, Component, \
-		Event, EventManager
+from pymills.event import listener, Component, \
+		Event, Manager
 
 class Foo(Component):
 
 	@listener("foo")
 	def onFOO(self, event):
 		self.send(Event(), "bar")
-	
+
 class Bar(Component):
 
 	@listener("bar")
@@ -19,7 +20,7 @@ class Bar(Component):
 		print "FooBar!"
 
 def main():
-	event = EventManager()
+	event = Manager()
 	foo = Foo(event)
 	bar = Bar(event)
 

@@ -5,28 +5,22 @@
 
 """James Mills Python Library
 
-This is my library of packages and modules that I have
-devloped for various purposes.
+pymills is a collection of works by James Mills containing
+general purpose and special purpose libraries and modules
+for the Python programming language. Most libraries and
+modules are based around a core component of pymills, the
+"event" library.
 
-All modules and packages are written by me, James Mills and are
-therefore CopyRight (C) 2003-2005 by James Mills.
-This library is released under the GPL license which is
-included with this distribution. Please read it.
+pymills provides a very easy to use and powerful event
+library enabling asyncronous and event-driven applications
+and system to be developed. Software systems and applications
+written with pymills.event are broken up into components
+and can be distributed across different nodes.
 
-I hope you will find this libary usefull in some way, I use it
-in all my Python Software Projects. Currently:
-	* PircSrv -> http://trac.shortcircuit.net.au/pircsrv/
-	* PIRCD   -> No HomePage.
-	* KDB     -> No HomePage.
-See the ShortCircuit GitWeb: http://git.shortcircuit.net.au/
-
-Please report any defects you find with this library or any of
-the parts therein. There is a defect tracking tool on the url
-shown above. Please follow the links to the pymills project
-page.
-
-cheers
-JamesMills
+pymills also contains an ann library which provides the
+building blocks to build artificial neural networks in
+an asyncronous/event-driven manner closely modelling
+biological neural networks.
 """
 
 __name__ = "pymills"

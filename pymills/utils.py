@@ -71,7 +71,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 		stderr="/dev/null"):
 	"""daemonize(stdin="/dev/null", stdout="/dev/null",
 			stderr="/dev/null") -> None
-	
+
 	This forks the current process into a daemon.
 
 	The stdin, stdout, and stderr arguments are file names that
@@ -91,7 +91,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 		stdin  : file to write standard input
 		stdout : file to write standard output
 		stderr : file to write standard error
-	
+
 	These arguments are optional and default to /dev/null.
 
 	Note that stderr is opened unbuffered, so
@@ -100,28 +100,28 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 	"""
 
 	# Do first fork.
-	try: 
-		pid = os.fork() 
+	try:
+		pid = os.fork()
 		if pid > 0:
 			# Exit first parent
 			raise SystemExit, 0
-	except OSError, e: 
+	except OSError, e:
 		print >> sys.stderr, "fork #1 failed: (%d) %s\n" % (
 				e.errno, e.strerror)
 		raise SystemExit, 1
 
 	# Decouple from parent environment.
-	os.chdir("/") 
-	os.umask(077) 
-	os.setsid() 
+	os.chdir("/")
+	os.umask(077)
+	os.setsid()
 
 	# Do second fork.
-	try: 
-		pid = os.fork() 
+	try:
+		pid = os.fork()
 		if pid > 0:
 			# Exit second parent
 			raise SystemExit, 0
-	except OSError, e: 
+	except OSError, e:
 		print >> sys.stderr, "fork #2 failed: (%d) %s\n" % (
 				e.errno, e.strerror)
 		raise SystemExit, 1
@@ -173,19 +173,19 @@ class State(object):
 
 	def __eq__(self, s):
 		return s in self._states and self._state == s
-	
+
 	def __lt__(self, s):
 		return s in self._states and self._state == s and \
 				self._states[s] < self._states[self._state]
 
-	def __gr__(self, state):
+	def __gr__(self, s):
 		return s in self._states and self._state == s and \
 				self._states[s] > self._states[self._state]
 
 	def _add(self, s):
 		self._states[s] = self._next
 		self._next = self._next + 1
-	
+
 	def set(self, s):
 		"""S.set(s) -> None
 
@@ -193,7 +193,7 @@ class State(object):
 		adding it if it doesn't exist.
 		"""
 
-		if not s in self._states:
+		if s not in self._states:
 			self._add(s)
 
 		self._state = s
@@ -285,7 +285,7 @@ def getFiles(path, tests=[os.path.isfile], pattern=".*", \
 		include_path=True):
 	"""getFiles(path, tests=[os.path.isfile], pattern=".*", \
 			include_path=True) -> list of files
-	
+
 	Return a list of files in the specified path
 	applying the predicates listed in tests returning
 	only the files that match the pattern.
@@ -380,10 +380,10 @@ def validateEmail(email):
 def safe__import__(moduleName, globals=globals(),
 		locals=locals(), fromlist=[]):
 	"""Safe imports: rollback after a failed import.
-	 
+
 	Initially inspired from the RollbackImporter in PyUnit,
 	but it's now much simpler and works better for our needs.
-	 
+
 	See http://pyunit.sourceforge.net/notes/reloading.html
 	"""
 
@@ -427,5 +427,5 @@ def notags(str):
 		elif state == STATE_TAG:
 			if char == '>':
 				state = STATE_TEXT
-	
+
 	return newStr

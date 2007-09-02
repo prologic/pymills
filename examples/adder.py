@@ -1,23 +1,18 @@
 #!/usr/bin/env python
 
-from pymills.event import listener, filter, Component, \
-		Event, RemoteManager
+from pymills.event import listener, Component, \
+		Event, Remote
 
 class Adder(Component):
 
-	@filter()
-	def onDEBUG(self, event):
-		print "DEBUG: %s" % event
-		return False, event
-
 	@listener("add")
-	def onADD(self, event, x, y):
+	def onADD(self, x, y):
 		print "Adding %s + %s" % (x, y)
 		r = x + y
 		self.event.push(Event(r), "result")
 
 def main():
-	event = RemoteManager()
+	event = Remote(port=12000)
 	adder = Adder(event)
 
 	while True:

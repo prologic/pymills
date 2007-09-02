@@ -1,6 +1,10 @@
+#!/usr/bin/env python
+
+from time import sleep, time
 from random import seed, random
 
-from pymills.ann import *
+from pymills.ann import new_node, new_connection, \
+		new_neuron, new_output
 
 a = new_node()
 b = new_node()

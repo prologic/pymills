@@ -52,7 +52,7 @@ def strip(s, color=False):
 		s = s.replace("\x01", "")
 		s = s.replace("\x02", "")
 	return s
-	
+
 def sourceJoin(nick, ident, host):
 	"""sourceJoin(nick, ident, host) -> str
 
@@ -65,12 +65,12 @@ def sourceJoin(nick, ident, host):
 
 def sourceSplit(source):
 	"""sourceSplit(source) -> str, str, str
-	
+
 	Split the given source into it's parts.
 
 	source must be of the form:
 		nick!ident@host
-	
+
 	Example:
 		nick, ident, host, = sourceSplit("Joe!Blogs@localhost")
 	"""
@@ -93,7 +93,7 @@ class RawEvent(Event):
 
 	def __init__(self, line):
 		Event.__init__(self, line)
-	
+
 class NumericEvent(Event):
 
 	def __init__(self, source, target, numeric, arg, message):
@@ -300,7 +300,7 @@ class IRC(Component):
 
 	def ircRAW(self, data):
 		"""I.ircRAW(data) -> None
-		
+
 		Send a raw message
 
 		This must be overridden by sub-classes in order to
@@ -309,14 +309,14 @@ class IRC(Component):
 		"""
 
 		pass
-	
+
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)
 
 	def ircSERVER(self, server, hops, token, description):
 		 self.ircRAW("SERVER %s %s %s :%s" % (server, hops,
 			 token, description))
-	
+
 	def ircUSER(self, ident, host, server, name):
 		self.ircRAW("USER %s \"%s\" \"%s\" :%s" % (
 			ident, host, server, name))
@@ -324,7 +324,7 @@ class IRC(Component):
 		self._info["host"] = host
 		self._info["server"] = server
 		self._info["name"] = name
-	
+
 	def ircNICK(self, nick, idle=None, signon=None, ident=None,
 			host=None, server=None, hops=None, name=None):
 
@@ -337,19 +337,19 @@ class IRC(Component):
 
 		else:
 			self.ircRAW("NICK %s" % nick)
-	
+
 	def ircPING(self, server):
 		self.ircRAW("PING :%s" % server)
 
 	def ircPONG(self, server):
-		self.ircRAW("PONG :%s" % server) 
+		self.ircRAW("PONG :%s" % server)
 
 	def ircQUIT(self, message="", source=None):
 		if source is None:
 			self.ircRAW("QUIT :%s" % message)
 		else:
 			self.ircRAW(":%s QUIT :%s" % (source, message))
-	
+
 	def ircJOIN(self, channel, key=None, source=None):
 		if source is None:
 			if key is None:
@@ -362,14 +362,14 @@ class IRC(Component):
 			else:
 				self.ircRAW(":%s JOIN %s %s" % (source,
 					channel, key))
-	
+
 	def ircPART(self, channel, message="", source=None):
 		if source is None:
 			self.ircRAW("PART %s :%s" % (channel, message))
 		else:
 			self.ircRAW(":%s PART %s :%s" % (source, channel,
 				message))
-	
+
 	def ircPRIVMSG(self, target, message, source=None):
 		if source is None:
 			self.ircRAW("PRIVMSG %s :%s" % (target, message))
@@ -383,7 +383,7 @@ class IRC(Component):
 		else:
 			self.ircRAW(":%s NOTICE %s :%s" % (source,
 				target, message))
-	
+
 	def ircCTCP(self, target, type, message, source=None):
 		self.ircPRIVMSG(target, "%s %s" % (type, message),
 				source)
@@ -391,7 +391,7 @@ class IRC(Component):
 	def ircCTCPREPLY(self, target, type, message, source=None):
 		self.ircNOTICE(target, "%s %s" % (type, message),
 			  source)
-	
+
 	def ircKICK(self, channel, target, message="", source=None):
 		if source is None:
 			self.ircRAW("KICK %s %s :%s" % (channel, target,
@@ -399,7 +399,7 @@ class IRC(Component):
 		else:
 			self.ircRAW(":%s KICK %s %s :%s" % (source, channel,
 				target,	message))
-	
+
 	def ircTOPIC(self, channel, topic, whoset=None,
 			whenset=None, source=None):
 		if source is None:
@@ -415,7 +415,7 @@ class IRC(Component):
 			else:
 				self.ircRAW(":%s TOPIC %s %s %d :%s" % (source,
 					channel, whoset, whenset, topic)),
-	
+
 	def ircMODE(self, modes, channel=None, source=None):
 		if source is None:
 			if channel is None:
@@ -428,10 +428,10 @@ class IRC(Component):
 			else:
 				self.ircMODE(":%s MODE %s :%s" % (source, channel,
 					modes))
-	
+
 	def ircKILL(self, target, message):
 		self.ircRAW("KILL %s :%s" % (target, message))
-	
+
 	def ircINVITE(self, target, channel, source=None):
 		if source is None:
 			self.ircRAW("INVITE %s %s" % (target, channel))

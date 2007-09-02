@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-import threading
 from time import sleep
 
 from pymills.event import listener, filter, Component, \
@@ -11,7 +12,7 @@ class ThreadOne(Worker):
 	@listener("hello")
 	def onHELLO(self, event, message=""):
 		self.event.push(Event("hello from 1 (%s)" % message), "received")
-	
+
 	def run(self):
 		while self.isRunning():
 			try:

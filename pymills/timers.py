@@ -30,7 +30,7 @@ class Timers(Component):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self._timers = []
-	
+
 	def find(self, **kwargs):
 		for i, timer in enumerate(self._timers):
 			found = True
@@ -71,7 +71,7 @@ class Timers(Component):
 
 		self._timers.append(
 				Timer(n, channel, forever, initial, **kwargs))
-	
+
 	def process(self):
 		"""T.process() -> None
 
@@ -90,7 +90,7 @@ class Timers(Component):
 class Timer:
 	"""Timer(n, channel="timer", forever=False,
 	      initial=False, **kwargs) -> new timer object
-	
+
 	Creates a new timer object which when triggered
 	will return an event to be pushed onto the event
 	queue held by the Timers container.
@@ -107,7 +107,7 @@ class Timer:
 		self._kwargs = kwargs
 
 		self.reset()
-	
+
 	def reset(self):
 		"""T.reset() -> None
 

@@ -1,37 +1,27 @@
 #!/usr/bin/env python
-# Module:	bench
-# Date:		25 February 2007
-# Author:	James Mills, prologic at shortcircuit dot net dot au
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-"""bench
+"""Event Library Bench Marking Tool
 
 Bench marking example. THis example does some simple
 benchmaking of the event library. It's capable of
-doing both local event and remote events and will
+doing both local events and remote events and will
 print out some statistics about each run.
 """
 
-__description__ = "pymills.event bench marking"
-__version__ = "0.2.1"
-__author__ = "James Mills"
-__author_email__ = "James Mills, prologic at shortcircuit dot net dot au"
-__url__ = "http://trac.shortcircuit.net.au/pymills/"
-__copyright__ = "CopyRight (C) 2005 by James Mills"
-__license__ = "GPL"
-
-import sys
 import math
 import time
 import hotshot
 import optparse
-import threading
-import hotshot.stats
 
-from pymills.event import *
+import pymills
+from pymills.event import listener, filter, \
+		Component, Manager, Remote, Event
 from pymills.misc import duration
 
 USAGE = "%prog [options]"
-VERSION = "%prog v" + __version__
+VERSION = "%prog v" + pymills.__version__
 
 ERRORS = [
 		(0, "Cannot listen and connect at the same time!"),
@@ -102,7 +92,7 @@ class State(Component):
 
 	def __init__(self, event):
 		self.done = False
-	
+
 	@listener("stop")
 	def onSTOP(self):
 		self.done = True
@@ -128,7 +118,10 @@ def main():
 	if opts.connect is not None:
 		nodes = opts.connect.split(",")
 
-	event = RemoteManager(nodes=nodes)
+	if opts.listen or opts.connect:
+		event = Remote(nodes=nodes)
+	else:
+		event = Manager()
 	monitor = Monitor(event)
 	state = State(event)
 
@@ -145,13 +138,14 @@ def main():
 	if opts.profile:
 		profiler = hotshot.Profile("bench.prof")
 		profiler.start()
-	
+
 	event.push(Event(message="hello"), "hello")
 
 	while not state.done:
 		try:
 			event.flush()
-			event.process()
+			if hasattr(event, "process"):
+				event.process()
 
 			if opts.events > 0 and monitor.getEventCount() > opts.events:
 				event.send(Event(), "stop")
