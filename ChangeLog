@@ -1,3 +1,53 @@
+2007-09-03  James Mills <prologic@shortcircuit.net.au>
+
+	* AUTHORS, CHANGES, LICENSE, Makefile, docs/AUTHORS, docs/INSTALL,
+	docs/LICENSE, docs/README, docs/RELEASE, docs/THANKS,
+	examples/adder.py, examples/andnn.py, examples/anntest.py,
+	examples/bench.py, examples/calc.py, examples/echoserer.py,
+	examples/eventclient.py, examples/eventserver.py, examples/irc.py,
+	examples/ircbot.py, examples/linktest.py, examples/loops.py,
+	examples/nandnn.py, examples/nornn.py, examples/notnn.py,
+	examples/ornn.py, examples/pygameex.py, examples/subchannels.py,
+	examples/telnet-ssl.py, examples/telnet.py, examples/threadtest.py,
+	examples/timers.py, examples/todo.py, examples/udpclient.py,
+	examples/udpserver.py, examples/workertest.py, examples/xornn.py,
+	ez_setup.py, pymills/__init__.py, pymills/ann.py,
+	pymills/crux/ports.py, pymills/datatypes.py, pymills/db.py,
+	pymills/env.py, pymills/event.py, pymills/io.py, pymills/irc.py,
+	pymills/log.py, pymills/sockets.py, pymills/spider.py,
+	pymills/test.py, pymills/tests/event.py, pymills/tests/run.py,
+	pymills/tests/sockets.py, pymills/timers.py, pymills/utils.py,
+	pymills/ver.py, pymills/web.py, setup.py: Preparing for a 3.2
+	release:   * Added/Updated docs  * Added Makefile for easier
+	building  * Fixed examples with detected errors from pyflakes  *
+	Updated __doc__ of pymills to reflect better what it is.  * Fixed
+	various superfluous whitespaces in files  * Fixed various "if not
+	expression in object" patterns.  * Changed EventManager to Manager
+	in event library  * Changed RemoteManager to Remote in event library
+	* Added history support to io.Command  * Fixed tests
+
+2007-08-29  James Mills <prologic@shortcircuit.net.au>
+
+	* pymills/event.py:  * Removed need for call function - moved into send  * Added
+	 debug/logging support  To set debug/loggin: {{{ e =
+	 EventManager(log=logger, debug=debug) }}}  Where:  * logger is a
+	 logger instnace or None  * debug is True or False to enable/disable
+	 debugging
+
+2007-08-29  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, pymills/__init__.py, pymills/event.py,
+	pymills/utils.py:  * Majorly simplied event library  * Fixed utils.getFiles  * Updated
+	 event benchmarking example
+
+2007-08-25  James Mills <prologic@shortcircuit.net.au>
+
+	* LICENSE, MANIFEST.in: Added GNU license. Added PyPi manifest
+
+2007-08-25  James Mills <prologic@shortcircuit.net.au>
+
+	* ChangeLog: Added GNU-style ChangeLog
+
 2007-08-25  James Mills <prologic@shortcircuit.net.au>
 
 	* AUTHORS, CHANGES: Added docs for authors, changes
