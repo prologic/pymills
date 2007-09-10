@@ -1,3 +1,23 @@
+2007-09-10  James Mills <prologic@shortcircuit.net.au>
+
+	* examples/bench.py, examples/udpclient.py, pymills/event.py,
+	pymills/irc.py, pymills/sockets.py, pymills/tests/event.py,
+	pymills/timers.py:  * Updated examples to reflect changes in event API  * Updated
+	 timers, sockets and irc to reflect changes in event API  * Updated
+	 tests/event.py to reflect changes in event API  NEW '''event'''
+	 API:  * Component's are no longer Singleton's and no longer have
+	 this property.  * Component.__init__ _must_ be explicetly called to
+	 setup event handlers.  * Component's __init__ calls register()  *
+	 Components can be explicitly or implicitly registered.  * "linked"
+	 Components are registered.   * if a and b are Component instances,
+	 a becomes b's parent in {{{a.link(b)}}}  * Component's push/send
+	 calls check for a parent.   * If a parent exists call the parent's
+	 push/send   * If not, call it's own.
+
+2007-09-03  James Mills <prologic@shortcircuit.net.au>
+
+	* ChangeLog: Updated
+
 2007-09-03  James Mills <prologic@shortcircuit.net.au>
 
 	* AUTHORS, CHANGES, LICENSE, Makefile, docs/AUTHORS, docs/INSTALL,
