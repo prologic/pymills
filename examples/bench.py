@@ -79,18 +79,20 @@ class Sender(Component):
 	@listener("received")
 	def onRECEIVED(self, message=""):
 		#print message
-		self.event.push(Event(message="hello"), "hello")
+		self.push(Event(message="hello"), "hello")
 
 class Receiver(Component):
 
 	@listener("hello")
 	def onHELLO(self, message=""):
-		self.event.push(Event(message="Got: %s" % message),
+		self.push(Event(message="Got: %s" % message),
 				"received")
 
 class State(Component):
 
 	def __init__(self, event):
+		Component.__init__(self, event)
+
 		self.done = False
 
 	@listener("stop")
@@ -100,6 +102,8 @@ class State(Component):
 class Monitor(Component):
 
 	def __init__(self, event):
+		Component.__init__(self, event)
+
 		self._eventCount = 0
 
 	def getEventCount(self):
@@ -119,19 +123,19 @@ def main():
 		nodes = opts.connect.split(",")
 
 	if opts.listen or opts.connect:
-		event = Remote(nodes=nodes)
+		manager = Remote(nodes=nodes)
 	else:
-		event = Manager()
-	monitor = Monitor(event)
-	state = State(event)
+		manager = Manager()
+	monitor = Monitor(manager)
+	state = State(manager)
 
 	if opts.listen:
-		receiver = Receiver(event)
+		receiver = Receiver(manager)
 	elif opts.connect:
-		sender = Sender(event)
+		sender = Sender(manager)
 	else:
-		sender = Sender(event)
-		receiver = Receiver(event)
+		sender = Sender(manager)
+		receiver = Receiver(manager)
 
 	sTime = time.time()
 
@@ -139,23 +143,23 @@ def main():
 		profiler = hotshot.Profile("bench.prof")
 		profiler.start()
 
-	event.push(Event(message="hello"), "hello")
+	manager.push(Event(message="hello"), "hello")
 
 	while not state.done:
 		try:
-			event.flush()
-			if hasattr(event, "process"):
-				event.process()
+			manager.flush()
+			if hasattr(manager, "process"):
+				manager.process()
 
 			if opts.events > 0 and monitor.getEventCount() > opts.events:
-				event.send(Event(), "stop")
+				manager.send(Event(), "stop")
 				break
 			if opts.time > 0 and (time.time() - sTime) > opts.time:
-				event.send(Event(), "stop")
+				manager.send(Event(), "stop")
 				break
 
 		except KeyboardInterrupt:
-			event.send(Event(), "stop")
+			manager.send(Event(), "stop")
 			break
 
 	print

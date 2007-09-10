@@ -46,7 +46,7 @@ import select
 from time import sleep
 import cPickle as pickle
 from threading import Thread
-from inspect import getmembers, ismethod
+from inspect import getmembers, ismethod, getargspec
 
 from utils import caller
 
@@ -111,7 +111,20 @@ def send(handlers, event, channel, source=None):
 	r = []
 	for handler in handlers:
 		try:
-			r.append(handler(*event._args, **event._kwargs))
+			args, varargs, varkw, defaults = getargspec(handler)
+			if args[0] == "self":
+				del args[0]
+			if len(args) > 0:
+				if args[0] in ("event", "evt", "e",):
+					del args[0]
+					if len(args) > 0:
+						r.append(handler(event, *event._args, **event._kwargs))
+					else:
+						r.append(handler(event))
+				else:
+					r.append(handler(*event._args, **event._kwargs))
+			else:
+				r.append(handler())
 		except FilterEvent:
 			return
 	return tuple(r)
@@ -125,24 +138,12 @@ class Manager(object):
 	remote event managers.
 	"""
 
-	def __new__(cls, *args, **kwargs):
-		"Creates x; see x.__class__.__doc__ for signature"
-
-		objList = [sup.__new__(cls, *args, **kwargs)
-				for sup in Manager.__bases__]
-		for obj in objList[1:]:
-			objList[0].__dict__.update(copy.deepcopy(obj.__dict__))
-
-		self = objList[0]
-
+	def __init__(self, log=None, debug=False):
 		self._handlers = {"global": []}
 		self._queue = []
-
-		return self
-
-	def __init__(self, log=None, debug=False):
 		self._log = log
 		self._debug = debug
+		self.manager = self
 
 	def __len__(self):
 		return len(self._queue)
@@ -214,7 +215,10 @@ class Manager(object):
 		by flushEvents. source is expected to be an object.
 		"""
 
-		self._queue.append((event, channel, source))
+		if self.manager == self:
+			self._queue.append((event, channel, source))
+		else:
+			self.manager.push(event, channel, source)
 
 	def flush(self):
 		"""E.flushEvents() -> None
@@ -224,11 +228,14 @@ class Manager(object):
 		to filters/listeners.
 		"""
 
-		for event, channel, source in self._queue[:]:
-			try:
-				self.send(event, channel, source)
-			finally:
-				self._queue.remove((event, channel, source))
+		if self.manager == self:
+			for event, channel, source in self._queue[:]:
+				try:
+					self.send(event, channel, source)
+				finally:
+					self._queue.remove((event, channel, source))
+		else:
+			self.manager.flush()
 
 	def send(self, event, channel, source=None):
 		"""E.send(event, channel, source=None) -> None
@@ -250,16 +257,19 @@ TypeError: a class that defines __slots__ without defining __getstate__ cannot b
 #		if source is None:
 #			source = self
 
-		handlers = self.getHandlers("global") + \
-				self.getHandlers(channel)
+		if self.manager == self:
+			handlers = self.getHandlers("global") + \
+					self.getHandlers(channel)
 
-		if self._debug:
-			if self._log is not None:
-				self._log.debug(event)
-			else:
-				print >> sys.stderr, event
+			if self._debug:
+				if self._log is not None:
+					self._log.debug(event)
+				else:
+					print >> sys.stderr, event
 
-		return send(handlers, event, channel, source)
+			return send(handlers, event, channel, source)
+		else:
+			return self.manager.send(event, channel, source)
 
 class Component(Manager):
 	"""Component(Manager) -> new component object
@@ -288,81 +298,43 @@ class Component(Manager):
 	}}}
 	"""
 
-	instances = {}
+	def __init__(self, manager=None, log=None, debug=False):
+		Manager.__init__(self, log, debug)
 
-	def __new__(cls, *args, **kwargs):
-		"Creates x; see x.__class__.__doc__ for signature"
-
-		if cls in cls.instances:
-			return cls.instances[cls]
-
-		if len(args) > 0 and isinstance(args[0], Manager):
-			event = args[0]
-			args = args[1:]
+		if manager is not None:
+			self.manager = manager
 		else:
-			event = None
+			self.manager = self
 
-		objList = [sup.__new__(cls, *args, **kwargs)
-				for sup in Component.__bases__]
-		for obj in objList[1:]:
-			objList[0].__dict__.update(copy.deepcopy(obj.__dict__))
+		self._links = []
 
-		self = objList[0]
-
-		if event is None:
-			self.event = self
-		else:
-			self.event = event
-
-		if self.event is not self:
-			handlers = [x[1] for x in getmembers(
-				self, lambda x: ismethod(x) and
-				callable(x) and x.__name__.startswith("on") and
-				(hasattr(x, "filter") or hasattr(x, "listener")))]
-
-			for handler in handlers:
-				if hasattr(self, "__channelPrefix__"):
-					channel = "%s:%s" % (
-							self.__channelPrefix__,
-							handler.channel)
-				else:
-					channel = handler.channel
-
-				self.event.add(handler, channel)
-
-				if self._handlers.has_key(channel):
-					self._handlers[channel].append(handler)
-					self._handlers[channel].sort(
-							cmp=lambda x, y: hasattr(x, "filter"))
-				else:
-					self._handlers[channel] = [handler]
-
-		self.instances[cls] = self
-		return self
+		self.register(self.manager)
 
 	def __del__(self):
 		self.unregister()
 
-	def link(self, component):
-		"""C.link(component) -> None
-
-		Link the given component to the current component.
-		"""
-
+	def register(self, manager):
 		handlers = [x[1] for x in getmembers(
-			component, lambda x: ismethod(x) and
+			self, lambda x: ismethod(x) and
 			callable(x) and x.__name__.startswith("on") and
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for handler in handlers:
-			if hasattr(component, "__channelPrefix__"):
+			if hasattr(self, "__channelPrefix__"):
 				channel = "%s:%s" % (
-						component.__channelPrefix__,
+						self.__channelPrefix__,
 						handler.channel)
 			else:
 				channel = handler.channel
 
-			self.add(handler, channel)
+			manager.add(handler, channel)
+
+			if self._handlers.has_key(channel):
+				self._handlers[channel].append(handler)
+				self._handlers[channel].sort(
+						cmp=lambda x, y: hasattr(x, "filter"))
+			else:
+				self._handlers[channel] = [handler]
 
 	def unregister(self):
 		"""C.unregister() -> None
@@ -372,8 +344,28 @@ class Component(Manager):
 		"""
 
 		for handler in self.getHandlers():
-			self.event.remove(handler)
+			self.manager.remove(handler)
 			self.remove(handler)
+
+	def link(self, component):
+		"""C.link(component) -> None
+
+		Link the given component to the current component.
+		"""
+
+		if component not in self._links:
+			self._links.append(component)
+			component.register(self)
+
+	def unlink(self, component):
+		"""C.unlink(component) -> None
+
+		Un-Link the given component from the current component.
+		"""
+
+		if component in self._links:
+			self._links.remove(component)
+			component.unregister(self)
 
 class Worker(Component, Thread):
 

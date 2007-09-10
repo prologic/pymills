@@ -26,8 +26,10 @@ class Timers(Component):
 	they are triggered.
 	"""
 
-	def __init__(self, *args):
+	def __init__(self, event):
 		"initializes x; see x.__class__.__doc__ for signature"
+
+		Component.__init__(self, event)
 
 		self._timers = []
 
@@ -83,7 +85,7 @@ class Timers(Component):
 		for timer in self._timers[:]:
 			done, event, channel = timer.process()
 			if done:
-				self.event.push(event, channel)
+				self.push(event, channel)
 				if not timer._forever:
 					self._timers.remove(timer)
 

@@ -221,8 +221,10 @@ class IRC(Component):
 	 * newnick
 	"""
 
-	def __init__(self, *args):
+	def __init__(self, event=None):
 		"initializes x; see x.__class__.__doc__ for signature"
+
+		Component.__init__(self, event)
 
 		self._buffer = ""
 		self._info = {}
@@ -456,7 +458,7 @@ class IRC(Component):
 		lines, buffer = splitLines(data, self._buffer)
 		self._buffer = buffer
 		for line in lines:
-			self.event.push(RawEvent(line), "raw", self)
+			self.push(RawEvent(line), "raw", self)
 
 	@listener("raw")
 	def onRAW(self, line):
@@ -472,12 +474,12 @@ class IRC(Component):
 		tokens = line.split(" ")
 
 		if tokens[0] == "PING":
-			self.event.push(
+			self.push(
 					PingEvent(strip(tokens[1]).lower()),
 					"ping", self)
 
 		elif tokens[0] == "NICK":
-			self.event.push(
+			self.push(
 					NewNickEvent(
 						tokens[1].lower(), int(tokens[2]),
 						int(tokens[3]), tokens[4].lower(),
@@ -486,14 +488,14 @@ class IRC(Component):
 					"newnick", self)
 
 		elif tokens[0] == "TOPIC":
-			self.event.push(
+			self.push(
 					TopicEvent(
 						tokens[1], tokens[2], int(tokens[3]),
 						strip(" ".join(tokens[4:]))),
 					"topic", self)
 
 		elif tokens[0] == "NETINFO":
-			self.event.push(
+			self.push(
 					NetInfoEvent(
 						int(tokens[1]),
 						int(tokens[2]),
@@ -560,7 +562,7 @@ class IRC(Component):
 				self._info["server"] = tokens[3].rstrip(",")
 				self._info["serverVersion"] = tokens[6]
 
-			self.event.push(
+			self.push(
 					NumericEvent(source, target, numeric,
 						arg, message),
 					"numeric", self)
@@ -575,15 +577,15 @@ class IRC(Component):
 					tokens = strip(message, color=True).split(" ")
 					type = tokens[0].lower()
 					message = " ".join(tokens[1:])
-					self.event.push(
+					self.push(
 							CtcpEvent(source, target, type, message),
 							"ctcp", self)
 				else:
-					self.event.push(
+					self.push(
 							MessageEvent(source, target, message),
 							"message", self)
 			else:
-				self.event.push(
+				self.push(
 						MessageEvent(source, target, message),
 						"message", self)
 
@@ -591,7 +593,7 @@ class IRC(Component):
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			target = tokens[2].lower()
 			message = strip(" ".join(tokens[3:]))
-			self.event.push(
+			self.push(
 					NoticeEvent(source, target, message),
 					"notice", self)
 
@@ -599,7 +601,7 @@ class IRC(Component):
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			channels = strip(tokens[2]).lower()
 			for channel in channels.split(","):
-				self.event.push(
+				self.push(
 						JoinEvent(source, channel),
 						"join", self)
 
@@ -607,14 +609,14 @@ class IRC(Component):
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			channel = strip(tokens[2]).lower()
 			message = strip(" ".join(tokens[3:]))
-			self.event.push(
+			self.push(
 					PartEvent(source, channel, message),
 					"part", self)
 
 		elif tokens[1] == "QUIT":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			message = strip(" ".join(tokens[2:]))
-			self.event.push(
+			self.push(
 					QuitEvent(source, message),
 					"quit", self)
 
@@ -631,14 +633,14 @@ class IRC(Component):
 			else:
 				ctime = time.time()
 
-			self.event.push(
+			self.push(
 					NickEvent(source, newNick, ctime),
 					"nick", self)
 
 		elif tokens[1] == "MOTD":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			server = strip(tokens[2]).lower()
-			self.event.push(
+			self.push(
 					MotdEvent(source, server),
 					"motd", self)
 

@@ -67,7 +67,9 @@ class WriteEvent(Event):
 
 class Client(Component):
 
-	def __init__(self):
+	def __init__(self, event=None):
+		Component.__init__(self, event)
+
 		self.ssl = False
 		self.server = {}
 		self.issuer = {}
@@ -101,7 +103,7 @@ class Client(Component):
 			else:
 				data = self._sock.recv(bufsize)
 		except socket.error, e:
-			self.event.push(ErrorEvent(e[1]), "error", self)
+			self.push(ErrorEvent(e[1]), "error", self)
 			self.close()
 			return
 
@@ -109,7 +111,7 @@ class Client(Component):
 			self.close()
 			return
 
-		self.event.push(ReadEvent(data), "read", self)
+		self.push(ReadEvent(data), "read", self)
 
 	def open(self, host, port, ssl=False):
 		self.ssl = ssl
@@ -120,7 +122,7 @@ class Client(Component):
 				self._ssock = socket.ssl(self._sock)
 		except socket.error, e:
 			self.close()
-			self.event.push(ErrorEvent(e[1]), "error", self)
+			self.push(ErrorEvent(e[1]), "error", self)
 			return
 
 		self._sock.setblocking(False)
@@ -149,7 +151,7 @@ class Client(Component):
 							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
 							self._ssock.issuer()).groupdict()
 
-				self.event.push(
+				self.push(
 						ConnectEvent(host, port), "connect", self)
 
 				return
@@ -157,7 +159,7 @@ class Client(Component):
 		etime = time.time()
 		ttime = etime - stime
 
-		self.event.push(
+		self.push(
 				ErrorEvent("Connection timed out"), "error", self)
 
 	def close(self):
@@ -165,12 +167,12 @@ class Client(Component):
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, e:
-			self.event.push(ErrorEvent(e[1]), "error", self)
+			self.push(ErrorEvent(e[1]), "error", self)
 		self.connected = False
-		self.event.push(DisconnectEvent(), "disconnect", self)
+		self.push(DisconnectEvent(), "disconnect", self)
 
 	def write(self, data):
-		self.event.push(WriteEvent(data), "write", self)
+		self.push(WriteEvent(data), "write", self)
 
 	def process(self):
 		if self.__poll__():
@@ -227,7 +229,7 @@ class Client(Component):
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.event.push(ErrorEvent(e[1]), "error", self)
+				self.push(ErrorEvent(e[1]), "error", self)
 
 class TCPClient(Client):
 
@@ -260,7 +262,7 @@ class UDPClient(Client):
 
 		self.connected = True
 
-		self.event.push(ConnectEvent(host, port), "connect", self)
+		self.push(ConnectEvent(host, port), "connect", self)
 
 	@filter("write")
 	def onWRITE(self, data):
@@ -278,11 +280,13 @@ class UDPClient(Client):
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.event.push(ErrorEvent(e[1]), "error", self)
+				self.push(ErrorEvent(e[1]), "error", self)
 
 class Server(Component):
 
-	def __init__(self):
+	def __init__(self, event=None):
+		Component.__init__(self, event)
+
 		self._clients = []
 
 	def __del__(self):
@@ -311,7 +315,7 @@ class Server(Component):
 				newsock.setblocking(False)
 				self._clients.append(newsock)
 				host, port = host
-				self.event.push(
+				self.push(
 						ConnectEvent(host, port, newsock),
 						"connect", self)
 			else:
@@ -320,7 +324,7 @@ class Server(Component):
 				try:
 					data = sock.recv(bufsize)
 				except socket.error, e:
-					self.event.push(
+					self.push(
 							ErrorEvent(e[1], sock), "error", self)
 					self.close(sock)
 					continue
@@ -329,7 +333,7 @@ class Server(Component):
 					self.close(sock)
 					continue
 
-				self.event.push(
+				self.push(
 						ReadEvent(data, sock), "read", self)
 
 	def close(self, sock=None):
@@ -338,10 +342,10 @@ class Server(Component):
 				sock.shutdown(2)
 				sock.close()
 			except socket.error, e:
-				self.event.push(
+				self.push(
 						ErrorEvent(e[1], sock), "error", self)
 			self._clients.remove(sock)
-			self.event.push(
+			self.push(
 					DisconnectEvent(sock), "disconnect", self)
 
 		else:
@@ -352,10 +356,10 @@ class Server(Component):
 				self._sock.close()
 				self._sock = None
 			except socket.error, e:
-				self.event.push(ErrorEvent(e[1]), "error", self)
+				self.push(ErrorEvent(e[1]), "error", self)
 
 	def write(self, sock, data):
-		self.event.push(WriteEvent(data, sock), "write", self)
+		self.push(WriteEvent(data, sock), "write", self)
 
 	def broadcast(self, data):
 		for sock in self._clients:
@@ -412,7 +416,7 @@ class Server(Component):
 			if e[0] in [32, 107]:
 				self.close(sock)
 			else:
-				self.event.push(
+				self.push(
 						ErrorEvent(e[1], sock), "error", self)
 
 class TCPServer(Server):
@@ -456,7 +460,7 @@ class UDPServer(Server):
 			try:
 				data, addr = self._sock.recvfrom(bufsize)
 			except socket.error, e:
-				self.event.push(
+				self.push(
 						ErrorEvent(e[1], self._sock), "error", self)
 				self.close()
 				return
@@ -465,5 +469,5 @@ class UDPServer(Server):
 				self.close()
 				return
 
-			self.event.push(
+			self.push(
 					ReadEvent(data, self._sock), "read". self)
