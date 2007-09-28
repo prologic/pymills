@@ -16,11 +16,11 @@ def setupPaths(req, PYTHONPATH=None):
 
 	NOTE: This function only works with mod_python
 
-	
+
 	req        - mod_python Request object
 	PYTHONPATH - custom path to append to python's searchable
 	             path.
-	
+
 	Usage:
 	docroot, docpath = setupPaths(req)
 	"""
@@ -31,11 +31,11 @@ def setupPaths(req, PYTHONPATH=None):
 	if PYTHONPATH is None:
 		PYTHONPATH = os.getenv("PYTHONPATH", os.getcwd())
 
-	if not PYTHONPATH in sys.path:
+	if PYTHONPATH not in sys.path:
 		sys.path.append(PYTHONPATH)
 
 	docpath = os.path.dirname(req.filename)
-	if not docpath in sys.path:
+	if docpath not in sys.path:
 		sys.path.append(docpath)
 	docroot = "http://%s%s" % (
 			req.hostname, os.path.dirname(req.uri))
@@ -44,10 +44,10 @@ def setupPaths(req, PYTHONPATH=None):
 def escape(s=""):
 	"""escape(s) -> str
 
-	Replace special characters "&", "<" and ">" to HTML-safe 
+	Replace special characters "&", "<" and ">" to HTML-safe
 	sequences
 	"""
-	
+
 	if s == "":
 		return ""
 	return s.replace("&amp;", "&") \
@@ -63,7 +63,7 @@ def unescape(s=""):
 	Replace HTML-safe sequences back to their ASCII equivilent
 	characters "&", "<" and ">" ...
 	"""
-	
+
 	if s == "":
 		return ""
 

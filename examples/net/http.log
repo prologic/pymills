@@ -1,0 +1,14 @@
+GET / HTTP/1.1
+Host: localhost:9000
+User-Agent: ELinks/0.11.3 (textmode; Linux 2.6.20.1 i686; 80x24-2)
+Accept: */*
+Accept-Encoding: gzip
+Connection: Keep-Alive
+
+GET / HTTP/1.1
+Host: virgo.shortcircuit.net.au:80
+User-Agent: ELinks/0.11.3 (textmode; Linux 2.6.20.1 i686; 80x24-2)
+Accept: */*
+Accept-Encoding: gzip
+Connection: Keep-Alive
+

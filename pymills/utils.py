@@ -15,7 +15,7 @@ import optparse
 from optparse import _match_abbrev
 from ConfigParser import ConfigParser as _ConfigParser
 
-from datatypes import CaselessDict
+from pymills.types import CaselessDict
 
 class Error(Exception):
 	"Error Exception"
@@ -71,7 +71,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 		stderr="/dev/null"):
 	"""daemonize(stdin="/dev/null", stdout="/dev/null",
 			stderr="/dev/null") -> None
-	
+
 	This forks the current process into a daemon.
 
 	The stdin, stdout, and stderr arguments are file names that
@@ -91,7 +91,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 		stdin  : file to write standard input
 		stdout : file to write standard output
 		stderr : file to write standard error
-	
+
 	These arguments are optional and default to /dev/null.
 
 	Note that stderr is opened unbuffered, so
@@ -100,28 +100,28 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 	"""
 
 	# Do first fork.
-	try: 
-		pid = os.fork() 
+	try:
+		pid = os.fork()
 		if pid > 0:
 			# Exit first parent
 			raise SystemExit, 0
-	except OSError, e: 
+	except OSError, e:
 		print >> sys.stderr, "fork #1 failed: (%d) %s\n" % (
 				e.errno, e.strerror)
 		raise SystemExit, 1
 
 	# Decouple from parent environment.
-	os.chdir("/") 
-	os.umask(077) 
-	os.setsid() 
+	os.chdir("/")
+	os.umask(077)
+	os.setsid()
 
 	# Do second fork.
-	try: 
-		pid = os.fork() 
+	try:
+		pid = os.fork()
 		if pid > 0:
 			# Exit second parent
 			raise SystemExit, 0
-	except OSError, e: 
+	except OSError, e:
 		print >> sys.stderr, "fork #2 failed: (%d) %s\n" % (
 				e.errno, e.strerror)
 		raise SystemExit, 1
@@ -173,19 +173,19 @@ class State(object):
 
 	def __eq__(self, s):
 		return s in self._states and self._state == s
-	
+
 	def __lt__(self, s):
 		return s in self._states and self._state == s and \
 				self._states[s] < self._states[self._state]
 
-	def __gr__(self, state):
+	def __gr__(self, s):
 		return s in self._states and self._state == s and \
 				self._states[s] > self._states[self._state]
 
 	def _add(self, s):
 		self._states[s] = self._next
 		self._next = self._next + 1
-	
+
 	def set(self, s):
 		"""S.set(s) -> None
 
@@ -193,7 +193,7 @@ class State(object):
 		adding it if it doesn't exist.
 		"""
 
-		if not s in self._states:
+		if s not in self._states:
 			self._add(s)
 
 		self._state = s
@@ -281,23 +281,34 @@ class OptionParser(optparse.OptionParser):
 				self.error("%s not supplied" % option)
 		return (values, args)
 
-def getFiles(path, tests=[os.path.isfile], pattern=".*"):
-	"""getFiles(path, tests=[os.path.isfile], pattern=".*") ->
-			list or []
-	
+def getFiles(path, tests=[os.path.isfile], pattern=".*", \
+		include_path=True):
+	"""getFiles(path, tests=[os.path.isfile], pattern=".*", \
+			include_path=True) -> list of files
+
 	Return a list of files in the specified path
 	applying the predicates listed in tests returning
 	only the files that match the pattern.
 	"""
 
+	def testFile(file):
+		for test in tests:
+			if not test(file):
+				print "%s dit not satisfy %s" % (file, test)
+				return False
+		return True
+
 	files = os.listdir(path)
 	list = []
 	for file in files:
-		if reduce(lambda x, y: x and y, tests[1:], tests[0]) and \
+		if testFile(os.path.join(path, file)) and \
 				re.match(pattern, file):
-					list.append(file)
+			if include_path:
+				list.append(os.path.join(path, file))
+			else:
+				list.append(file)
 	return list
-	
+
 def isReadable(file):
 	"""isReadable(file) -> bool
 
@@ -369,10 +380,10 @@ def validateEmail(email):
 def safe__import__(moduleName, globals=globals(),
 		locals=locals(), fromlist=[]):
 	"""Safe imports: rollback after a failed import.
-	 
+
 	Initially inspired from the RollbackImporter in PyUnit,
 	but it's now much simpler and works better for our needs.
-	 
+
 	See http://pyunit.sourceforge.net/notes/reloading.html
 	"""
 
@@ -416,5 +427,63 @@ def notags(str):
 		elif state == STATE_TAG:
 			if char == '>':
 				state = STATE_TEXT
-	
+
 	return newStr
+
+_proc_status = "/proc/%d/status" % os.getpid()
+_scale = {"KB": 1024.0, "MB": 1024.0 * 1024.0}
+
+def _VmB(VmKey):
+	try:
+		t = open(_proc_status)
+		v = t.read()
+		t.close()
+	except:
+		return 0.0
+	i = v.index(VmKey)
+	v = v[i:].split(None, 3)
+	if len(v) < 3:
+		return 0.0
+	return float(v[1]) * _scale[v[2].upper()]
+
+def memory(since=0.0):
+	"Return memory usage in bytes."
+
+	return _VmB("VmSize:") - since
+
+def resident(since=0.0):
+	"Return resident memory usage in bytes."
+
+	return _VmB("VmRSS:") - since
+
+def stacksize(since=0.0):
+	"Return stack size in bytes."
+
+	return _VmB("VmStk:") - since
+
+def decodeHTML(s=""):
+	"""decodeHTML(s) -> str
+
+	Decode HTML entities to their ASCII equivilent.
+	"""
+
+	return s.replace("&amp;", "&") \
+			.replace("&lt;", "<") \
+			.replace("&gt;", ">") \
+			.replace("&quot;", "\"") \
+			.replace("&#039;", "'") \
+			.replace("&mdash", "--")
+
+def encodeHTML(s=""):
+	"""encodeHTML(s) -> str
+
+	Encode HTML special characters from their ASCII form to
+	HTML entities.
+	"""
+
+	return s.replace("&", "&amp;") \
+			.replace("<", "&lt;") \
+			.replace(">", "&gt;") \
+			.replace("\"", "&quot;") \
+			.replace("'", "&#039;") \
+			.replace("--", "&mdash")

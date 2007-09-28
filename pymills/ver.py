@@ -28,7 +28,7 @@ class Version:
 		self._build = 0
 
 		self.__parse(verStr)
-	
+
 	def __repr__(self):
 		if not self._release[0] == "":
 			if self._release[1] > 0:
@@ -48,7 +48,7 @@ class Version:
 		c2 = self._release == y._release
 		c3 = self._build == y._build
 		return c1 and c2 and c3
-	
+
 	def __ne__(self, y):
 		return not self == y
 

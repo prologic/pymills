@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-from pymills.event import *
 from pymills.sockets import TCPServer
+from pymills.event import listener, Manager
 
 class EchoServer(TCPServer):
 
@@ -9,7 +11,7 @@ class EchoServer(TCPServer):
 	def onCONNECT(self, sock, host, port):
 		print "New connection: %s:%d" % (host, port)
 		self.write(sock, "Ready\r\n")
-	
+
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
 		print "Disconnection: %s" % sock
@@ -20,7 +22,7 @@ class EchoServer(TCPServer):
 		self.write(sock, line + "\r\n")
 
 def main():
-	event = EventManager()
+	event = Manager()
 	server = EchoServer(event, 7)
 
 	while True:

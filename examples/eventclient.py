@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
 import time
 
@@ -9,7 +11,7 @@ class Foo(Component):
 
 	@filter()
 	def onDEBUG(self, event):
-		print event
+		print "DEBUG: %s" % event
 		return False, event
 
 	@listener("received")
@@ -25,21 +27,18 @@ def main():
 	event = RemoteManager(nodes)
 	foo = Foo(event)
 
-	hello = Event(message="Hello World")
-
 	sTime = time.time()
 
 	while True:
-
-		if (time.time() - sTime) > 5:
-			event.push(hello, "hello")
-			sTime = time.time()
-
 		try:
 			event.flush()
 			event.process()
+			if (time.time() - sTime) > 5:
+				event.push(Event(message="hello"), "hello")
+				sTime = time.time()
 		except KeyboardInterrupt:
 			break
+
 	event.flush()
 
 if __name__ == "__main__":

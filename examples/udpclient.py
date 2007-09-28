@@ -1,24 +1,25 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-from pymills.event import *
 from pymills.sockets import UDPClient
+from pymills.event import listener, Manager
 
 class TelnetClient(UDPClient):
 
 	@listener("connect")
 	def onCONNECT(self, host, port):
 		print "Connected to %s" % host
-	
+
 	@listener("read")
 	def onREAD(self, line):
 		print line
 
 def main(host, port):
 
-	import socket
 	from pymills.io import SelectInput
 
-	event = EventManager()
+	event = Manager()
 	client = TelnetClient(event)
 	input = SelectInput()
 
@@ -39,4 +40,4 @@ if __name__ == "__main__":
 	if len(sys.argv) == 3:
 		main(sys.argv[1], sys.argv[2])
 	else:
-		print "Usage: telnet.py host port"
+		print "Usage: udpclient.py host port"

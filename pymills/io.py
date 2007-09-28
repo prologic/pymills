@@ -11,6 +11,7 @@ command-style programs easier. (ie: programs that prompt for
 input and accept commands and react to them)
 """
 
+import os
 import sys
 import inspect
 import readline
@@ -21,17 +22,29 @@ class Command:
 	HELP = 0
 	QUIT = 1
 
-	def __init__(self, help, prompt, commands):
+	def __init__(self, help, prompt, commands,
+			historyFile="$HOME/.pymills_history"):
 		self.help = help
 		self.prompt = prompt
 		self.commands = commands
+
+		self._historyFile = historyFile
+		self.readHistory()
 	
+	def readHistory(self):
+		readline.load_history_file(
+				os.path.expandvars(self._historyFile))
+
+	def writeHistory(self):
+		readline.write_history_file(
+				os.path.expandvars(self._historyFile))
+
 	def _pos(self, command):
 		for a, b in self.commands:
 			if a == command:
 				return self.commands.index((a, b))
 		return -1
-		
+	
 	def process(self):
 		input = Input(True)
 		s = input.read(self.prompt)
@@ -53,15 +66,17 @@ class Command:
 				elif b == self.HELP:
 					print self.help
 			else:
-				print 'ERROR: Invalid Command'
+				print "ERROR: Invalid Command"
 
 			s = input.read(self.prompt)
+
+		self.writeHistory()
 
 class Input:
 
 	def __init__(self, exitOnEOF=False):
 		self._exitOnEOF = exitOnEOF
-	
+
 	def read(self, prompt=None, default=None, expected=None):
 		try:
 			if prompt is not None:
@@ -95,14 +110,14 @@ class SelectInput:
 		ready = select.select([self._stdin], [], [], wait)
 		read = ready[0]
 		return read != []
-	
+
 	def read(self, bufsize=512):
 		return self._stdin.read(bufsize)
 
 	def readline(self):
 		line = self._stdin.readline()
 		return line
-	
+
 class Table:
 	"""Class to print nicely formatted tables
 
@@ -144,7 +159,7 @@ class Table:
 
 		for row in self._rows:
 			s.write("%s\n" % string.join(
-				map(self._convert, self._headers, 
+				map(self._convert, self._headers,
 					map(str, row)), ""))
 
 		s.write("-" * len(self._header))
@@ -163,7 +178,7 @@ class Table:
 			return value.center(length)
 		elif justify == RJUSTIFY:
 			return value.rjust(length)
-		
+
 	def add(self, row):
 		"""Adds a new row to the table
 
@@ -192,9 +207,9 @@ def test():
 	"""
 
 	headers = [
-		('id', 4, LJUSTIFY),
-		('Name', 10, LJUSTIFY),
-		('Age', 3, LJUSTIFY)]
+		("id", 4, LJUSTIFY),
+		("Name", 10, LJUSTIFY),
+		("Age", 3, LJUSTIFY)]
 	table = Table(headers)
 	table.add([0, "James", 21])
 	print table
@@ -202,26 +217,26 @@ def test():
 	help = "Help me! I'm stupid!"
 
 	commands = []
-	commands.append(('quit', Command.QUIT))
-	commands.append(('help', Command.HELP))
-	commands.append(('hello', hello))
-	commands.append(('world', world))
+	commands.append(("quit", Command.QUIT))
+	commands.append(("help", Command.HELP))
+	commands.append(("hello", hello))
+	commands.append(("world", world))
 
-	prompt = 'Command: '
+	prompt = "Command: "
 
 	command = Command(help, prompt, commands)
 	command.process()
 
 def hello(args):
-	print 'Hello'
+	print "Hello"
 	print args
 
 class world:
 	def __init__(self, args):
 		self.args = args
 	def run(self):
-		print 'World'
+		print "World"
 		print self.args
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 	test()

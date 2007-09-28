@@ -32,7 +32,7 @@ def newLogger(name="PyMills", logType="syslog",
 
 	format = name + "[%(module)s] %(levelname)s: %(message)s"
 	if logType == "file":
-		format = "%(asctime)s " + format 
+		format = "%(asctime)s " + format
 	dateFormat = ""
 	level = level.upper()
 	if level in ["DEBUG", "ALL"]:
@@ -49,6 +49,6 @@ def newLogger(name="PyMills", logType="syslog",
 
 	formatter = logging.Formatter(format,dateFormat)
 	hdlr.setFormatter(formatter)
-	logger.addHandler(hdlr) 
+	logger.addHandler(hdlr)
 
 	return logger

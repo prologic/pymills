@@ -1,201 +1,193 @@
-# Filename: event.py
 # Module:	event
 # Date:		23rd June 2006
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Event Test Suite
 
-...
+Test all functionality of the event library.
 """
 
 import unittest
 
-from pymills.event import filter, listener, Component, \
-		Event, EventError, EventManager
+from pymills.event import filter, listener, Event, \
+		Component, Worker, Manager, FilterEvent, \
+		EventError
 
 class FilterComponent(Component):
 
 	@filter("foo")
-	def onFOO(self, event, msg=""):
-		return False, Event(msg.lower())
+	def onFOO(self, msg=""):
+		raise FilterEvent
 
 	@filter("bar")
-	def onBAR(self, event, msg=""):
+	def onBAR(self, msg=""):
 		if msg.lower() == "hello world":
-			return True, event
-		else:
-			return False, event
-	
+			raise FilterEvent
+
 class ListenerComponent(Component):
 
 	@listener("foo")
-	def onFOO(self, event, test, msg=""):
+	def onFOO(self, test, msg=""):
 		if msg.lower() == "start":
-			self.event.push(
-					Event(msg="foo"),
-					event._channel)
+			self.push(Event(msg="foo"), "foo")
 
 	@listener("bar")
 	def onBAR(self, event, test, msg=""):
 		if msg.lower() == "test":
-			self.event.push(
+			self.push(
 					Event(msg="hello world"),
 					event._channel)
+
+class Foo(Component):
+
+	@listener("foo")
+	def onFOO(self):
+		return self.send(Event(), "bar")
+
+class SubFoo(Foo):
+	pass
+
+class Bar(Component):
+
+	@listener("bar")
+	def onBAR(self):
+		return "bar"
+
+class FooWorker(Worker):
+
+	@listener("foo")
+	def onFOO(self):
+		return "foo"
 
 class EventTestCase(unittest.TestCase):
 
 	def setUp(self):
-		self.event = EventManager()
+		self.manager = Manager()
 
 	def tearDown(self):
 		pass
-	
-	def testEventError(self):
-		"""Test event.EvenerError
-
-		1. Test that raising an exception of type EventError
-		   works and a message is shown
-		"""
-
-		try:
-			raise EventError("test")
-		except EventError, msg:
-			#1
-			self.assertEquals(str(msg), "test")
-
-	def testComponentIDs(self):
-		"""Test event.Component
-
-		1. Test that there can only be at most one instance of
-		   a single component
-		2. Test that sub-classes of Component can be instantiated
-		3. Test that any sub-class instances also cannot be
-		   instantiated more than once
-		"""
-
-		#1
-
-		class ComponentA(Component):
-			pass
-
-		class ComponentB(Component):
-			pass
-
-		x = Component(self.event)
-		y = Component(self.event)
-
-		#2
-		a = ComponentA(self.event)
-		b = ComponentB(self.event)
-
-		#1
-		self.assertEquals(id(x), id(y))
-
-		#3
-		self.assertNotEquals(id(a), id(b))
 
 	def testComponentSetup(self):
-		"""Test event.Componoent
+		"""Test Component Setup
 
-		1. Test that any filters and listeners found in a
-		   Component are automatically added to the EventManager
-		2. Test that channels are added for these filters and
-		   listeners automatically
-		3. Test that the filters/listeners are being added to
-		   the right container
+		Tests that filters and listeners of a Component are
+		automatically added to the event manager instnace
+		given.
 		"""
 
-		#1
+		filter = FilterComponent(self.manager)
+		listener = ListenerComponent(self.manager)
 
-		filter = FilterComponent(self.event)
-		listener = ListenerComponent(self.event)
+		self.assertTrue(
+				filter.onFOO in self.manager.getHandlers("foo"))
+		self.assertTrue(
+				listener.onFOO in self.manager.getHandlers("foo"))
+		self.assertTrue(
+				filter.onBAR in self.manager.getHandlers("bar"))
+		self.assertTrue(
+				listener.onBAR in self.manager.getHandlers("bar"))
 
-		#2
-		self.assertTrue(
-				self.event._filters.has_key("foo") or
-				self.event._listeners.has_key("foo"))
-		self.assertTrue(
-				self.event._filters.has_key("bar") or
-				self.event._listeners.has_key("bar"))
+		filter.unregister()
+		listener.unregister()
 
-		#3
-		self.assertTrue(
-				filter.onFOO in 
-				self.event._filters["foo"])
-		self.assertTrue(
-				filter.onBAR in
-				self.event._filters["bar"])
-		self.assertTrue(
-				listener.onFOO in
-				self.event._listeners["foo"])
-		self.assertTrue(
-				listener.onBAR in
-				self.event._listeners["bar"])
-	
+		self.assertEquals(self.manager.getHandlers(), [])
+
+	def testSubClassing(self):
+
+		subfoo = SubFoo(self.manager)
+
+		print self.manager.getHandlers()
+
+	def testComponentLinks(self):
+		"""Test Component Links
+
+		Test that components can be linked together and
+		events can be sent to linked components.
+		"""
+
+		foo = Foo(self.manager)
+		bar = Bar(self.manager)
+
+		foo.link(bar)
+
+		self.assertTrue(bar.onBAR in foo.getHandlers())
+
+		print self.manager.getHandlers()
+		print foo.getHandlers()
+		print bar.getHandlers()
+
+		r = self.manager.send(Event(), "foo")
+		self.assertEquals(r, (("bar",),))
+
+		foo.unregister()
+		bar.unregister()
+
+		self.assertEquals(self.getHandlers(), [])
+
+	def testWorker(self):
+		"""Test Worker
+
+		...
+		"""
+
+#		foo = FooWorker(self.manager)
+
+#		r = self.send(Event(), "foo")
+#		self.assertEquals(r, ["foo"])
+
+#		foo.stop()
+#		foo.unregister()
+
+#		self.assertEquals(self.getHandlers(), [])
+
 	def testEvent(self):
-		"""Test event.Event
+		"""Test Event
 
-		1. Test that args given are stored
-		2. Test that kwargs given are stored
-		3. Test that kwargs also become the instance attributes
-		4. Test the str/repr string
-		5. Test that __str__ and __repr__ return the same thing
+		Test new Event construction and that it's associated
+		arguments and keyword arguments are stored correctly.
 		"""
-
-		import time
 
 		a = Event(1, 2, 3, "foo", "bar", foo="1", bar="2")
 
-		#1
 		self.assertTrue(1 in a._args)
 		self.assertTrue(2 in a._args)
 		self.assertTrue(3 in a._args)
 		self.assertTrue("foo" in a._args)
 		self.assertTrue("bar" in a._args)
 
-		#2
 		self.assertEquals(a._kwargs["foo"], "1")
 		self.assertEquals(a._kwargs["bar"], "2")
 
-		#3
 		self.assertEquals(a.foo, "1")
 		self.assertEquals(a.bar, "2")
 
-		#4
 		self.assertEquals(str(a),
-				"<Event (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
+				"<Event/None (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
 
-		#5
-		self.assertEquals(str(a), repr(a))
-	
-	def testEventManager(self):
-		"""Test EventManager
+	def testManager(self):
+		"""Test Manager
 
-		1. Test that there is a global channel setup
-		2. Test that the event queue is empty
+		Test Manager construction and that a global
+		channel is created. Test that the event queue is
+		empty.
 		"""
 
-		#1
 		self.assertTrue(
-				self.event._filters.has_key("global") and
-				self.event._listeners.has_key("global"))
+				self.manager._handlers.has_key("global"))
 
-		#2
-		self.assertTrue(self.event._queue == [])
+		self.assertEquals(len(self.manager), 0)
 
-	def testEventManagerAddRemove(self):
-		"""Test EventManager.add & EventManager.remove
+	def testManagerAddRemove(self):
+		"""Test Manager.add & Manager.remove
 
-		1. Test that filters/listeners can be added to the
-		   global channel
-		2. Test that filters/listeners can be added to a
-		   specific channel
-		3. Test that non-filters/listeners cannot be added
-		   and raises an EventError
-		4. Test that filters/listeners can be removed from
-		   all channels
-		5. Test that filters/listeners can be removed from
-		   a specific channel
+		Test that filters and listeners can be added to
+		the global channel. Test that filters and listeners
+		can be added to specific channels. Test that
+		non-filters and non-listeners cannot be added to any
+		channel and raises an EventError. Test that filters
+		and listeners can be removed from all channels.
+		Test that filters and listeners can be removed from
+		a specific channel.
 		"""
 
 		@filter("foo")
@@ -209,110 +201,139 @@ class EventTestCase(unittest.TestCase):
 		def onTEST():
 			pass
 
-		#1
-		self.event.add(onFOO)
-		self.event.add(onBAR)
+		self.manager.add(onFOO)
+		self.manager.add(onBAR)
 		self.assertTrue(
-				onFOO in self.event._filters["global"] and
-				onBAR in self.event._listeners["global"])
-
-		#2
-		self.event.add(onFOO, "test")
-		self.event.add(onBAR, "test")
+				onFOO in self.manager.getHandlers("global"))
 		self.assertTrue(
-				onFOO in self.event._filters["test"] and
-				onBAR in self.event._listeners["test"])
+				onBAR in self.manager.getHandlers("global"))
 
-		#3
+		self.manager.add(onFOO, "foo")
+		self.manager.add(onBAR, "bar")
+		self.assertTrue(
+				onFOO in self.manager.getHandlers("foo"))
+		self.assertTrue(
+				onBAR in self.manager.getHandlers("bar"))
+
 		try:
-			self.event.add(onTEST)
-			self.assertFalse(False)
+			self.manager.add(onTEST)
 		except EventError:
-			self.assertTrue(True)
+			pass
 
-		#4
-		self.event.remove(onFOO)
+		self.assertFalse(onTEST in self.manager.getHandlers())
+
+		self.manager.remove(onFOO)
 		self.assertTrue(
-				onFOO not in self.event._filters.values() and
-				onFOO not in self.event._listeners.values())
+				onFOO not in self.manager.getHandlers())
 
-		#5
-		self.event.remove(onBAR, "test")
+		self.manager.remove(onBAR, "bar")
 		self.assertTrue(
-				onBAR in self.event._listeners["global"] and
-				onBAR not in self.event._listeners["test"])
+				onBAR not in self.manager.getHandlers("bar"))
+		self.assertTrue(
+				onBAR in self.manager.getHandlers("global"))
+		self.manager.remove(onBAR)
+		self.assertTrue(
+				onBAR not in self.manager.getHandlers())
 
-	def testEventManagerPushFlushSend(self):
-		"""Test EventManager's push, flush and send
+		self.assertEquals(self.manager.getHandlers(), [])
 
-		1. Test push
-		2. Test flush
-		3. Test that the event queue is empty after flushing
-		4. Test send
-		5. Test that events cannot be sent to the global
-		   channel
-		6. Test that _channel and _time are set on
-		   the event
-		7 Test that a filter actually can stop further event
-		   processing
+	def testManagerPushFlushSend(self):
+		"""Test Manager's push, flush and send
+
+		Test that events can be pushed, fluahsed and that
+		the event queue is empty after flushing. Test that
+		events can be sent directly without queuing and that
+		events cannot be sent to the global channel.
+
+		Test that Event._channel, Event._time and
+		Event._source are set appropiately.
+
+		Test that a filter will filter an event and prevent
+		any further processing of this event.
+
+		Test that events sent directly to listeners can have
+		a return value from that listener. The return value
+		should be a list of return values from all listeners
+		listening to the given channel for that event.
 		"""
 
 		import time
 
 		self.flag = False
-
-		@filter()
-		def onCHECK(event, test, time):
-			#6
-			test.assertTrue(
-					hasattr(event, "_time") and
-					type(event._time) == float and
-					int(event._time) == int(time))
-			test.assertTrue(hasattr(event, "_channel"))
-			return False, event
+		self.foo = False
 
 		@listener("test")
-		def onTEST(test, time):
+		def onTEST(test, time, stop=False):
 			test.flag = True
+			return "test"
+
+		@listener("test")
+		def onFOO(test, time, stop=False):
+			test.foo = True
+			return "foo"
+
+		@listener("bar")
+		def onBAR(test, time):
+			return "bar"
 
 		@filter()
-		def onSTOP(event, test, time, stop=False):
-			return stop, event
+		def onSTOP(test, time, stop=False):
+			if stop:
+				raise FilterEvent
 
-		self.event.add(onSTOP)
-		self.event.add(onCHECK)
-		self.event.add(onTEST, "test")
+		self.manager.add(onSTOP)
+		self.manager.add(onTEST, "test")
+		self.manager.add(onFOO, "test")
+		self.manager.add(onBAR, "bar")
 
-		#1 & #2
-		self.event.push(Event(self, time.time()), "test")
-		self.event.flush()
+		self.assertTrue(onSTOP in self.manager.getHandlers("global"))
+		self.assertTrue(onTEST in self.manager.getHandlers("test"))
+		self.assertTrue(onFOO in self.manager.getHandlers("test"))
+		self.assertTrue(onBAR in self.manager.getHandlers("bar"))
+		self.assertEquals(len(self.manager.getHandlers()), 4)
+
+		self.manager.push(Event(self, time.time()), "test")
+		self.manager.flush()
+		self.assertTrue(self.flag == True)
+		self.flag = False
+		self.assertTrue(self.foo == True)
+		self.foo = False
+
+		self.assertEquals(len(self.manager), 0)
+
+		self.manager.send(Event(self, time.time()), "test")
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
-		#3
-		self.assertTrue(self.event._queue == [])
-
-		#4
-		self.event.send(Event(self, time.time()), "test")
-		self.assertTrue(self.flag == True)
-		self.flag = False
-
-		#5
 		try:
-			self.event.send(Event(), "global")
-			self.assertFalse(False)
+			self.manager.send(Event(), "global")
+			self.assertTrue(False)
 		except EventError:
 			self.assertTrue(True)
 
-		#6
-		self.event.send(Event(self, time.time()), "test")
+		self.manager.send(Event(self, time.time()), "test")
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
-		#7
-		self.event.send(Event(self, time.time(), stop=True),
+		self.manager.send(Event(self, time.time(), stop=True),
 				"test")
 		self.assertTrue(self.flag == False)
+
+		r = self.manager.send(Event(self, time.time()), "test")
+		self.assertEquals(r[0], None)
+		self.assertEquals(r[1], "test")
+		self.assertEquals(r[2], "foo")
+
+		self.assertEquals(
+				self.manager.send(Event(self, time.time()), "bar"),
+				(None, "bar",))
+
+		self.manager.remove(onSTOP)
+		self.manager.remove(onTEST, "test")
+		self.manager.remove(onFOO, "test")
+		self.manager.remove(onBAR, "bar")
+
+		self.assertEquals(self.manager.getHandlers(), [])
 
 def suite():
 	return unittest.makeSuite(EventTestCase, "test")

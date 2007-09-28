@@ -1,24 +1,25 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set sw=3 sts=3 ts=3
 
-from pymills.event import *
 from pymills.sockets import TCPClient
+from pymills.event import listener, Manager
 
 class TelnetClient(TCPClient):
 
 	@listener("connect")
 	def onCONNECT(self, host, port):
 		print "Connected to %s" % host
-	
+
 	@listener("read")
 	def onREAD(self, line):
 		print line
 
 def main(host, port):
 
-	import socket
 	from pymills.io import SelectInput
 
-	event = EventManager()
+	event = Manager()
 	client = TelnetClient(event)
 	input = SelectInput()
 
@@ -26,11 +27,15 @@ def main(host, port):
 	client.open(host, int(port))
 
 	while client.connected:
-		client.process()
-		event.flush()
-		if input.poll():
-			line = input.readline()
-			client.write(line.strip() + "\r\n")
+		try:
+			client.process()
+			event.flush()
+			if input.poll():
+				line = input.readline()
+				client.write(line.strip() + "\r\n")
+		except KeyboardInterrupt:
+			break
+	client.close()
 	event.flush()
 
 if __name__ == "__main__":

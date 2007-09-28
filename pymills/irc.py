@@ -52,35 +52,38 @@ def strip(s, color=False):
 		s = s.replace("\x01", "")
 		s = s.replace("\x02", "")
 	return s
-	
-def sourceJoin(source):
-	"""sourceJoin(source) -> str
+
+def sourceJoin(nick, ident, host):
+	"""sourceJoin(nick, ident, host) -> str
 
 	Join a source previously split by sourceSplit
 	and join it back together inserting the ! and @
 	appropiately.
 	"""
 
-	return "%s!%s@%s" % source
+	return "%s!%s@%s" % (nick, ident, host)
 
 def sourceSplit(source):
 	"""sourceSplit(source) -> str, str, str
-	
+
 	Split the given source into it's parts.
 
 	source must be of the form:
 		nick!ident@host
-	
+
 	Example:
 		nick, ident, host, = sourceSplit("Joe!Blogs@localhost")
 	"""
 
-	if "!" in source and "@" in source:
-		nick, tmp = tuple(source.strip().split("!"))
-		ident, host = tmp.split("@")
-		return (nick, ident, host)
+	m = re.match(
+			"(?P<nick>[^!].*)!(?P<ident>.*)@(?P<host>.*)",
+			source)
+
+	if m is not None:
+		d = m.groupdict()
+		return d["nick"], d["ident"], d["host"]
 	else:
-		return source
+		return source, None, None
 
 ###
 ### Evenets
@@ -90,7 +93,7 @@ class RawEvent(Event):
 
 	def __init__(self, line):
 		Event.__init__(self, line)
-	
+
 class NumericEvent(Event):
 
 	def __init__(self, source, target, numeric, arg, message):
@@ -218,11 +221,13 @@ class IRC(Component):
 	 * newnick
 	"""
 
-	def __init__(self, *args):
+	def __init__(self, event=None):
 		"initializes x; see x.__class__.__doc__ for signature"
 
+		Component.__init__(self, event)
+
 		self._buffer = ""
-		self.info = {}
+		self._info = {}
 
 	###
 	### Properties
@@ -235,15 +240,7 @@ class IRC(Component):
 		return None otherwise.
 		"""
 
-		return self.info.get("nick", None)
-
-	def setNick(self, nick):
-		"""I.setNick(nick) -> None
-
-		Set the current nickname to the specified nickname.
-		"""
-
-		self.info["nick"] = nick.lower()
+		return self._info.get("nick", None)
 
 	def getIdent(self):
 		"""I.getIdent() -> str
@@ -252,15 +249,7 @@ class IRC(Component):
 		return None otherwise.
 		"""
 
-		return self.info.get("ident", None)
-
-	def setIdent(self, ident):
-		"""I.setIdent(ident) -> None
-
-		Set the current ident to the specified ident.
-		"""
-
-		self.info["ident"] = ident.lower()
+		return self._info.get("ident", None)
 
 	def getHost(self):
 		"""I.getHost() -> str
@@ -269,15 +258,7 @@ class IRC(Component):
 		return None otherwise.
 		"""
 
-		return self.info.get("host", None)
-
-	def setHost(self, host):
-		"""I.setHost(ident) -> None
-
-		Set the current host to the specified host.
-		"""
-
-		self.info["host"] = host.lower()
+		return self._info.get("host", None)
 
 	def getServer(self):
 		"""I.getServer() -> str
@@ -286,15 +267,25 @@ class IRC(Component):
 		return None otherwise.
 		"""
 
-		return self.info.get("server", None)
+		return self._info.get("server", None)
 
-	def setServer(self, server):
-		"""I.setServer(ident) -> None
+	def getServerVersion(self):
+		"""I.getServerVersion() -> str
 
-		Set the current server to the specified server.
+		Return the current server version if set,
+		return None otherwise.
 		"""
 
-		self.info["server"] = server.lower()
+		return self._info.get("serverVersion", None)
+
+	def getNetwork(self):
+		"""I.getNetwork() -> str
+
+		Return the current network if set,
+		return None otherwise.
+		"""
+
+		return self._info.get("network", None)
 
 	def getName(self):
 		"""I.getName() -> str
@@ -303,23 +294,15 @@ class IRC(Component):
 		return None otherwise.
 		"""
 
-		return self.info.get("name", None)
+		return self._info.get("name", None)
 
-	def setName(self, name):
-		"""I.setName(ident) -> None
-
-		Set the current name to the specified server.
-		"""
-
-		self.info["name"] = name
-	
 	###
 	### IRC Commands
 	###
 
 	def ircRAW(self, data):
 		"""I.ircRAW(data) -> None
-		
+
 		Send a raw message
 
 		This must be overridden by sub-classes in order to
@@ -328,22 +311,22 @@ class IRC(Component):
 		"""
 
 		pass
-	
+
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)
 
 	def ircSERVER(self, server, hops, token, description):
 		 self.ircRAW("SERVER %s %s %s :%s" % (server, hops,
 			 token, description))
-	
+
 	def ircUSER(self, ident, host, server, name):
 		self.ircRAW("USER %s \"%s\" \"%s\" :%s" % (
 			ident, host, server, name))
-		self.setIdent(ident)
-		self.setHost(host)
-		self.setServer(server)
-		self.setName(name)
-	
+		self._info["ident"] = ident
+		self._info["host"] = host
+		self._info["server"] = server
+		self._info["name"] = name
+
 	def ircNICK(self, nick, idle=None, signon=None, ident=None,
 			host=None, server=None, hops=None, name=None):
 
@@ -356,20 +339,19 @@ class IRC(Component):
 
 		else:
 			self.ircRAW("NICK %s" % nick)
-			self.setNick(nick)
-	
+
 	def ircPING(self, server):
 		self.ircRAW("PING :%s" % server)
 
 	def ircPONG(self, server):
-		self.ircRAW("PONG :%s" % server) 
+		self.ircRAW("PONG :%s" % server)
 
 	def ircQUIT(self, message="", source=None):
 		if source is None:
 			self.ircRAW("QUIT :%s" % message)
 		else:
 			self.ircRAW(":%s QUIT :%s" % (source, message))
-	
+
 	def ircJOIN(self, channel, key=None, source=None):
 		if source is None:
 			if key is None:
@@ -382,14 +364,14 @@ class IRC(Component):
 			else:
 				self.ircRAW(":%s JOIN %s %s" % (source,
 					channel, key))
-	
+
 	def ircPART(self, channel, message="", source=None):
 		if source is None:
 			self.ircRAW("PART %s :%s" % (channel, message))
 		else:
 			self.ircRAW(":%s PART %s :%s" % (source, channel,
 				message))
-	
+
 	def ircPRIVMSG(self, target, message, source=None):
 		if source is None:
 			self.ircRAW("PRIVMSG %s :%s" % (target, message))
@@ -403,7 +385,7 @@ class IRC(Component):
 		else:
 			self.ircRAW(":%s NOTICE %s :%s" % (source,
 				target, message))
-	
+
 	def ircCTCP(self, target, type, message, source=None):
 		self.ircPRIVMSG(target, "%s %s" % (type, message),
 				source)
@@ -411,7 +393,7 @@ class IRC(Component):
 	def ircCTCPREPLY(self, target, type, message, source=None):
 		self.ircNOTICE(target, "%s %s" % (type, message),
 			  source)
-	
+
 	def ircKICK(self, channel, target, message="", source=None):
 		if source is None:
 			self.ircRAW("KICK %s %s :%s" % (channel, target,
@@ -419,7 +401,7 @@ class IRC(Component):
 		else:
 			self.ircRAW(":%s KICK %s %s :%s" % (source, channel,
 				target,	message))
-	
+
 	def ircTOPIC(self, channel, topic, whoset=None,
 			whenset=None, source=None):
 		if source is None:
@@ -435,7 +417,7 @@ class IRC(Component):
 			else:
 				self.ircRAW(":%s TOPIC %s %s %d :%s" % (source,
 					channel, whoset, whenset, topic)),
-	
+
 	def ircMODE(self, modes, channel=None, source=None):
 		if source is None:
 			if channel is None:
@@ -448,10 +430,10 @@ class IRC(Component):
 			else:
 				self.ircMODE(":%s MODE %s :%s" % (source, channel,
 					modes))
-	
+
 	def ircKILL(self, target, message):
 		self.ircRAW("KILL %s :%s" % (target, message))
-	
+
 	def ircINVITE(self, target, channel, source=None):
 		if source is None:
 			self.ircRAW("INVITE %s %s" % (target, channel))
@@ -476,7 +458,7 @@ class IRC(Component):
 		lines, buffer = splitLines(data, self._buffer)
 		self._buffer = buffer
 		for line in lines:
-			self.event.push(RawEvent(line), "raw", self)
+			self.push(RawEvent(line), "raw", self)
 
 	@listener("raw")
 	def onRAW(self, line):
@@ -492,12 +474,12 @@ class IRC(Component):
 		tokens = line.split(" ")
 
 		if tokens[0] == "PING":
-			self.event.push(
+			self.push(
 					PingEvent(strip(tokens[1]).lower()),
 					"ping", self)
 
 		elif tokens[0] == "NICK":
-			self.event.push(
+			self.push(
 					NewNickEvent(
 						tokens[1].lower(), int(tokens[2]),
 						int(tokens[3]), tokens[4].lower(),
@@ -506,14 +488,14 @@ class IRC(Component):
 					"newnick", self)
 
 		elif tokens[0] == "TOPIC":
-			self.event.push(
+			self.push(
 					TopicEvent(
 						tokens[1], tokens[2], int(tokens[3]),
 						strip(" ".join(tokens[4:]))),
 					"topic", self)
 
 		elif tokens[0] == "NETINFO":
-			self.event.push(
+			self.push(
 					NetInfoEvent(
 						int(tokens[1]),
 						int(tokens[2]),
@@ -526,24 +508,67 @@ class IRC(Component):
 					"netinfo", self)
 
 		elif re.match("[0-9]+", tokens[1]):
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			target = tokens[2].lower()
 
 			numeric = int(tokens[1])
-			if tokens[3][0] == ":":
-				arg = None
-				message = strip(" ".join(tokens[3:]))
+			if len(tokens[3]) > 1:
+				if tokens[3][0] == ":":
+					arg = None
+					message = strip(" ".join(tokens[3:]))
+				else:
+					arg = tokens[3]
+					message = strip(" ".join(tokens[4:]))
 			else:
-				arg = tokens[3]
+				arg = None
 				message = strip(" ".join(tokens[4:]))
 
-			self.event.push(
+			if numeric == RPL_WELCOME:
+				"""
+				Welcome to the UnderNet IRC Network, kdb
+
+				Welcome to the Internet Relay Network kdb!-kdb@202.63.43.101
+
+				Welcome to the GameSurge IRC Network via burstfire.net, prologic
+				"""
+
+				m = re.match(
+						"Welcome to the (?P<network>.*) "
+						"(IRC|Internet Relay( Chat)?) Network "
+						"(?P<user>.*)", message)
+
+				if m is None:
+					m = re.match(
+							"Welcome to the Internet Relay Network "
+							"(?P<user>.*)", message)
+
+				if m is None:
+					m = re.match(
+							"Welcome to the (?P<network>.*) "
+							"IRC Network, "
+							"(?P<user>.*)", message)
+
+				d = m.groupdict()
+
+				nick, ident, host = sourceSplit(d["user"])
+				self._info["network"] = d.get("network", "")
+				self._info["nick"] = nick
+				if ident is not None:
+					self._info["ident"] = ident
+				if host is not None:
+					self._info["host"] = host
+			elif numeric == RPL_YOURHOST:
+				tokens = message.split(" ")
+				self._info["server"] = tokens[3].rstrip(",")
+				self._info["serverVersion"] = tokens[6]
+
+			self.push(
 					NumericEvent(source, target, numeric,
 						arg, message),
 					"numeric", self)
 
 		elif tokens[1] == "PRIVMSG":
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			target = tokens[2].lower()
 			message = strip(" ".join(tokens[3:]))
 
@@ -552,64 +577,70 @@ class IRC(Component):
 					tokens = strip(message, color=True).split(" ")
 					type = tokens[0].lower()
 					message = " ".join(tokens[1:])
-					self.event.push(
+					self.push(
 							CtcpEvent(source, target, type, message),
 							"ctcp", self)
 				else:
-					self.event.push(
+					self.push(
 							MessageEvent(source, target, message),
 							"message", self)
 			else:
-				self.event.push(
+				self.push(
 						MessageEvent(source, target, message),
 						"message", self)
 
 		elif tokens[1] == "NOTICE":
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			target = tokens[2].lower()
 			message = strip(" ".join(tokens[3:]))
-			self.event.push(
+			self.push(
 					NoticeEvent(source, target, message),
 					"notice", self)
 
 		elif tokens[1] == "JOIN":
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			channels = strip(tokens[2]).lower()
 			for channel in channels.split(","):
-				self.event.push(
+				self.push(
 						JoinEvent(source, channel),
 						"join", self)
 
 		elif tokens[1] == "PART":
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			channel = strip(tokens[2]).lower()
 			message = strip(" ".join(tokens[3:]))
-			self.event.push(
+			self.push(
 					PartEvent(source, channel, message),
 					"part", self)
 
 		elif tokens[1] == "QUIT":
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			message = strip(" ".join(tokens[2:]))
-			self.event.push(
+			self.push(
 					QuitEvent(source, message),
 					"quit", self)
 
 		elif tokens[1] == "NICK":
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			newNick = strip(tokens[2]).lower()
+
+			if self.getNick() is not None:
+				if source.lower() == self.getNick().lower():
+					self._info["nick"] = newNick
+
 			if len(tokens) == 4:
 				ctime = strip(tokens[3])
 			else:
 				ctime = time.time()
-			self.event.push(
+
+			self.push(
 					NickEvent(source, newNick, ctime),
 					"nick", self)
 
 		elif tokens[1] == "MOTD":
-			source = sourceSplit(strip(tokens[0].lower()))
+			source = sourceSplit(strip(tokens[0].lower()))[0]
 			server = strip(tokens[2]).lower()
-			self.event.push(
+			self.push(
 					MotdEvent(source, server),
 					"motd", self)
 
@@ -633,6 +664,9 @@ class IRC(Component):
 ###
 ### Errors and Numeric Replies
 ###
+
+RPL_WELCOME = 1
+RPL_YOURHOST = 2
 
 RPL_TRACELINK = 200
 RPL_TRACECONNECTING = 201

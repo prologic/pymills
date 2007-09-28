@@ -10,17 +10,18 @@ require access to Relational Database Management Systems
 such as MySQL and SQLite.
 
 NOTE: This library is not an Object Relational Mapper, it is
-simply a library that hides some of the interfaces of the 
+simply a library that hides some of the interfaces of the
 Python DB API and gives you nicer access to results
 with multiple access interfaces. (See example below)
 
 Supprted:
  * SQLite
  * MySQL
+ * Oracle
 
 Example Usage:
 >>> import db
->>> data = db.Connection("sqlite://test.db")
+>>> data = db.Session("sqlite://test.db")
 >>> data.do("create table names (firstname, lastname)")
 []
 >>> data.do("insert into names values ('James', 'Mills')")
@@ -38,19 +39,22 @@ u'James'
 u'Mills'
 """
 
-from datatypes import OrderedDict
+from time import time
+
+from pymills.misc import duration
+from pymills.types import OrderedDict
 
 def _parseURI(uri):
 	"""_parseURI(uri) -> dict
 
-	Parse a Connection URI into it's parts returning
+	Parse a URI into it's parts returning
 	a dictionary of schema, username, password and location.
 	If this fails, {} is returned.
 	"""
 
 	import re
 
-	m = re.match("(?P<schema>mysql|sqlite)://"
+	m = re.match("(?P<schema>oracle|mysql|sqlite)://"
 			"((?P<username>.*?):(?P<password>.*?)@(?P<hostname>.*?)/)?"
 			"(?P<database>.*)",
 			uri, re.IGNORECASE)
@@ -61,15 +65,22 @@ def _parseURI(uri):
 
 class DBError(Exception): pass
 
-class Connection:
-	"""Connection(uri) -> new connection
+class Session:
+	"""Session(uri) -> new database session
 
-	Create a new connection object to the database specified
+	Create a new session object to the database specified
 	by the uri.
 	"""
 
-	def __init__(self, uri):
+	def __init__(self, uri, log=None, dryrun=False, debug=False):
 		"initializes x; see x.__class__.__doc__ for signature"
+
+		self._log = log
+		self._dryrun = dryrun
+		self._debug = debug
+
+		if self._dryrun and (self._log is not None):
+			self._log.info("dryrun mode enabled")
 
 		self._cx = None
 		self._cu = None
@@ -77,7 +88,22 @@ class Connection:
 		for k, v in _parseURI(uri).iteritems():
 			setattr(self, "_%s" % k, v)
 
-		if self._schema.lower() == "mysql":
+		if self._schema.lower() == "oracle":
+			try:
+				import cx_Oracle as oracle
+			except:
+				raise DBError("No Oracle support available.")
+
+			try:
+				self._cx = oracle.connect(
+						dsn=self._hostname,
+						user=self._username,
+						password=self._password)
+				self._cu = self._cx.cursor()
+			except Exception, e:
+				raise DBError("Could not open connection: %s" % str(e))
+
+		elif self._schema.lower() == "mysql":
 			try:
 				import MySQLdb as mysql
 			except:
@@ -120,7 +146,8 @@ class Connection:
 		"""
 
 		try:
-			self._cx.commit()
+			if not self._dryrun:
+				self._cx.commit()
 			self._cu.close()
 			self._cx.close()
 		except:
@@ -149,38 +176,65 @@ class Connection:
 
 		rows = self._cu.fetchall()
 		return [_Record(zip(fields, row)) for row in rows]
-	
+
 	def commit(self):
 		"""C.commit() -> None
 
 		Perform a manual commit.
 		"""
 
-		self._cx.commit()
-	
-	def execute(self, sql, *args):
-		"""C.execute(sql) -> list of rows, or []
+		if not self._dryrun:
+			if self._debug and (self._log is not None):
+				self._log.debug("Commiting to database...")
+			self._cx.commit()
+
+	def execute(self, sql, *args, **kwargs):
+		"""C.execute(sql, *args, **kwargs) -> list of rows, or []
 
 		Execute the given SQL statement in sql and return
 		a list of rows (if appropiate) or return an empty list.
-		If this fails, a DBError exception will be thrown.
+		If this fails, a DBError exception will be raised.
 		"""
 
 		try:
-			self._cu.execute(sql, args)
-			self._cx.commit()
-			fields = self.__getFields__()
-			if fields == []:
-				return []
+			if not self._dryrun:
+				if self._debug and (self._log is not None):
+					st = time()
+					self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
+						sql,
+						str(args),
+						str(kwargs)))
+				self._cu.execute(sql, args, **kwargs)
+				fields = self.__getFields__()
+				if fields == []:
+					r = []
+				else:
+					r = self.__buildResult__(fields)
+				if self._debug and (self._log is not None):
+					et = time()
+					self._log.debug("Result: %s" % str(r))
+					if (et - st) < 1:
+						self._log.debug("Time: %0.2f" % (et - st))
+					else:
+						self._log.debug("Time: %s+%s:%s:%s" % duration(et - st))
+				return r
 			else:
-				return self.__buildResult__(fields)
-		except sqlite.Error, e:
+				if self._debug and (self._log is not None):
+					self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
+						sql,
+						str(args),
+						str(kwargs)))
+				return []
+		except Exception, e:
+			raise
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
-	
-	def do(self, sql, *args):
+
+	def do(self, sql, *args, **kwargs):
 		"""Synonym of execute"""
 
-		return self.execute(sql, *args)
+		return self.execute(sql, *args, **kwargs)
+
+Connection = Session
 
 class _Record(OrderedDict):
 	"""_Recird(row) -> a new multi-access row
