@@ -108,8 +108,9 @@ class Stack:
 
 class Queue(object):
 
-	def __init__(self):
+	def __init__(self, size=None):
 		self._queue = []
+		self._size = size
 
 	def __len__(self):
 		return len(self._queue)
@@ -122,6 +123,8 @@ class Queue(object):
 
 	def push(self, item):
 		self._queue.insert(0, item)
+		if self._size is not None:
+			self._queue = self._queue[:self._size]
 
 	def get(self, n=0, remove=False):
 		if (not self.empty()) and (0 <= (n + 1) <= len(self._queue)):
