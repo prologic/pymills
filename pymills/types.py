@@ -80,7 +80,7 @@ class Stack(object):
 		super(Stack, self).__init__()
 
 		self._stack = []
-		self._size = size
+		self._size = -size
 
 	def __len__(self):
 		return len(self._stack)
