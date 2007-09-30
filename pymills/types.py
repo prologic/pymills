@@ -76,8 +76,9 @@ class OrderedDict(dict):
 
 class Stack:
 
-	def __init__(self):
+	def __init__(self, size=None):
 		self._stack = []
+		self._size = size
 
 	def __len__(self):
 		return len(self._stack)
@@ -90,6 +91,8 @@ class Stack:
 
 	def push(self, item):
 		self._stack.append(item)
+		if self._size is not None:
+			self._stack = self._stack[:self._size]
 
 	def pop(self):
 		if not self.empty():
