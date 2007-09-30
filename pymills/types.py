@@ -94,7 +94,7 @@ class Stack(object):
 	def push(self, item):
 		self._stack.append(item)
 		if self._size is not None:
-			self._stack = self._stack[:self._size]
+			self._stack = self._stack[self._size:]
 
 	def pop(self):
 		if not self.empty():
