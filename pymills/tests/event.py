@@ -96,8 +96,6 @@ class EventTestCase(unittest.TestCase):
 
 		subfoo = SubFoo(self.manager)
 
-		print self.manager.getHandlers()
-
 	def testComponentLinks(self):
 		"""Test Component Links
 
@@ -112,17 +110,13 @@ class EventTestCase(unittest.TestCase):
 
 		self.assertTrue(bar.onBAR in foo.getHandlers())
 
-		print self.manager.getHandlers()
-		print foo.getHandlers()
-		print bar.getHandlers()
-
 		r = self.manager.send(Event(), "foo")
 		self.assertEquals(r, (("bar",),))
 
 		foo.unregister()
 		bar.unregister()
 
-		self.assertEquals(self.getHandlers(), [])
+		self.assertEquals(self.manager.getHandlers(), [])
 
 	def testWorker(self):
 		"""Test Worker

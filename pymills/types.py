@@ -74,9 +74,11 @@ class OrderedDict(dict):
 			raise KeyError(key)
 		return self._keys.index(key)
 
-class Stack:
+class Stack(object):
 
 	def __init__(self, size=None):
+		super(Stack, self).__init__()
+
 		self._stack = []
 		self._size = size
 
@@ -112,6 +114,8 @@ class Stack:
 class Queue(object):
 
 	def __init__(self, size=None):
+		super(Queue, self).__init__()
+
 		self._queue = []
 		self._size = size
 
