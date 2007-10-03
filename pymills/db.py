@@ -204,7 +204,7 @@ class Session:
 						sql,
 						str(args),
 						str(kwargs)))
-				self._cu.execute(sql, args, **kwargs)
+				self._cu.execute(sql, *args, **kwargs)
 				fields = self.__getFields__()
 				if fields == []:
 					r = []
@@ -228,7 +228,7 @@ class Session:
 		except Exception, e:
 			raise
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
-
+	
 	def do(self, sql, *args, **kwargs):
 		"""Synonym of execute"""
 
