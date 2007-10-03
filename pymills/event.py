@@ -329,6 +329,7 @@ class EventManager(object):
 					return callable(*event._args,
 							**event._kwargs)
 			except Exception, e:
+				raise
 				raise EventError(
 						"Error with filter/listener '%s': %s" % (
 							callable, e))

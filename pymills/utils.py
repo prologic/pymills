@@ -380,10 +380,10 @@ def safe__import__(moduleName, globals=globals(),
 	try:
 		return __import__(moduleName, globals, locals, fromlist)
 	except Exception, e:
+		raise
 		for name in sys.modules.copy():
 			if not alreadyImported.has_key(name):
 				del (sys.modules[name])
-		raise e
 
 class ConfigParser(_ConfigParser):
 
@@ -418,3 +418,10 @@ def notags(str):
 				state = STATE_TEXT
 	
 	return newStr
+
+def MixIn(cls, mixin, last=False):
+	if mixin not in cls.__bases__:
+		if last:
+			cls.__bases__ += (mixin,)
+		else: 
+			cls.__bases__ = (mixin,) + cls.__bases__
