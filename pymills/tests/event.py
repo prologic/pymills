@@ -331,6 +331,3 @@ class EventTestCase(unittest.TestCase):
 
 def suite():
 	return unittest.makeSuite(EventTestCase, "test")
-
-if __name__ == "__main__":
-	unittest.main()

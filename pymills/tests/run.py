@@ -9,17 +9,22 @@
 Script to run the PyMills Test Suite.
 """
 
+import sys
+import doctest
 import unittest
 
 def suite():
-	import pymills.tests
+	from pymills.tests import event, sockets
 
 	suite = unittest.TestSuite()
-	suite.addTest(pymills.tests.suite())
+	suite.addTest(event.suite())
+	suite.addTest(sockets.suite())
 
 	return suite
 
-if __name__ == "__main__":
-	import doctest, sys
+def main():
 	doctest.testmod(sys.modules[__name__])
 	unittest.main(defaultTest="suite")
+
+if __name__ == "__main__":
+	main()

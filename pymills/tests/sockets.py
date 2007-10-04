@@ -1,7 +1,6 @@
-# Filename: sockets.py
 # Module:	sockets
 # Date:		26th June 2006
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Sockets Test Suite
 
@@ -13,7 +12,7 @@ from time import sleep
 from threading import Thread
 
 from pymills.event import listener, Manager
-from pymills.sockets import TCPClient, TCPServer, \
+from pymills.net.sockets import TCPClient, TCPServer, \
 		SocketError, ConnectEvent, DisconnectEvent, \
 		ReadEvent, WriteEvent
 
@@ -277,6 +276,3 @@ class SocketsTestCase(unittest.TestCase):
 
 def suite():
 	return unittest.makeSuite(SocketsTestCase, "test")
-
-if __name__ == "__main__":
-	unittest.main()
