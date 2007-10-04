@@ -10,7 +10,7 @@
 import math
 from time import time, sleep
 
-from event import listener, Event, UnhandledEvent, Worker
+from pymills.event import listener, Event, UnhandledEvent, Worker
 
 class SignalEvent(Event):
 
