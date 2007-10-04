@@ -287,17 +287,15 @@ class Component(Manager):
 
 	Filters and Listeners are defined like so:
 
-	{{{
-	#!python
-
+	C{
 	@filter()
 	def onFOO(self, event):
 		return True, event
-
+	
 	@listener()
 	def onBAR(self, event):
 		print event
-	}}}
+	}
 	"""
 
 	def __init__(self, manager=None, log=None, debug=False):

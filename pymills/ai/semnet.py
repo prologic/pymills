@@ -1,11 +1,10 @@
-# Filename: semnet.py
 # Module:	semnet
 # Date:		2nd April 2006
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Semantic Network Library
 
-....
+Write something interesting here.
 """
 
 class Entity:
