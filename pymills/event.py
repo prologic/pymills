@@ -1,6 +1,6 @@
 # Module:	event
 # Date:		2nd April 2006
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Event Library
 
@@ -40,7 +40,6 @@ instantiated once.
 """
 
 import sys
-import copy
 import socket
 import select
 from time import sleep
