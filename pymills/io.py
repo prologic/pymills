@@ -126,9 +126,9 @@ class Table:
 	and add a bunch of rows, then print it.
 	"""
 
-	LJUSTIFY = -1
+	LEFT = -1
 	CENTER = 0
-	RJUSTIFY = 1
+	RIGHT = 1
 
 	def __init__(self, headers):
 		"""Initialize Table Object
@@ -142,11 +142,11 @@ class Table:
 		self._rows = []
 
 		for title, length, justify in headers:
-			if justify == LJUSTIFY:
+			if justify == Table.LEFT:
 				self._header += title.ljust(length)
-			elif justify == CENTER:
+			elif justify == Table.CENTER:
 				self._header += title.center(length)
-			elif justify == RJUSTIFY:
+			elif justify == Table.RIGHT:
 				self._header += title.rjust(length)
 			else:
 				self._header += title.ljust(length)
@@ -176,11 +176,11 @@ class Table:
 
 	def _convert(self, header, value):
 		length, justify = header[1:]
-		if justify == LJUSTIFY:
+		if justify == Table.LEFT:
 			return value.ljust(length)
-		elif justify == CENTER:
+		elif justify == Table.CENTER:
 			return value.center(length)
-		elif justify == RJUSTIFY:
+		elif justify == Table.RIGHT:
 			return value.rjust(length)
 
 	def add(self, row):
@@ -202,9 +202,9 @@ def test():
 	"""
 
 	headers = [
-		("id", 4, LJUSTIFY),
-		("Name", 10, LJUSTIFY),
-		("Age", 3, LJUSTIFY)]
+		("id", 4, Table.LEFT),
+		("Name", 10, Table.LEFT),
+		("Age", 3, Table.LEFT)]
 	table = Table(headers)
 	table.add([0, "James", 21])
 	print table
