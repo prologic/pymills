@@ -126,6 +126,10 @@ class Table:
 	and add a bunch of rows, then print it.
 	"""
 
+	LJUSTIFY = -1
+	CENTER = 0
+	RJUSTIFY = 1
+
 	def __init__(self, headers):
 		"""Initialize Table Object
 
@@ -186,15 +190,6 @@ class Table:
 		"""
 
 		self._rows.append(row)
-
-##
-## Constants
-##
-
-# Table
-LJUSTIFY = -1
-CENTER = 0
-RJUSTIFY = 1
 
 ##
 ## Tests
