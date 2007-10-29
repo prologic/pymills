@@ -65,7 +65,7 @@ def _parseURI(uri):
 
 class DBError(Exception): pass
 
-class Session:
+class Session(object):
 	"""Session(uri) -> new database session
 
 	Create a new session object to the database specified
