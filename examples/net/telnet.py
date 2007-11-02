@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+import optparse
+
+from pymills.io import SelectInput
 from pymills.net.sockets import TCPClient
+from pymills import __version__ as systemVersion
 from pymills.event import listener, Manager, UnhandledEvent
 
 class TelnetClient(TCPClient):
@@ -15,16 +19,45 @@ class TelnetClient(TCPClient):
 	def onREAD(self, line):
 		print line
 
-def main(host, port):
+USAGE = "%prog [options] <host> [<port>]>"
+VERSION = "%prog v" + systemVersion
 
-	from pymills.io import SelectInput
+def parse_options():
+	"""parse_options() -> opts, args
+
+	Parse any command-line options given returning both
+	the parsed options and arguments.
+	"""
+
+	parser = optparse.OptionParser(usage=USAGE, version=VERSION)
+
+	parser.add_option("-s", "--ssl",
+			action="store_true", default=False, dest="ssl",
+			help="Enable Secure Socket Layer (SSL)")
+
+	opts, args = parser.parse_args()
+
+	if len(args) < 1:
+		parser.print_help()
+		raise SystemExit, 1
+
+	return opts, args
+
+def main():
+	opts, args = parse_options()
+
+	host = args[0]
+	if len(args) > 1:
+		port = int(args[1])
+	else:
+		port = 23
 
 	e = Manager()
 	client = TelnetClient(e)
 	input = SelectInput()
 
 	print "Trying %s..." % host
-	client.open(host, int(port))
+	client.open(host, port, ssl=opts.ssl)
 
 	while client.connected:
 		try:
@@ -44,9 +77,4 @@ def main(host, port):
 		pass
 
 if __name__ == "__main__":
-	import sys
-
-	if len(sys.argv) == 3:
-		main(sys.argv[1], sys.argv[2])
-	else:
-		print "Usage: telnet.py host port"
+	main()
