@@ -12,8 +12,8 @@ from traceback import format_exc
 from urwid.raw_display import Screen
 
 from pymills.misc import backMerge
-from pymills.sockets import TCPClient
-from pymills.irc import sourceSplit, IRC, ERR_NICKNAMEINUSE
+from pymills.net.sockets import TCPClient
+from pymills.net.irc import sourceSplit, IRC, ERR_NICKNAMEINUSE
 from pymills.event import filter, listener, Component, \
 		Manager
 
@@ -26,8 +26,7 @@ HELP_STRINGS = {
 class Client(TCPClient, IRC):
 
 	def __init__(self, event):
-		TCPClient.__init__(self, event)
-		IRC.__init__(self)
+		super(Client, self).__init__(event)
 
 	def ircRAW(self, data):
 		self.write(data + "\r\n")
@@ -46,11 +45,6 @@ class MainWindow(Screen, Component):
 		self.client = client
 		self.channel = None
 
-		self.client.setNick(
-				os.getenv("USER", "PyMills"))
-		self.client.setIdent(
-				os.getenv("USER", "PyMills"))
-
 		self.cmdRegex = re.compile(
 				"\/(?P<command>[a-z]+) ?"
 				"(?P<args>.*)(?iu)")
@@ -63,7 +57,7 @@ class MainWindow(Screen, Component):
 #		self.lines = []
 		self.body = urwid.ListBox([])
 		self.lines = self.body.body
-		self.body.set_focus(len(self.lines))
+		#self.body.set_focus(len(self.lines))
 
 		self.title = urwid.Text(MAIN_TITLE)
 		self.header = urwid.AttrWrap(self.title, "title")
@@ -251,7 +245,7 @@ class MainWindow(Screen, Component):
 			self.client.ircQUIT(message)
 
 	def update_screen(self, size):
-		self.body.set_focus(len(self.lines))
+		#self.body.set_focus(len(self.lines))
 		canvas = self.top.render(size, focus=True)
 		self.draw_screen(size, canvas)
 
