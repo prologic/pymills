@@ -204,7 +204,7 @@ class Session(object):
 						sql,
 						str(args),
 						str(kwargs)))
-				self._cu.execute(sql, args)
+				self._cu.execute(sql, *args, **kwargs)
 				fields = self.__getFields__()
 				if fields == []:
 					r = []
