@@ -188,7 +188,7 @@ class Session(object):
 				self._log.debug("Commiting to database...")
 			self._cx.commit()
 
-	def getCursor():
+	def getCursor(self):
 		"""C.getCursor() -> cursor object
 
 		Return the db-api internal cursor
