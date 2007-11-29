@@ -188,6 +188,17 @@ class Session(object):
 				self._log.debug("Commiting to database...")
 			self._cx.commit()
 
+	def getCursor():
+		"""C.getCursor() -> cursor object
+
+		Return the db-api internal cursor
+		object. Useful for performing other
+		functions this library doesn't wrap
+		around or support. eg: callproc (Oracle)
+		"""
+
+		return self._cu
+
 	def execute(self, sql, *args, **kwargs):
 		"""C.execute(sql, *args, **kwargs) -> list of rows, or []
 
