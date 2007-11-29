@@ -188,6 +188,22 @@ class Session(object):
 				self._log.debug("Commiting to database...")
 			self._cx.commit()
 
+	def newCursor(self):
+		"""C.newCursor() -> new cursor object
+
+		Return a new db-api cursor object. Useful
+		for performing other functions this library
+		doesn't wrap around or support.
+		eg: callproc (Oracle)
+
+		NB: This returns a new cursor object and
+		    does not return the current internal one.
+			 Use getCursor to get a copy of the
+			 internal one.
+		"""
+
+		return self._cx.cursor()
+
 	def getCursor(self):
 		"""C.getCursor() -> cursor object
 
