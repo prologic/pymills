@@ -260,6 +260,12 @@ TypeError: a class that defines __slots__ without defining __getstate__ cannot b
 #			source = self
 
 		try:
+			if self._debug:
+				if self._log is not None:
+					self._log.debug("Sending %s to %s" % (event, channel))
+				else:
+					print >> sys.stderr, "Sending %s to %s" % (event, channel)
+
 			if self.manager == self:
 				handlers = self.getHandlers("global") + \
 						self.getHandlers(channel)
@@ -270,9 +276,9 @@ TypeError: a class that defines __slots__ without defining __getstate__ cannot b
 		finally:
 			if self._debug:
 				if self._log is not None:
-					self._log.debug(event)
+					self._log.debug("Sent: %s" % event)
 				else:
-					print >> sys.stderr, event
+					print >> sys.stderr, "Sent: %s" % event
 
 
 class Component(Manager):
