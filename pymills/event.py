@@ -259,19 +259,21 @@ TypeError: a class that defines __slots__ without defining __getstate__ cannot b
 #		if source is None:
 #			source = self
 
-		if self.manager == self:
-			handlers = self.getHandlers("global") + \
-					self.getHandlers(channel)
-
+		try:
+			if self.manager == self:
+				handlers = self.getHandlers("global") + \
+						self.getHandlers(channel)
+	
+				return send(handlers, event, channel, source)
+			else:
+				return self.manager.send(event, channel, source)
+		finally:
 			if self._debug:
 				if self._log is not None:
 					self._log.debug(event)
 				else:
 					print >> sys.stderr, event
 
-			return send(handlers, event, channel, source)
-		else:
-			return self.manager.send(event, channel, source)
 
 class Component(Manager):
 	"""Component(Manager) -> new component object
