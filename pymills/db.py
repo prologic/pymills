@@ -215,11 +215,12 @@ class Session(object):
 
 		return self._cu
 
-	def execute(self, sql, *args, **kwargs):
-		"""C.execute(sql, *args, **kwargs) -> list of rows, or []
+	def execute(self, sql=None, *args, **kwargs):
+		"""C.execute(sql=None, *args, **kwargs) -> list of rows, or []
 
-		Execute the given SQL statement in sql and return
-		a list of rows (if appropiate) or return an empty list.
+		Execute the given SQL statement or a previously prepared
+		statement in the current internal cursor. Return a list of rows
+		if any or return an empty list.
 		If this fails, a DBError exception will be raised.
 		"""
 
@@ -256,7 +257,7 @@ class Session(object):
 			raise
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
 	
-	def do(self, sql, *args, **kwargs):
+	def do(self, sql=None, *args, **kwargs):
 		"""Synonym of execute"""
 
 		return self.execute(sql, *args, **kwargs)
