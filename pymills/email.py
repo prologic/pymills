@@ -9,10 +9,15 @@ multi-part emails as well as a simple sendEmail function
 for simpler plain text emails.
 """
 
-import base64
 import smtplib
-import MimeWriter
-from StringIO import StringIO
+import mimetypes
+from email import encoders
+from email.message import Message
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.mime.audio import MIMEAudio
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 
 class Email(object):
 
@@ -21,29 +26,56 @@ class Email(object):
 		self.recipient = recipient
 		self.subject = subject
 
-		self.message = StringIO()
-		self.writer = MimeWriter.MimeWriter(self.message)
-		self.writer.addheader('Subject', subject)
-		self.writer.startmultipartbody('mixed')
+		self.msg = MIMEMultipart()
+		self.msg["From"] = sender
+		self.msg["Subject"] = subject
+		self.msg["To"] = recipient
+		self.msg.preamble = subject
 
-	def add(self, type="text/plain", name=None, fd=None, content=""):
-		part = self.writer.nextpart()
-		if name is not None:
-			type = "%s; name=\"%s\"" % (type, name)
-		body = part.startbody(type)
-		if fd is not None:
-			base64.encode(fd, body)
+	def _getType(self, file):
+		ctype, encoding = mimetypes.guess_type(path)
+		if ctype is None or encoding is not None:
+			ctype = 'application/octet-stream'
+		return ctype.split('/', 1)
+
+	def add(self, text="", file=None):
+		if file is not None:
+			mainType, subType = self._getType(file)
+			if mainType == 'text':
+				fp = open(file, "r")
+				msg = MIMEText(fp.read(), _subtype=subType)
+				fp.close()
+			elif mainType == 'image':
+				fp = open(file, 'rb')
+				msg = MIMEImage(fp.read(), _subtype=subType)
+				fp.close()
+			elif mainType == 'audio':
+				fp = open(file, 'rb')
+				msg = MIMEAudio(fp.read(), _subtype=subType)
+				fp.close()
+			else:
+				fp = open(file, 'rb')
+				msg = MIMEBase(mainType, subType)
+				msg.set_payload(fp.read())
+				fp.close()
+				encoders.encode_base64(msg)
+			self.msg.add_header(
+				'Content-Disposition',
+				'attachment',
+				filename=os.path.basename(file))
 		else:
-			body.write(content)
+			msg = MIMEText(text)
+
+		self.msg.attach(msg)
 
 	def send(self):
-		self.writer.lastpart()
-		smtp = smtplib.SMTP("localhost")
-		smtp.sendmail(
+		s = smtplib.SMTP()
+		s.connect()
+		s.sendmail(
 			self.sender,
 			self.recipient,
-			self.message.getvalue())
-		smtp.quit()
+			self.msg.as_string())
+		s.close()
 
 def sendEmail(sender, recipient, subject, message):
 	"""sendEmail(sender, recipient, subject, message) -> None
