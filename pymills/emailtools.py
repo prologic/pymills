@@ -33,7 +33,7 @@ class Email(object):
 		self.msg.preamble = subject
 
 	def _getType(self, file):
-		ctype, encoding = mimetypes.guess_type(path)
+		ctype, encoding = mimetypes.guess_type(file)
 		if ctype is None or encoding is not None:
 			ctype = 'application/octet-stream'
 		return ctype.split('/', 1)
