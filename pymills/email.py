@@ -24,7 +24,9 @@ class Email(object):
 
 	def add(self, type="text/plain", name=None, fd=None, content=""):
 		part = self.writer.nextpart()
-		body = part.startbody(type, name)
+		if name is not None:
+			type = "%s; name=\"%s\"" % name
+		body = part.startbody(type)
 		if fd is not None:
 			body.write(base64.encode(fd))
 		else:
