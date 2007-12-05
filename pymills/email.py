@@ -28,7 +28,7 @@ class Email(object):
 			type = "%s; name=\"%s\"" % (type, name)
 		body = part.startbody(type)
 		if fd is not None:
-			body.write(base64.encode(fd))
+			base64.encode(fd, body)
 		else:
 			body.write(content)
 
