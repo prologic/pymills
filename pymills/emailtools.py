@@ -9,6 +9,7 @@ multi-part emails as well as a simple sendEmail function
 for simpler plain text emails.
 """
 
+import os
 import smtplib
 import mimetypes
 from email import encoders
