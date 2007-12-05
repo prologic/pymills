@@ -1,8 +1,8 @@
-# Module:	email
+# Module:	emailtools
 # Date:		5th December 2007
 # Author:	James Mills, prologic at shortcircuit dot net au
 
-"""Email Utilities
+"""Email Tools
 
 A feature-rich Email class allowing you to create and send
 multi-part emails as well as a simple sendEmail function
