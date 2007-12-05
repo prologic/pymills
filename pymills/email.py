@@ -17,6 +17,10 @@ from StringIO import StringIO
 class Email(object):
 
 	def __init__(self, sender, recipient, subject=""):
+		self.sender = sender
+		self.recipient = recipient
+		self.subject = subject
+
 		self.message = StringIO()
 		self.writer = MimeWriter.MimeWriter(self.message)
 		self.writer.addheader('Subject', subject)
