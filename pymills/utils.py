@@ -345,25 +345,6 @@ def caller(n=1):
 	stack = extract_stack()
 	return stack[-n-2][2]
 
-def sendEmail(fromEmail, toEmail, subject, message):
-	"""sendEmail(fromEmail, toEmail, subject, message) -> None
-
-	A helper function to send an email.
-	"""
-
-	import smtplib
-	from email.MIMEText import MIMEText
-
-	msg = MIMEText(message)
-	msg["Subject"] = subject
-	msg["From"] = fromEmail
-	msg["To"] = toEmail
-
-	s = smtplib.SMTP()
-	s.connect()
-	s.sendmail(fromEmail, toEmail, msg.as_string())
-	s.close()
-
 def validateEmail(email):
 	"""validateEmail(email) -> bool
 
