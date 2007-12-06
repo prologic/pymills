@@ -22,9 +22,13 @@ from email.mime.multipart import MIMEMultipart
 
 class Email(object):
 
-	def __init__(self, sender, recipient, subject=""):
+	def __init__(self, sender, recipients, subject=""):
 		self.sender = sender
-		self.recipient = recipient
+
+		if type(recipients) is str:
+			self.recipiens = [self.recipiens]
+		else:
+			self.recipients = recipients
 		self.subject = subject
 
 		self.msg = MIMEMultipart()
@@ -86,7 +90,7 @@ class Email(object):
 		s.connect()
 		s.sendmail(
 			self.sender,
-			self.recipient,
+			self.recipients,
 			self.msg.as_string())
 		s.close()
 
