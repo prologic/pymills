@@ -24,14 +24,24 @@ COMMASPACE = ", "
 
 class Email(object):
 
-	def __init__(self, sender, recipients, subject=""):
+	def __init__(self, sender, recipients, subject="", cc=[], bcc=[]):
 		self.sender = sender
 
 		if type(recipients) is str:
-			self.recipiens = [self.recipiens]
+			self.recipients = [recipients]
 		else:
 			self.recipients = recipients
 		self.subject = subject
+
+		if type(cc) is str:
+			self.cc = [cc]
+		else:
+			self.cc = cc
+
+		if type(bcc) is str:
+			self.bcc = [bcc]
+		else:
+			self.bcc = bcc
 
 		self.msg = MIMEMultipart()
 		self.msg["From"] = sender
@@ -88,6 +98,15 @@ class Email(object):
 		self.msg.attach(msg)
 
 	def send(self):
+
+		recipients = self.recipients
+		
+		if self.cc:
+			self.msg["Cc"] = COMMASPACE.join(self.cc)
+			recipients += self.cc
+		if self.bcc:
+			recipients += self.bcc
+
 		s = smtplib.SMTP()
 		s.connect()
 		s.sendmail(
