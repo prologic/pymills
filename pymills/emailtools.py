@@ -39,31 +39,43 @@ class Email(object):
 			ctype = 'application/octet-stream'
 		return ctype.split('/', 1)
 
-	def add(self, text="", file=None):
+	def add(self, text="", file=None, attach=False):
 		if file is not None:
 			mainType, subType = self._getType(file)
-			if mainType == 'text':
-				fp = open(file, "r")
-				msg = MIMEText(fp.read(), _subtype=subType)
-				fp.close()
-			elif mainType == 'image':
-				fp = open(file, 'rb')
-				msg = MIMEImage(fp.read(), _subtype=subType)
-				fp.close()
-			elif mainType == 'audio':
-				fp = open(file, 'rb')
-				msg = MIMEAudio(fp.read(), _subtype=subType)
-				fp.close()
-			else:
+
+			if attach:
 				fp = open(file, 'rb')
 				msg = MIMEBase(mainType, subType)
 				msg.set_payload(fp.read())
 				fp.close()
 				encoders.encode_base64(msg)
-			self.msg.add_header(
-				'Content-Disposition',
-				'attachment',
-				filename=os.path.basename(file))
+				msg.add_header(
+					'Content-Disposition',
+					'attachment',
+					filename=os.path.basename(file))
+			else:
+				if mainType == 'text':
+					fp = open(file, "r")
+					msg = MIMEText(fp.read(), _subtype=subType)
+					fp.close()
+				elif mainType == 'image':
+					fp = open(file, 'rb')
+					msg = MIMEImage(fp.read(), _subtype=subType)
+					fp.close()
+				elif mainType == 'audio':
+					fp = open(file, 'rb')
+					msg = MIMEAudio(fp.read(), _subtype=subType)
+					fp.close()
+				else:
+					fp = open(file, 'rb')
+					msg = MIMEBase(mainType, subType)
+					msg.set_payload(fp.read())
+					fp.close()
+					encoders.encode_base64(msg)
+					msg.add_header(
+						'Content-Disposition',
+						'attachment',
+						filename=os.path.basename(file))
 		else:
 			msg = MIMEText(text)
 
