@@ -20,6 +20,8 @@ from email.mime.audio import MIMEAudio
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
+COMMASPACE = ", "
+
 class Email(object):
 
 	def __init__(self, sender, recipients, subject=""):
@@ -34,7 +36,7 @@ class Email(object):
 		self.msg = MIMEMultipart()
 		self.msg["From"] = sender
 		self.msg["Subject"] = subject
-		self.msg["To"] = recipient
+		self.msg["To"] = COMMASPACE.join(self.recipients)
 		self.msg.preamble = subject
 
 	def _getType(self, file):
