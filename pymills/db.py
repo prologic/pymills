@@ -175,7 +175,7 @@ class Session(object):
 		"""
 
 		rows = self._cu.fetchall()
-		return [_Record(zip(fields, row)) for row in rows]
+		return [Record(zip(fields, row)) for row in rows]
 
 	def commit(self):
 		"""C.commit() -> None
@@ -265,18 +265,34 @@ class Session(object):
 
 Connection = Session
 
-class _Record(OrderedDict):
-	"""_Recird(row) -> a new multi-access row
+class Record(OrderedDict):
+	"""Recird(data) -> a new multi-access record
 
-	Create a new multi-access row given a list of 2-pair
-	tuplies containing the field and value for that row.
-	Each row created can be access any number of ways.
+	Create a new multi-access record given a list of 2-pair
+	tuplies containing the field and value for that record.
+	Each record created can be accessed in a dictionary-like
+	fasion or using attribute names of the record object.
 	"""
 
 	def __init__(self, row):
-		OrderedDict.__init__(self)
+		"initializes x; see x.__class__.__doc__ for signature"
+
+		super(Record, self).__init__()
+
 		for k, v in row:
 			if type(v) == str:
 				v = unicode(v, "utf-8")
 			self[k] = v
 			setattr(self, k, v)
+	
+	def add(self, k, v):
+		"""R.add(k, v) -> None
+
+		Add a new key and value given as k, v to this
+		record.
+		"""
+
+		if type(v) == str:
+			v = unicode(v, "utf-8")
+		self[k] = v
+		setattr(self, k, v)
