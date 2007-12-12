@@ -239,6 +239,7 @@ class Session(object):
 				else:
 					r = self.__buildResult__(fields)
 				if self._debug and (self._log is not None):
+					self._log.debug("Rows: %d" % self.getCursor().rowcount)
 					et = time()
 					self._log.debug("Result: %s" % str(r))
 					if (et - st) < 1:
