@@ -1,4 +1,3 @@
-# Filename: db.py
 # Module:	db
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
@@ -39,6 +38,7 @@ u'James'
 u'Mills'
 """
 
+from copy import copy
 from time import time
 
 from pymills.misc import duration
@@ -299,24 +299,22 @@ class Record(OrderedDict):
 		self[k] = v
 		setattr(self, k, v)
 
-def pivot(table, left, top, value):
-	"""pivot(table, left, top, value) -> table
+def pivot(rows, left, top, value):
+	"""pivot(rows, left, top, value) -> rows
 
 	Creates a cross-tab or pivot table from a normalised input
-	table. Use this unction to 'denormalize' a table of normalized
-	records.
+	rows. Use this unction to 'denormalize' a table of normalized
+	records (rows).
 	
-	table	- list of dictionaries
-	left	- tuple of headings which are displayed down the 
-           left side of the new table.
-	top	- tuple of headings which are displayed across the 
-           top of the new table.
+	rows	- list of Record objects.
+	left	- tuple of row headings
+	top	- tuple of column headings
 	"""
 
 	rs = OrderedDict()
 	ysort = []
 	xsort = []
-	for row in table:
+	for row in rows:
 		yaxis = tuple([row[c] for c in left])
 		if yaxis not in ysort: ysort.append(yaxis)
 		xaxis = tuple([row[c] for c in top])
@@ -339,7 +337,7 @@ def pivot(table, left, top, value):
 	headings = list(left)
 	headings.extend(xsort)
 
-	t = []
+	newRows = []
 
 	for left in ysort:
 		row = list(left)
@@ -347,6 +345,48 @@ def pivot(table, left, top, value):
 		sortedkeys.sort()
 		sortedvalues = map(rs[left].get, sortedkeys)
 		row.extend(sortedvalues)
-		t.append(Record(zip(headings,row)))
+		newRows.append(Record(zip(headings,row)))
 
-	return t
+	return newRows
+
+def variance(rows,
+	headers=("Variance ($)", "Variance (%)",),
+	formats=("$%0.2f", "%0.2f%%",)):
+	"""variance(rows,
+		headers=("Variance ($)", "Variance (%)",),
+		formats=("$%0.2f", "%0.2f%%",)) -> rows
+
+	Calculate a variance on a set of rows
+	and add two new columns:
+	 * Variance ($)
+	 * Variance (%)
+	
+	This function assumes that the data to calculate
+	the variance on are the last two columns in the
+	data set.
+
+	The format strings default to something that looks
+	like this:
+
+	Variance ($)   Variance (%)
+	---------------------------
+	  $1234.45       34.32%
+	"""
+
+	newRows = []
+
+	try:
+		for row in rows:
+			x = row[-2]
+			y = row[-1]
+			d = y - x
+			v = d / x * 100
+
+			newRow = copy(row)
+			newRow.add(headers[0], formats[0] % d)
+			newRow.add(headers[1], formats[1] % v)
+			newRows.append(newRow)
+	except:
+		return rows
+
+	return newRows
