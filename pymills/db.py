@@ -308,12 +308,12 @@ def pivot(table, left, top, value):
 	
 	table	- list of dictionaries
 	left	- tuple of headings which are displayed down the 
-				left side of the new table.
+           left side of the new table.
 	top	- tuple of headings which are displayed across the 
-				top of the new table.
+           top of the new table.
 	"""
 
-	rs = {}
+	rs = OrderedDict()
 	ysort = []
 	xsort = []
 	for row in table:
