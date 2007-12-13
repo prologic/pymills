@@ -349,15 +349,15 @@ def pivot(rows, left, top, value):
 	return newRows
 
 def variance(rows,
-	headers=("Variance ($)", "Variance (%)",),
-	formats=("$%0.2f", "%0.2f%%",)):
+	headers=("Variance", "Variance (%)",),
+	formats=("%0.2f", "%0.2f%%",)):
 	"""variance(rows,
-		headers=("Variance ($)", "Variance (%)",),
-		formats=("$%0.2f", "%0.2f%%",)) -> rows
+		headers=("Variance", "Variance (%)",),
+		formats=("%0.2f", "%0.2f%%",)) -> rows
 
 	Calculate a variance on a set of rows
 	and add two new columns:
-	 * Variance ($)
+	 * Variance
 	 * Variance (%)
 	
 	This function assumes that the data to calculate
@@ -367,9 +367,9 @@ def variance(rows,
 	The format strings default to something that looks
 	like this:
 
-	Variance ($)   Variance (%)
+	  Variance   Variance (%)
 	---------------------------
-	  $1234.45       34.32%
+	  1234.45       34.32%
 	"""
 
 	newRows = []
