@@ -281,10 +281,7 @@ class Record(OrderedDict):
 		super(Record, self).__init__()
 
 		for k, v in row:
-			if type(v) == str:
-				v = unicode(v, "utf-8")
-			self[k] = v
-			setattr(self, k, v)
+			self.add(k, v)
 	
 	def add(self, k, v):
 		"""R.add(k, v) -> None
@@ -293,8 +290,12 @@ class Record(OrderedDict):
 		record.
 		"""
 
+		if type(k) == tuple:
+			k = k[0]
+
 		if type(v) == str:
 			v = unicode(v, "utf-8")
+
 		self[k] = v
 		setattr(self, k, v)
 
