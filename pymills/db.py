@@ -296,3 +296,45 @@ class Record(OrderedDict):
 			v = unicode(v, "utf-8")
 		self[k] = v
 		setattr(self, k, v)
+
+def pivot(table, left, top, value):
+	"""pivot(table, left, top, value) -> table
+
+	Creates a cross-tab or pivot table from a normalised input
+	table. Use this unction to 'denormalize' a table of normalized
+	records.
+	
+	table	- list of dictionaries
+	left	- tuple of headings which are displayed down the 
+				left side of the new table.
+	top	- tuple of headings which are displayed across the 
+				top of the new table.
+	"""
+
+	rs = {}
+	ysort = []
+	xsort = []
+	for row in table:
+		yaxis = tuple([row[c] for c in left])
+		if yaxis not in ysort: ysort.append(yaxis)
+		xaxis = tuple([row[c] for c in top])
+		if xaxis not in xsort: xsort.append(xaxis)
+		try:
+			rs[yaxis]
+		except KeyError:
+			rs[yaxis] = {}
+		if xaxis not in rs[yaxis]:
+			rs[yaxis][xaxis] = 0
+		rs[yaxis][xaxis] += row[value]
+			
+	headings = list(left)
+	headings.extend(xsort)
+	
+	t = []
+
+	for left in ysort:
+		row = list(left)
+		row.extend([rs[left][x] for x in rs[left]])
+		t.append(Record(zip(headings,row)))
+
+	return t
