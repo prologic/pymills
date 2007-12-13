@@ -38,7 +38,6 @@ u'James'
 u'Mills'
 """
 
-from copy import copy
 from time import time
 
 from pymills.misc import duration
@@ -332,7 +331,7 @@ def pivot(rows, left, top, value):
 		if len(rs[key]) < len(xsort):
 			for var in xsort:
 				if var not in rs[key].keys():
-					rs[key][var] = ''
+					rs[key][var] = None
 
 	headings = list(left)
 	headings.extend(xsort)
@@ -374,19 +373,34 @@ def variance(rows,
 	"""
 
 	newRows = []
+	keys = rows[0].keys()[-2:]
 
-	try:
-		for row in rows:
-			x = row[-2]
-			y = row[-1]
+	for row in rows:
+		x = row[keys[0]]
+		y = row[keys[1]]
+
+		if None in [x, y]:
+			d = "N/A"
+			v = "N/A"
+		else:
 			d = y - x
-			v = d / x * 100
+			if x == 0:
+				v = "N/A"
+			else:
+				v = d / x * 100
 
-			newRow = copy(row)
+		newRow = Record(zip(row.keys(), row.values()))
+
+		if type(d) == float:
 			newRow.add(headers[0], formats[0] % d)
+		else:
+			newRow.add(headers[0], d)
+
+		if type(v) == float:
 			newRow.add(headers[1], formats[1] % v)
-			newRows.append(newRow)
-	except:
-		return rows
+		else:
+			newRow.add(headers[1], v)
+
+		newRows.append(newRow)
 
 	return newRows
