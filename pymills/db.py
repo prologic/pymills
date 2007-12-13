@@ -196,10 +196,11 @@ class Session(object):
 		doesn't wrap around or support.
 		eg: callproc (Oracle)
 
-		NB: This returns a new cursor object and
-		    does not return the current internal one.
-			 Use getCursor to get a copy of the
-			 internal one.
+		NB:
+			This returns a new cursor object and
+			does not return the current internal one.
+			Use getCursor to get a copy of the
+			internal one.
 		"""
 
 		return self._cx.cursor()
@@ -326,15 +327,25 @@ def pivot(table, left, top, value):
 		if xaxis not in rs[yaxis]:
 			rs[yaxis][xaxis] = 0
 		rs[yaxis][xaxis] += row[value]
-			
+
+	# Handle missing values
+	for key in rs:
+		if len(rs[key]) < len(xsort):
+			for var in xsort:
+				if var not in rs[key].keys():
+					rs[key][var] = ''
+
 	headings = list(left)
 	headings.extend(xsort)
-	
+
 	t = []
 
 	for left in ysort:
 		row = list(left)
-		row.extend([rs[left][x] for x in rs[left]])
+		sortedkeys = rs[left].keys()
+		sortedkeys.sort()
+		sortedvalues = map(rs[left].get, sortedkeys)
+		row.extend(sortedvalues)
 		t.append(Record(zip(headings,row)))
 
 	return t
