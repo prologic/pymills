@@ -80,14 +80,14 @@ class Header(object):
 			return self.name.ljust(width)
 	
 	def toHTML(self):
-		align, cls, style = ("",) * 3
+		align, cls, style = (None,) * 3
 		if self.align:
 			align = "align=\"%s\"" % self.align
 		if self.cls:
 			cls = "class=\"%s\"" % self.cls
 		if self.style:
 			style = "style=\"%s\"" % self.style
-		attrs = " ".join([align, cls, style]).strip()
+		attrs = " ".join(x for x in [align, cls, style] if x is not None).strip()
 		if attrs == "":
 			return " <th>%s</th>" % self.name
 		else:
@@ -146,12 +146,12 @@ class Row(list):
 		if self.hidden:
 			return "\n"
 		else:
-			cls, style = ("",) * 2
+			cls, style = (None,) * 2
 			if self.cls:
 				cls = "class=\"%s\"" % self.cls
 			if self.style:
 				style = "style=\"%s\"" % self.style
-			attrs = " ".join([cls, style]).strip()
+			attrs = " ".join(x for x in [cls, style] if x is not None).strip()
 
 			cells = "\n  ".join([cell.toHTML() for cell in self.cells])
 			if attrs == "":
@@ -227,14 +227,14 @@ class Cell(object):
 			return self._format()
 
 	def toHTML(self):
-		align, cls, style = ("",) * 3
+		align, cls, style = (None,) * 3
 		if self.align:
 			align = "align=\"%s\"" % self.align
 		if self.cls:
 			cls = "class=\"%s\"" % self.cls
 		if self.style:
 			style = "style=\"%s\"" % self.style
-		attrs = " ".join([align, cls, style]).strip()
+		attrs = " ".join(x for x in [align, cls, style] if x is not None).strip()
 		if attrs == "":
 			return "<td>%s</td>" % self._format()
 		else:
@@ -317,12 +317,12 @@ class Table(list):
 		return v
 
 	def toHTML(self):
-		cls, style = ("",) * 2
+		cls, style = (None,) * 2
 		if self.cls:
 			cls = "class=\"%s\"" % self.cls
 		if self.style:
 			style = "style=\"%s\"" % self.style
-		attrs = " ".join([cls, style]).strip()
+		attrs = " ".join(x for x in [cls, style] if x is not None).strip()
 
 		s = StringIO()
 		if attrs == "":
