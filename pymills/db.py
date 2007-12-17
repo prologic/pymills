@@ -266,7 +266,7 @@ class Session(object):
 Connection = Session
 
 class Record(OrderedDict):
-	"""Recird(data) -> a new multi-access record
+	"""Record(data) -> a new multi-access record
 
 	Create a new multi-access record given a list of 2-pair
 	tuplies containing the field and value for that record.
@@ -297,6 +297,16 @@ class Record(OrderedDict):
 
 		self[k] = v
 		setattr(self, k, v)
+	
+	def remove(self, k):
+		"""R.remove(k) -> None
+
+		Remove a value given it's key from
+		this record.
+		"""		
+
+		del self[k]
+		del self.k
 
 def pivot(rows, left, top, value):
 	"""pivot(rows, left, top, value) -> rows
@@ -344,16 +354,12 @@ def pivot(rows, left, top, value):
 		sortedkeys.sort()
 		sortedvalues = map(rs[left].get, sortedkeys)
 		row.extend(sortedvalues)
-		newRows.append(Record(zip(headings,row)))
+		newRows.append(Record(zip(headings, row)))
 
-	return newRows
+	return newRows, sortedkeys
 
-def variance(rows,
-	headers=("Variance", "Variance (%)",),
-	formats=("%0.2f", "%0.2f%%",)):
-	"""variance(rows,
-		headers=("Variance", "Variance (%)",),
-		formats=("%0.2f", "%0.2f%%",)) -> rows
+def variance(rows, names=("Variance", "Variance (%)",)):
+	"""variance(rows, names=("Variance", "Variance (%)",)): -> rows
 
 	Calculate a variance on a set of rows
 	and add two new columns:
@@ -363,13 +369,6 @@ def variance(rows,
 	This function assumes that the data to calculate
 	the variance on are the last two columns in the
 	data set.
-
-	The format strings default to something that looks
-	like this:
-
-	  Variance   Variance (%)
-	---------------------------
-	  1234.45       34.32%
 	"""
 
 	newRows = []
@@ -380,27 +379,18 @@ def variance(rows,
 		y = row[keys[1]]
 
 		if None in [x, y]:
-			d = "N/A"
-			v = "N/A"
+			d = None
+			v = None
 		else:
 			d = y - x
 			if x == 0:
-				v = "N/A"
+				v = None
 			else:
 				v = d / x * 100
 
 		newRow = Record(zip(row.keys(), row.values()))
-
-		if type(d) == float:
-			newRow.add(headers[0], formats[0] % d)
-		else:
-			newRow.add(headers[0], d)
-
-		if type(v) == float:
-			newRow.add(headers[1], formats[1] % v)
-		else:
-			newRow.add(headers[1], v)
-
+		newRow.add(names[0], d)
+		newRow.add(names[1], v)
 		newRows.append(newRow)
 
-	return newRows
+	return newRows, names
