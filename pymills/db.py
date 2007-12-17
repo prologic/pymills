@@ -41,7 +41,7 @@ u'Mills'
 from time import time
 
 from pymills.misc import duration
-from pymills.types import OrderedDict
+from pymills.datatypes import OrderedDict
 
 def _parseURI(uri):
 	"""_parseURI(uri) -> dict

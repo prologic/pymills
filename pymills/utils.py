@@ -15,7 +15,7 @@ import optparse
 from optparse import _match_abbrev
 from ConfigParser import ConfigParser as _ConfigParser
 
-from pymills.types import CaselessDict
+from pymills.datatypes import CaselessDict
 
 class Error(Exception):
 	"Error Exception"

@@ -1,11 +1,12 @@
 # Filename: datatypes.py
 # Module:	datatypes
 # Date:		04th August 2004
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Data Types Library
 
-...
+Various custom data types not available in the standard
+python library.
 """
 
 class OrderedDict(dict):
