@@ -89,9 +89,9 @@ class Header(object):
 			style = "style=\"%s\"" % self.style
 		attrs = " ".join([align, cls, style]).strip()
 		if attrs == "":
-			return "<th>%s</th>" % self.name
+			return " <th>%s</th>" % self.name
 		else:
-			return "<th %s>%s</th>" % (attrs, self.name)
+			return " <th %s>%s</th>" % (attrs, self.name)
 
 class Row(list):
 	"""Row(cells, table=None, **kwargs) -> new table row object
@@ -144,7 +144,7 @@ class Row(list):
 
 	def toHTML(self):
 		if self.hidden:
-			return ""
+			return "\n"
 		else:
 			cls, style = ("",) * 2
 			if self.cls:
@@ -153,11 +153,11 @@ class Row(list):
 				style = "style=\"%s\"" % self.style
 			attrs = " ".join([cls, style]).strip()
 
-			cells = "".join([cell.toHTML() for cell in self.cells])
+			cells = "\n  ".join([cell.toHTML() for cell in self.cells])
 			if attrs == "":
-				return "<tr>%s</tr>" % cells
+				return " <tr>\n  %s\n </tr>" % cells
 			else:
-				return "<tr %s>%s</td>" % (attrs, cells)
+				return " <tr %s>\n  %s\n </tr>" % (attrs, cells)
 
 class Cell(object):
 	"""Cell(value, **kwargs) -> new table cell object
@@ -326,11 +326,13 @@ class Table(list):
 
 		s = StringIO()
 		if attrs == "":
-			s.write("<table>")
+			s.write("<table>\n")
 		else:
-			s.write("<table %s>" % attrs)	
-		s.write("".join([header.toHTML() for header in self.headers]))
-		s.write("".join([row.toHTML() for row in self.rows]))
+			s.write("<table %s>\n" % attrs)	
+		s.write("\n".join([header.toHTML() for header in self.headers]))
+		s.write("\n")
+		s.write("\n".join([row.toHTML() for row in self.rows]))
+		s.write("\n")
 		s.write("</table>")
 		v = s.getvalue()
 		s.close()
