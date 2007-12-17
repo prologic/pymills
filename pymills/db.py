@@ -358,25 +358,23 @@ def pivot(rows, left, top, value):
 
 	return newRows, sortedkeys
 
-def variance(rows, names=("Variance", "Variance (%)",)):
-	"""variance(rows, names=("Variance", "Variance (%)",)): -> rows
+def variance(rows, keys=("variance", "pvariance",)):
+	"""variance(rows, keys=("variance", "pvariance",)) -> rows
 
 	Calculate a variance on a set of rows
-	and add two new columns:
-	 * Variance
-	 * Variance (%)
+	adding two new fields, 'variance' and 'pvariance'.
 	
 	This function assumes that the data to calculate
-	the variance on are the last two columns in the
-	data set.
+	the variance on are the last two fields in the
+	dataset.
 	"""
 
 	newRows = []
-	keys = rows[0].keys()[-2:]
+	fields = rows[0].keys()[-2:]
 
 	for row in rows:
-		x = row[keys[0]]
-		y = row[keys[1]]
+		x = row[fields[0]]
+		y = row[fields[1]]
 
 		if None in [x, y]:
 			d = None
@@ -389,8 +387,8 @@ def variance(rows, names=("Variance", "Variance (%)",)):
 				v = d / x * 100
 
 		newRow = Record(zip(row.keys(), row.values()))
-		newRow.add(names[0], d)
-		newRow.add(names[1], v)
+		newRow.add(keys[0], d)
+		newRow.add(keys[1], v)
 		newRows.append(newRow)
 
-	return newRows, names
+	return newRows
