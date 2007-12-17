@@ -192,9 +192,16 @@ class Cell(object):
 		self.row = None
 		self.header = None
 
-		self.type = kwargs.get("type", str)
+		self.type = kwargs.get("type", type(self.value))
 		self.align = kwargs.get("align", None)
-		self.format = kwargs.get("format", "%s")
+		self.format = kwargs.get("format", None)
+		if self.format is None:
+			if self.type == float:
+				self.format = "%0.2f"
+			elif self.type == int:
+				self.format = "%d"
+			else:
+				self.format = "%s"
 		self.cls = kwargs.get("cls", None)
 		self.style = kwargs.get("style", None)
 
