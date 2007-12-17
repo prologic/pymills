@@ -12,7 +12,7 @@ import types
 from StringIO import StringIO
 
 class Header(object):
-	"""Header(name, **kwargs) -> new table header object
+	"""Header(name, table=None, **kwargs) -> new table header object
 
 	Container class that holds the definition of a table
 	header and how each piece of data should be formatted
@@ -40,33 +40,44 @@ class Header(object):
 	>>>
 	"""
 
-	def __init__(self, name, **kwargs):
+	def __init__(self, name, table=None, **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self.name = name
+		self.table = table
 
 		self.type = kwargs.get("type", str)
 		self.align = kwargs.get("align", None)
 		self.format = kwargs.get("format", "%s")
-		self.width = kwargs.get("width", len(self.name))
+		self.width = kwargs.get("width", self.getWidth())
 		self.cls = kwargs.get("cls", None)
 		self.style = kwargs.get("style", None)
 		self.ccls = kwargs.get("ccls", None)
 		self.cstyle = kwargs.get("cstyle", None)
 
-	def __str__(self):
-		if self.align:
-			width = self.width
-			if self.align == "left":
-				return self.name.ljust(widtH)
-			elif self.align == "center":
-				return self.name.center(widtH)
-			elif self.align == "right":
-				return self.name.rjust(widtH)
-			else:
-				return self.name.ljust(width)
+	def refresh(self):
+		self.width = self.getWidth()
+
+	def getWidth(self):
+		if self.table:
+			rows = self.table.rows
+			hIndex = self.table.headers.index(self)
+			return max(
+				max([len(str(x[hIndex])) for x in rows]) + 2,
+				len(self.name) + 2)
 		else:
-			return self.name
+			return len(self.name)
+
+	def __str__(self):
+		width = self.width
+		if self.align == "left":
+			return self.name.ljust(widtH)
+		elif self.align == "center":
+			return self.name.center(widtH)
+		elif self.align == "right":
+			return self.name.rjust(widtH)
+		else:
+			return self.name.ljust(width)
 	
 	def toHTML(self):
 		align, cls, style = ("",) * 3
@@ -82,8 +93,8 @@ class Header(object):
 		else:
 			return "<th %s>%s</th>" % (attrs, self.name)
 
-class Row(object):
-	"""Row(cells, **kwargs) -> new table row object
+class Row(list):
+	"""Row(cells, table=None, **kwargs) -> new table row object
 
 	Container class that holds the definition of a table
 	row and a set of cells and how each cell should be
@@ -106,14 +117,24 @@ class Row(object):
 	>>>
 	"""
 
-	def __init__(self, cells, row=None, header=None, **kwargs):
+	def __init__(self, cells, table=None, **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self.cells = cells
+		super(Row, self).__init__(cells)
+
+		self.cells = self
+		self.table = table
 
 		self.hidden = kwargs.get("hidden", False)
 		self.cls = kwargs.get("cls", None)
 		self.style = kwargs.get("style", None)
+
+	def refresh(self):
+		for i, cell in enumerate(self.cells):
+			cell.row = self
+			cell.table = self.table
+			cell.header = self.table.headers[i]
+			cell.refresh()
 
 	def __str__(self):
 		if self.hidden:
@@ -139,7 +160,7 @@ class Row(object):
 				return "<tr %s>%s</td>" % (attrs, cells)
 
 class Cell(object):
-	"""Cell(value, row=None, header=None, **kwargs) -> new table cell object
+	"""Cell(value, **kwargs) -> new table cell object
 
 	Container class that holds the definition of a table
 	cell and it's value and how it should be formatted
@@ -163,32 +184,27 @@ class Cell(object):
 	>>>
 	"""
 
-	def __init__(self, value, row=None, header=None, **kwargs):
+	def __init__(self, value, **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self.value = value
 
-		self.row = row
-		self.header = header
+		self.row = None
+		self.header = None
 
-		self.type = str
-		self.align = None
-		self.format = "%s"
-		self.cls = None
-		self.style = None
+		self.type = kwargs.get("type", str)
+		self.align = kwargs.get("align", None)
+		self.format = kwargs.get("format", "%s")
+		self.cls = kwargs.get("cls", None)
+		self.style = kwargs.get("style", None)
 
+	def refresh(self):
 		if self.header:
-			self.type = self.header.type
-			self.align = self.header.align
-			self.format = self.header.format
-			self.cls = self.header.ccls
-			self.style = self.header.cstyle
-
-		self.type = kwargs.get("type", self.type)
-		self.align = kwargs.get("align", self.align)
-		self.format = kwargs.get("format", self.format)
-		self.cls = kwargs.get("cls", self.cls)
-		self.style = kwargs.get("style", self.style)
+			self.type = self.header.type or self.type
+			self.align = self.header.align or self.align
+			self.format = self.header.format or self.format
+			self.cls = self.header.ccls or self.cls
+			self.style = self.header.cstyle or self.style
 
 	def _format(self):
 		if type(self.format) == types.FunctionType:
@@ -197,19 +213,19 @@ class Cell(object):
 			return self.format % self.value
 
 	def __str__(self):
-		if self.header is not None and self.align:
+		if self.header:
 			width = self.header.width
 			if self.align == "left":
-				return self.format().ljust(widtH)
+				return self._format().ljust(widtH)
 			elif self.align == "center":
-				return self.format().center(widtH)
+				return self._format().center(widtH)
 			elif self.align == "right":
-				return self.format().rjust(widtH)
+				return self._format().rjust(widtH)
 			else:
-				return self.format().ljust(width)
+				return self._format().ljust(width)
 		else:
 			return self._format()
-	
+
 	def toHTML(self):
 		align, cls, style = ("",) * 3
 		if self.align:
@@ -224,14 +240,14 @@ class Cell(object):
 		else:
 			return "<td %s>%s</td>" % (attrs, self._format())
 
-class Table(object):
-	"""Table(rows=[], headers=[], **kwargs) -> new table object
+	def getHeader(self):
+		return self.row.table.headers[self.row.table.rows[0].index(self)]
+
+class Table(list):
+	"""Table(headers, rows=[], **kwargs) -> new table object
 
 	Container class to hold a set of rows and headers
 	allowing easy traversal and display.
-
-	If the optional rows or headers argumnets are given,
-	these are used as the table row data and headers.
 
 	An Optional list of kwargs can also be supplied that
 	affect how this table is created:
@@ -243,7 +259,7 @@ class Table(object):
 	>>> c = Cell(22.0/7.0, format="%0.2f", align="right", cls="foo", style="hidden: true")
 	>>> r = Row([c], cls="asdf", style="qwerty")
 	>>> h = Header("Test")
-	>>> t = Table([r], [h])
+	>>> t = Table([h], [r])
 	>>> print t
 	Test
 	----
@@ -255,14 +271,36 @@ class Table(object):
 	>>>
 	"""
 
-	def __init__(self, rows=[], headers=[], **kwargs):
+	def __init__(self, headers, rows=[], **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self.rows = rows
+		super(Table, self).__init__(rows)
+
 		self.headers = headers
+		self.rows = self
 
 		self.cls = kwargs.get("cls", None)
 		self.style = kwargs.get("style", None)
+
+	def append(self, row):
+		row.table = self
+		row.refresh()
+		super(Table, self).append(row)
+
+	def refresh(self):
+		for header in self.headers:
+			header.table = self
+		for row in self.rows:
+			row.table = self
+
+		for header in self.headers:
+			header.refresh()
+
+		for row in self.rows:
+			row.refresh()
+
+	def __repr__(self):
+		return "<Table %s rows=%d>" % (id(self), len(self.rows))
 
 	def __str__(self):
 		s = StringIO()
@@ -300,3 +338,10 @@ class Table(object):
 
 	def getXY(self, x, y):
 		return self.rows[y].getCell(x)
+
+def test():
+	import doctest
+	doctest.testmod()
+
+if __name__ == "__main__":
+	test()
