@@ -103,22 +103,16 @@ class Input:
 
 class SelectInput:
 
-	def __init__(self):
-		self._stdin = sys.stdin
-
 	def poll(self, wait=0.01):
-		ready = select.select([self._stdin], [], [], wait)
-		read = ready[0]
-		return read != []
+		return not select.select([self._stdin], [], [], wait) == []
 
-	def read(self, bufsize=512):
-		return self._stdin.read(bufsize)
+	def read(self, bufSize=512):
+		return sys.stdin.read(bufSize)
 
 	def readline(self):
-		line = self._stdin.readline()
-		return line
+		return sys.stdin.readline()
 
-class Table:
+class Table(object):
 	"""Class to print nicely formatted tables
 
 	This class will allow you to print nice pretty
@@ -190,6 +184,63 @@ class Table:
 		"""
 
 		self._rows.append(row)
+
+class HTMLTable(Table):
+	"Extension of the Table class rendered as HTML"
+
+	def __init__(self, headers):
+		"""Initialize Table Object
+
+		Syntax of headers (list of tuples):
+		(title, length, justify)
+		"""
+
+		self._headers = headers
+		self._header = ""
+		self._rows = []
+
+		for title, length, justify in headers:
+			if justify == Table.LEFT:
+				self._header += " <th align=\"left\">%s</th>\n" % title
+			elif justify == Table.CENTER:
+				self._header += " <th align=\"center\">%s</th>\n" % title
+			elif justify == Table.RIGHT:
+				self._header += " <th align=\"right\">%s</th>\n" % title
+			else:
+				self._header += " <th align=\"left\">%s</th>\n" % title
+
+	def __str__(self):
+
+		import string
+		from StringIO import StringIO
+
+		s = StringIO()
+		s.write("<table>\n")
+		s.write(self._header)
+		s.write("\n")
+
+		for row in self._rows:
+			s.write(" <tr>\n")
+			s.write("%s" % string.join(
+				map(self._convert, self._headers,
+					map(str, row)), ""))
+			s.write(" </tr>\n")
+		
+		s.write("</table>")
+
+		try:
+			return s.getvalue()
+		finally:
+			s.close()
+
+	def _convert(self, header, value):
+		length, justify = header[1:]
+		if justify == Table.LEFT:
+			return "  <td align=\"left\">%s</td>\n" % value
+		elif justify == Table.CENTER:
+			return "  <td align=\"center\">%s</td>\n" % value
+		elif justify == Table.RIGHT:
+			return "  <td align=\"right\">%s</td>\n" % value
 
 ##
 ## Tests
