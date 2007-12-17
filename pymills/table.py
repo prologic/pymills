@@ -71,11 +71,11 @@ class Header(object):
 	def __str__(self):
 		width = self.width
 		if self.align == "left":
-			return self.name.ljust(widtH)
+			return self.name.ljust(width)
 		elif self.align == "center":
-			return self.name.center(widtH)
+			return self.name.center(width)
 		elif self.align == "right":
-			return self.name.rjust(widtH)
+			return self.name.rjust(width)
 		else:
 			return self.name.ljust(width)
 	
@@ -216,11 +216,11 @@ class Cell(object):
 		if self.header:
 			width = self.header.width
 			if self.align == "left":
-				return self._format().ljust(widtH)
+				return self._format().ljust(width)
 			elif self.align == "center":
-				return self._format().center(widtH)
+				return self._format().center(width)
 			elif self.align == "right":
-				return self._format().rjust(widtH)
+				return self._format().rjust(width)
 			else:
 				return self._format().ljust(width)
 		else:
