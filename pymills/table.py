@@ -29,6 +29,15 @@ class Header(object):
 	 * style  - style attribute used by toHTML
 	 * ccls   - cell class attribute to use for each cell used by toHTML
 	 * cstyle - cell style attribute to use for each cell used by toHTML
+
+	Example
+	-------
+	>>> h = Header("Test")
+	>>> print h
+	Test
+	>>> print h.toHTML()
+	<th>Test</th>
+	>>>
 	"""
 
 	def __init__(self, name, **kwargs):
@@ -85,6 +94,16 @@ class Row(object):
 	 * hidden - whether this row is displayed.
 	 * cls    - class attribute used by toHTML
 	 * style  - style attribute used by toHTML
+
+	Example
+	-------
+	>>> c = Cell(22.0/7.0, format="%0.2f", align="right", cls="foo", style="hidden: true")
+	>>> r = Row([c], cls="asdf", style="qwerty")
+	>>> print r
+	3.14
+	>>> print r.toHTML()
+	<tr class="asdf" style="qwerty"><td align="right" class="foo" style="hidden: true">3.14</td></td>
+	>>>
 	"""
 
 	def __init__(self, cells, row=None, header=None, **kwargs):
@@ -133,6 +152,15 @@ class Cell(object):
 	 * format - format str or callable
 	 * cls    - class attribute used by toHTML
 	 * style  - style attribute used by toHTML
+
+	Example
+	-------
+	>>> c = Cell(22.0/7.0, format="%0.2f", align="right", cls="foo", style="hidden: true")
+	>>> print c
+	3.14
+	>>> print c.toHTML()
+	<td align="right" class="foo" style="hidden: true">3.14</td>
+	>>>
 	"""
 
 	def __init__(self, value, row=None, header=None, **kwargs):
@@ -209,6 +237,22 @@ class Table(object):
 	affect how this table is created:
 	 * cls   - class attribute used by toHTML
 	 * style - style attribute used by toHTML
+
+	Example
+	-------
+	>>> c = Cell(22.0/7.0, format="%0.2f", align="right", cls="foo", style="hidden: true")
+	>>> r = Row([c], cls="asdf", style="qwerty")
+	>>> h = Header("Test")
+	>>> t = Table([r], [h])
+	>>> print t
+	Test
+	----
+	3.14
+	----
+
+	>>> print t.toHTML()
+	<table><th>Test</th><tr class="asdf" style="qwerty"><td align="right" class="foo" style="hidden: true">3.14</td></td></table>
+	>>>
 	"""
 
 	def __init__(self, rows=[], headers=[], **kwargs):
