@@ -306,7 +306,7 @@ class Record(OrderedDict):
 		"""		
 
 		del self[k]
-		del self.k
+		delattr(self, k)
 
 def pivot(rows, left, top, value):
 	"""pivot(rows, left, top, value) -> rows
