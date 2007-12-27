@@ -14,9 +14,10 @@ import doctest
 import unittest
 
 def suite():
-	from pymills.tests import event, sockets
+	from pymills.tests import db, event, sockets
 
 	suite = unittest.TestSuite()
+	suite.addTest(db.suite())
 	suite.addTest(event.suite())
 	suite.addTest(sockets.suite())
 

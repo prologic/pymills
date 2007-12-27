@@ -1,7 +1,6 @@
-# Filename: db.py
 # Module:	db
-# Date:		04th August 2004
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Date:		4th August 2004
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Database Library
 
@@ -20,17 +19,17 @@ Supprted:
  * Oracle
 
 Example Usage:
->>> import db
->>> data = db.Session("sqlite://test.db")
->>> data.do("create table names (firstname, lastname)")
+>>> from pymills.db import newDB
+>>> db = newDB("sqlite://test.db")
+>>> db.do("create table names (firstname, lastname)")
 []
->>> data.do("insert into names values ('James', 'Mills')")
+>>> db.do("insert into names values ('James', 'Mills')")
 []
->>> data.do("insert into names values ('Danny', 'Rawlins')")
+>>> db.do("insert into names values ('Danny', 'Rawlins')")
 []
->>> data.do("select firstname, lastname from names")
+>>> db.do("select firstname, lastname from names")
 [{'lastname': u'Mills', 'firstname': u'James'}, {'lastname': u'Rawlins', 'firstname': u'Danny'}]
->>> rows = data.do("select firstname, lastname from names")
+>>> rows = db.do("select firstname, lastname from names")
 >>> rows[0]
 {'lastname': u'Mills', 'firstname': u'James'}
 >>> rows[0]["firstname"]
@@ -39,17 +38,90 @@ u'James'
 u'Mills'
 """
 
-from time import time
 
 from pymills.misc import duration
 from pymills.types import OrderedDict
 
-def _parseURI(uri):
-	"""_parseURI(uri) -> dict
+def newDB(s, **kwargs):
+	"""newDB(s) -> new session object
 
-	Parse a URI into it's parts returning
-	a dictionary of schema, username, password and location.
-	If this fails, {} is returned.
+	Create a new database session object from the
+	given string s representing a dadtabase URI.
+	An optional list of keyword arguments can be
+	passed to affect how the session object is
+	created:
+	 * log    - logger instnace
+	 * debug  - wether or not debug mode is enabled
+	 * dryrun = whether or not drrun mode is enabled
+	 """
+
+	d = __parseURI(s)
+	schema = d["schema"]
+	username = d["username"]
+	password = d["password"]
+	hostname = d["hostname"]
+	database = d["database"]
+
+	if schema.lower() == "oracle":
+		try:
+			import cx_Oracle as oracle
+		except:
+			raise DBError("No Oracle support available.")
+
+		try:
+			return OracleSession(oracle.connect(
+				dsn=hostname, user=username,
+				password=password), **kwargs)
+		except Exception, e:
+			raise DBError("Could not open connection: %s" % str(e))
+
+	elif schema.lower() == "mysql":
+		try:
+			import MySQLdb as mysql
+		except:
+			raise DBError("No MySQL support available.")
+
+		try:
+			return MySQLSession(mysql.connect(
+				host=hostname,	user=username,
+				passwd=password, db=database), **kwargs)
+		except Exception, e:
+			raise DBError("Could not open database: %s" % e)
+
+	elif schema.lower() == "sqlite":
+		try:
+			import sqlite3 as sqlite
+		except:
+			raise DBError("No SQLite support available.")
+
+		if database.lower() == ":memory:":
+			filename = ":memory:"
+		else:
+			import os
+			filename = os.path.abspath(
+					os.path.expanduser(database))
+
+		try:
+			return SQLiteSession(
+					sqlite.connect(filename), **kwargs)
+		except sqlite.Error, e:
+			raise DBError("Could not open database '%s' -> %s" % (filename, e))
+	
+	else:
+		raise DBError("Unsupported schema: %s" % schema)
+
+def __parseURI(s):
+	"""__parseURI(s) -> dict
+
+	Parse the given string s representing a database URI
+	and return a dictionary of it's parts. Return the
+	schema, username, password, filename or hostname
+	and an optional database name.
+
+	The following syntax is recognized:
+	 sqlite:///path/to/foo.db or sqlite://:memory:
+	 mysql://username:password@hostname/database
+	 oracle://username:password@tns/
 	"""
 
 	import re
@@ -57,24 +129,27 @@ def _parseURI(uri):
 	m = re.match("(?P<schema>oracle|mysql|sqlite)://"
 			"((?P<username>.*?):(?P<password>.*?)@(?P<hostname>.*?)/)?"
 			"(?P<database>.*)",
-			uri, re.IGNORECASE)
+			s, re.IGNORECASE)
 	if m is not None:
 		return m.groupdict()
 	else:
-		raise DBError("Supplied URI is not valid: %s" % uri)
+		raise DBError("Supplied URI is not valid: %s" % s)
 
-class DBError(Exception): pass
+class DBError(Exception):
+	pass
 
-class Session(object):
-	"""Session(uri) -> new database session
+class BaseSession(object):
+	"""BaseSession(cx) -> new database session
 
-	Create a new session object to the database specified
-	by the uri.
+	Create a new session object to the database connection
+	specified. Optional keyword argumnets can be passed
+	to enable logging, debug mode and dryrun mode.
 	"""
 
-	def __init__(self, uri, log=None, dryrun=False, debug=False):
+	def __init__(self, cx, log=None, dryrun=False, debug=False):
 		"initializes x; see x.__class__.__doc__ for signature"
 
+		self._cx = cx
 		self._log = log
 		self._dryrun = dryrun
 		self._debug = debug
@@ -82,76 +157,7 @@ class Session(object):
 		if self._dryrun and (self._log is not None):
 			self._log.info("dryrun mode enabled")
 
-		self._cx = None
-		self._cu = None
-
-		for k, v in _parseURI(uri).iteritems():
-			setattr(self, "_%s" % k, v)
-
-		if self._schema.lower() == "oracle":
-			try:
-				import cx_Oracle as oracle
-			except:
-				raise DBError("No Oracle support available.")
-
-			try:
-				self._cx = oracle.connect(
-						dsn=self._hostname,
-						user=self._username,
-						password=self._password)
-				self._cu = self._cx.cursor()
-			except Exception, e:
-				raise DBError("Could not open connection: %s" % str(e))
-
-		elif self._schema.lower() == "mysql":
-			try:
-				import MySQLdb as mysql
-			except:
-				raise DBError("No MySQL support available.")
-
-			try:
-				self._cx = mysql.connect(
-						host=self._hostname,
-						user=self._username,
-						passwd=self._password,
-						db=self._database)
-				self._cu = self._cx.cursor()
-			except Exception, e:
-				raise DBError("Could not open database: %s" % e)
-
-		elif self._schema.lower() == "sqlite":
-			try:
-				import sqlite3 as sqlite
-			except:
-				raise DBError("No SQLite support available.")
-
-			if self._database.lower() == ":memory:":
-				filename = ":memory:"
-			else:
-				import os
-				filename = os.path.abspath(
-						os.path.expanduser(self._database))
-
-			try:
-				self._cx = sqlite.connect(filename)
-				self._cu = self._cx.cursor()
-			except sqlite.Error, e:
-				raise DBError("Could not open database '%s' -> %s" % (filename, e))
-
-	def __del__(self):
-		"""uninitializes x
-
-		Perform a last commit and close the connection to the
-		database.
-		"""
-
-		try:
-			if not self._dryrun:
-				self._cx.commit()
-			self._cu.close()
-			self._cx.close()
-		except:
-			pass
+		self._cu = self.newCursor()
 
 	def __getFields__(self):
 		"""C.__getFields__() -> [field1, field2, ...]
@@ -175,7 +181,21 @@ class Session(object):
 		"""
 
 		rows = self._cu.fetchall()
-		return [_Record(zip(fields, row)) for row in rows]
+		return [Record(zip(fields, row)) for row in rows]
+
+	def __execute__(self, sql=None, *args, **kwargs):
+		"""C.__execute__(sql=None, *args, **kwargs) -> list of rows, or []
+
+		Execute the given SQL statement or a previously prepared
+		statement in the current internal cursor.
+
+		NOTE:
+		 * This is a dummy implementation.
+		 * Sub-classes _must_ implement this specifically
+		   for the database type.
+		"""
+
+		pass
 
 	def commit(self):
 		"""C.commit() -> None
@@ -224,6 +244,8 @@ class Session(object):
 		If this fails, a DBError exception will be raised.
 		"""
 
+		from time import time
+
 		try:
 			if not self._dryrun:
 				if self._debug and (self._log is not None):
@@ -232,7 +254,7 @@ class Session(object):
 						sql,
 						str(args),
 						str(kwargs)))
-				self._cu.execute(sql, *args, **kwargs)
+				self.__execute__(sql, *args, **kwargs)
 				fields = self.__getFields__()
 				if fields == []:
 					r = []
@@ -256,16 +278,31 @@ class Session(object):
 		except Exception, e:
 			raise
 			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
-	
+
 	def do(self, sql=None, *args, **kwargs):
 		"""Synonym of execute"""
 
 		return self.execute(sql, *args, **kwargs)
 
-Connection = Session
+class SQLiteSession(BaseSession):
 
-class _Record(OrderedDict):
-	"""_Recird(row) -> a new multi-access row
+	def __execute__(self, sql=None, *args, **kwargs):
+		self._cu.execute(sql, args)
+
+class MySQLSession(BaseSession):
+
+	def __execute__(self, sql=None, *args, **kwargs):
+		self._cu.execute(sql, args)
+
+class OracleSession(BaseSession):
+
+	def __execute__(self, sql=None, *args, **kwargs):
+		self._cu.execute(sql, *args, **kwargs)
+
+Connection = newDB
+
+class Record(OrderedDict):
+	"""Recird(row) -> a new multi-access row
 
 	Create a new multi-access row given a list of 2-pair
 	tuplies containing the field and value for that row.
