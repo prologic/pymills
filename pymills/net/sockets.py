@@ -139,17 +139,19 @@ class Client(Component):
 				self.connected = True
 
 				if self.ssl and hasattr(self, "_ssock"):
-					self.server = re.match(
-							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
-							"/L=(?P<L>.*)/O=(?P<O>.*)"
-							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
-							self._ssock.server()).groupdict()
+					print self._ssock.server()
 
-					self.issuer = re.match(
-							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
-							"/L=(?P<L>.*)/O=(?P<O>.*)"
-							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
-							self._ssock.issuer()).groupdict()
+#					self.server = re.match(
+#							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
+#							"/L=(?P<L>.*)/O=(?P<O>.*)"
+#							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
+#							self._ssock.server()).groupdict()
+
+#					self.issuer = re.match(
+#							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
+#							"/L=(?P<L>.*)/O=(?P<O>.*)"
+#							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
+#							self._ssock.issuer()).groupdict()
 
 				self.push(
 						ConnectEvent(host, port), "connect", self)
