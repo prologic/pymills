@@ -137,21 +137,6 @@ class Session(object):
 			except sqlite.Error, e:
 				raise DBError("Could not open database '%s' -> %s" % (filename, e))
 
-	def __del__(self):
-		"""uninitializes x
-
-		Perform a last commit and close the connection to the
-		database.
-		"""
-
-		try:
-			if not self._dryrun:
-				self._cx.commit()
-			self._cu.close()
-			self._cx.close()
-		except:
-			pass
-
 	def __getFields__(self):
 		"""C.__getFields__() -> [field1, field2, ...]
 
@@ -175,6 +160,25 @@ class Session(object):
 
 		rows = self._cu.fetchall()
 		return [Record(zip(fields, row)) for row in rows]
+
+	def close(self):
+		"""C.close() -> None
+
+		Explicitly close the database connection
+		"""
+
+		self._cx.close()
+
+	def rollback(self):
+		"""C.rollback() -> None
+
+		Rollback any pending transactions.
+		"""
+
+		if not self._dryrun:
+			if self._debug and (self._log is not None):
+				self._log.debug("Rolling back last transaction(s)...")
+			self._cx.rollback()
 
 	def commit(self):
 		"""C.commit() -> None
