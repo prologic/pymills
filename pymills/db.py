@@ -418,10 +418,6 @@ def pivot(rows, left, top, value):
 
 def variance(rows, keys=("variance", "pvariance",)):
 	"""variance(rows, keys=("variance", "pvariance",)) -> rows
-=======
-class Record(OrderedDict):
-	"""Recird(row) -> a new multi-access row
->>>>>>> /tmp/db.py~other.ElDV1Z
 
 	Calculate a variance on a set of rows
 	adding two new fields, 'variance' and 'pvariance'.
