@@ -104,7 +104,7 @@ class Input:
 class SelectInput:
 
 	def poll(self, wait=0.01):
-		return not select.select([self._stdin], [], [], wait) == []
+		return not select.select([sys.stdin], [], [], wait) == []
 
 	def read(self, bufSize=512):
 		return sys.stdin.read(bufSize)
