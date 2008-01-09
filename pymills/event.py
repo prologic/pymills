@@ -95,9 +95,6 @@ def send(handlers, event, channel, source=None):
 	further filters or listeners can recieve this event.
 	"""
 
-	if hasattr(source, "__channelPrefix__"):
-		channel = "%s:%s" % (source.__channelPrefix__, channel)
-
 	if channel == "global":
 		raise EventError("Events cannot be sent to the global channel")
 
@@ -148,6 +145,14 @@ class Manager(object):
 
 	def __len__(self):
 		return len(self._queue)
+
+	def getChannels(self):
+		"""E.getChannels() -> list
+
+		Return a list of all available channels.
+		"""
+
+		return self._handlers.keys()
 
 	def getHandlers(self, channel=None):
 		"""E.getHandlers(channel=None) -> list
@@ -255,6 +260,9 @@ class Manager(object):
     raise TypeError("a class that defines __slots__ without "
 TypeError: a class that defines __slots__ without defining __getstate__ cannot be pickled
 		"""
+
+		if hasattr(source, "__channelPrefix__"):
+			channel = "%s:%s" % (source.__channelPrefix__, channel)
 
 #		if source is None:
 #			source = self
