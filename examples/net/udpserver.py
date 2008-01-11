@@ -10,7 +10,6 @@ class EchoServer(UDPServer):
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
 		print "New connection: %s:%d" % (host, port)
-		self.write(sock, "Ready\r\n")
 
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
@@ -20,7 +19,6 @@ class EchoServer(UDPServer):
 	def onREAD(self, sock, line):
 		line = line.strip()
 		print "%s: %s" % (sock, line)
-		self.write(sock, "%s\n" % line)
 	
 	@listener("error")
 	def onERROR(self, sock, msg):
