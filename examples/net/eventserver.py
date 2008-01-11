@@ -3,7 +3,7 @@
 # vim: set sw=3 sts=3 ts=3
 
 from pymills.event import listener, filter, Component, \
-		Event, RemoteManager
+		Event, Remote
 
 class HelloWorld(Component):
 
@@ -17,7 +17,7 @@ class HelloWorld(Component):
 		self.push(Event(message), "received")
 
 def main():
-	e = RemoteManager()
+	e = Remote()
 	helloWorld = HelloWorld(e)
 
 	while True:
