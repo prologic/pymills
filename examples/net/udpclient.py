@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+import readline
+
 from pymills.net.sockets import UDPClient
 from pymills.event import listener, Manager
 
@@ -18,11 +20,8 @@ class UDPClient(UDPClient):
 
 def main(host, port):
 
-	from pymills.io import SelectInput
-
 	event = Manager()
 	client = UDPClient(event)
-	input = SelectInput()
 
 	print "Trying %s..." % host
 	client.open(host, int(port))
@@ -30,9 +29,8 @@ def main(host, port):
 	while client.connected:
 		client.process()
 		event.flush()
-		if input.poll():
-			line = input.readline()
-			client.write("%s\n" % line.strip())
+		line = raw_input().strip()
+		client.write("%s\n" % line)
 	event.flush()
 
 if __name__ == "__main__":

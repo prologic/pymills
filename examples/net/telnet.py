@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+import readline
 import optparse
 
-from pymills.io import SelectInput
 from pymills.net.sockets import TCPClient
 from pymills import __version__ as systemVersion
 from pymills.event import listener, Manager, UnhandledEvent
@@ -54,7 +54,6 @@ def main():
 
 	e = Manager()
 	client = TelnetClient(e)
-	input = SelectInput()
 
 	print "Trying %s..." % host
 	client.open(host, port, ssl=opts.ssl)
@@ -63,9 +62,8 @@ def main():
 		try:
 			client.process()
 			e.flush()
-			if input.poll():
-				line = input.readline()
-				client.write(line.strip() + "\n")
+			line = raw_input().strip()
+			client.write("%s\n" % line)
 		except UnhandledEvent:
 			pass
 		except KeyboardInterrupt:
