@@ -64,8 +64,12 @@ def splitLines(s, buffer):
 class RawEvent(Event):
 
 	def __init__(self, sock, line):
-		Event.__init__(self, sock, line)
+		super(RawEvent, self).__init__(sock, line)
 
+class ErrorEvent(Event):
+
+	def __init__(self, code, msg):
+		super(ErrorEvent, self).__init__(code, msg)
 ###
 ### Protocol Class
 ###
