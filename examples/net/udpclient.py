@@ -5,7 +5,7 @@
 from pymills.net.sockets import UDPClient
 from pymills.event import listener, Manager
 
-class TelnetClient(UDPClient):
+class UDPClient(UDPClient):
 
 	@listener("connect")
 	def onCONNECT(self, host, port):
@@ -13,6 +13,7 @@ class TelnetClient(UDPClient):
 
 	@listener("read")
 	def onREAD(self, line):
+		line = line.strip()
 		print line
 
 def main(host, port):
@@ -20,7 +21,7 @@ def main(host, port):
 	from pymills.io import SelectInput
 
 	event = Manager()
-	client = TelnetClient(event)
+	client = UDPClient(event)
 	input = SelectInput()
 
 	print "Trying %s..." % host
@@ -31,7 +32,7 @@ def main(host, port):
 		event.flush()
 		if input.poll():
 			line = input.readline()
-			client.write(line.strip() + "\r\n")
+			client.write("%s\n" % line.strip())
 	event.flush()
 
 if __name__ == "__main__":

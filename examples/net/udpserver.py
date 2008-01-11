@@ -18,9 +18,13 @@ class EchoServer(UDPServer):
 
 	@listener("read")
 	def onREAD(self, sock, line):
+		line = line.strip()
 		print "%s: %s" % (sock, line)
-		print dir(sock)
-		self.write(sock, line + "\r\n")
+		self.write(sock, "%s\n" % line)
+	
+	@listener("error")
+	def onERROR(self, sock, msg):
+		print "ERROR (%s): %s" % (sock, msg)
 
 def main():
 	e = Manager()
