@@ -15,9 +15,8 @@ import os
 import sys
 import inspect
 import readline
-import select
 
-class Command:
+class Command(object):
 
 	HELP = 0
 	QUIT = 1
@@ -72,7 +71,7 @@ class Command:
 
 		self.writeHistory()
 
-class Input:
+class Input(object):
 
 	def __init__(self, exitOnEOF=False):
 		self._exitOnEOF = exitOnEOF
@@ -100,189 +99,3 @@ class Input:
 		except EOFError:
 			if self._exitOnEOF:
 				sys.exit(0)
-
-class SelectInput:
-
-	def poll(self, wait=0.01):
-		return not select.select([sys.stdin], [], [], wait) == []
-
-	def read(self, bufSize=512):
-		return sys.stdin.read(bufSize)
-
-	def readline(self):
-		return sys.stdin.readline()
-
-class Table(object):
-	"""Class to print nicely formatted tables
-
-	This class will allow you to print nice pretty
-	tabl-like outputs to stdout. You give it a header
-	and add a bunch of rows, then print it.
-	"""
-
-	LEFT = -1
-	CENTER = 0
-	RIGHT = 1
-
-	def __init__(self, headers):
-		"""Initialize Table Object
-
-		Syntax of headers (list of tuples):
-		(title, length, justify)
-		"""
-
-		self._headers = headers
-		self._header = ""
-		self._rows = []
-
-		for title, length, justify in headers:
-			if justify == Table.LEFT:
-				self._header += title.ljust(length)
-			elif justify == Table.CENTER:
-				self._header += title.center(length)
-			elif justify == Table.RIGHT:
-				self._header += title.rjust(length)
-			else:
-				self._header += title.ljust(length)
-
-	def __str__(self):
-
-		import string
-		from StringIO import StringIO
-
-		s = StringIO()
-		s.write("%s\n" % self._header)
-		s.write("-" * len(self._header))
-		s.write("\n")
-
-		for row in self._rows:
-			s.write("%s\n" % string.join(
-				map(self._convert, self._headers,
-					map(str, row)), ""))
-
-		s.write("-" * len(self._header))
-		s.write("\n")
-
-		try:
-			return s.getvalue()
-		finally:
-			s.close()
-
-	def _convert(self, header, value):
-		length, justify = header[1:]
-		if justify == Table.LEFT:
-			return value.ljust(length)
-		elif justify == Table.CENTER:
-			return value.center(length)
-		elif justify == Table.RIGHT:
-			return value.rjust(length)
-
-	def add(self, row):
-		"""Adds a new row to the table
-
-		row - list of values to print
-		"""
-
-		self._rows.append(row)
-
-class HTMLTable(Table):
-	"Extension of the Table class rendered as HTML"
-
-	def __init__(self, headers):
-		"""Initialize Table Object
-
-		Syntax of headers (list of tuples):
-		(title, length, justify)
-		"""
-
-		self._headers = headers
-		self._header = ""
-		self._rows = []
-
-		for title, length, justify in headers:
-			if justify == Table.LEFT:
-				self._header += " <th align=\"left\">%s</th>\n" % title
-			elif justify == Table.CENTER:
-				self._header += " <th align=\"center\">%s</th>\n" % title
-			elif justify == Table.RIGHT:
-				self._header += " <th align=\"right\">%s</th>\n" % title
-			else:
-				self._header += " <th align=\"left\">%s</th>\n" % title
-
-	def __str__(self):
-
-		import string
-		from StringIO import StringIO
-
-		s = StringIO()
-		s.write("<table>\n")
-		s.write(self._header)
-		s.write("\n")
-
-		for row in self._rows:
-			s.write(" <tr>\n")
-			s.write("%s" % string.join(
-				map(self._convert, self._headers,
-					map(str, row)), ""))
-			s.write(" </tr>\n")
-		
-		s.write("</table>")
-
-		try:
-			return s.getvalue()
-		finally:
-			s.close()
-
-	def _convert(self, header, value):
-		length, justify = header[1:]
-		if justify == Table.LEFT:
-			return "  <td align=\"left\">%s</td>\n" % value
-		elif justify == Table.CENTER:
-			return "  <td align=\"center\">%s</td>\n" % value
-		elif justify == Table.RIGHT:
-			return "  <td align=\"right\">%s</td>\n" % value
-
-##
-## Tests
-##
-
-def test():
-	"""Test function to perform a self-test on this module
-
-	To run, type: python io.py
-	"""
-
-	headers = [
-		("id", 4, Table.LEFT),
-		("Name", 10, Table.LEFT),
-		("Age", 3, Table.LEFT)]
-	table = Table(headers)
-	table.add([0, "James", 21])
-	print table
-
-	help = "Help me! I'm stupid!"
-
-	commands = []
-	commands.append(("quit", Command.QUIT))
-	commands.append(("help", Command.HELP))
-	commands.append(("hello", hello))
-	commands.append(("world", world))
-
-	prompt = "Command: "
-
-	command = Command(help, prompt, commands)
-	command.process()
-
-def hello(args):
-	print "Hello"
-	print args
-
-class world:
-	def __init__(self, args):
-		self.args = args
-	def run(self):
-		print "World"
-		print self.args
-
-if __name__ == "__main__":
-	test()
