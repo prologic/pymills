@@ -5,7 +5,7 @@
 import time
 
 from pymills.event import listener, filter, Component, \
-		Event, RemoteManager
+		Event, Remote
 
 class Foo(Component):
 
@@ -20,10 +20,10 @@ class Foo(Component):
 def main():
 
 	nodes = (
-			"202.63.43.98",
+			"203.213.80.147",
 			)
 
-	e = RemoteManager(nodes)
+	e = Remote(nodes)
 	foo = Foo(e)
 
 	sTime = time.time()
