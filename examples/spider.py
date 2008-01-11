@@ -1,7 +1,4 @@
-# Filename:	spider.py
-# Module:	spider
-# Date:		19th September 2005
-# Author:	James Mills <prologic@shortcircuit.net.au>
+#!/usr/bin/env python
 
 """Web Crawler/Spider
 
@@ -15,6 +12,7 @@ import sys
 import time
 import urllib2
 import urlparse
+import optparse
 import collections
 from BeautifulSoup import BeautifulSoup
 
@@ -28,16 +26,18 @@ import spider
 import pymills
 from pymills.web import escape
 from pymills.misc import duration
+from pymills import __version__ as systemVersion
+
+USAGE = "%prog [options] <url>"
+VERSION = "%prog v" + systemVersion
 
 AGENT = "%s-%s/%s" % (pymills.__name__, spider.__name__, pymills.__version__)
 
-### The Main Classes
+class Crawler(object):
 
-class Crawler:
-
-	def __init__(self, root, maxLinks, lock=True):
+	def __init__(self, root, depth, lock=True):
 		self._root = root
-		self._maxLinks = maxLinks
+		self._depth = depth
 		self._lock = lock
 		self._host = urlparse.urlparse(root)[1]
 		self._startTime = 0
@@ -75,10 +75,10 @@ class Crawler:
 							self._countLinks += 1
 							urls.append(url)
 							print "New: %s" % url
-					if n > self._maxLinks and self._maxLinks > 0:
+					if n > self._depth and self._depth > 0:
 						done = True
 
-class Fetcher:
+class Fetcher(object):
 
 	def __init__(self, url):
 		self._url = url
@@ -110,7 +110,7 @@ class Fetcher:
 		if handle is not None:
 			soup = BeautifulSoup()
 			try:
-				content = handle.open(request).read().encode("ISO-8859-1")
+				content = handle.open(request).read()
 				soup.feed(content)
 				if soup.html is not None:
 					title = soup.html.head.title.string
@@ -133,28 +133,59 @@ class Fetcher:
 					continue
 				self._urls.append(url)
 
-### Test Functions
-
-def testFetcher():
-	url = sys.argv[1]
+def getLinks(url):
 	page = Fetcher(url)
 	page.fetch()
 	for i, url in enumerate(page):
 		print "%d. %s" % (i, url)
 
-def testCrawler():
-	url = sys.argv[1]
-	maxLinks = int(sys.argv[2])
+def parse_options():
+	"""parse_options() -> opts, args
+
+	Parse any command-line options given returning both
+	the parsed options and arguments.
+	"""
+
+	parser = optparse.OptionParser(usage=USAGE, version=VERSION)
+
+	parser.add_option("-q", "--quiet",
+			action="store_true", default=False, dest="quiet",
+			help="Enable quiet mode")
+
+	parser.add_option("-l", "--links",
+			action="store_true", default=False, dest="links",
+			help="Get links for specified url only")
+
+	parser.add_option("-d", "--depth",
+			action="store", default=30, dest="depth",
+			help="Maximum depth to traverse")
+
+	opts, args = parser.parse_args()
+
+	if len(args) < 1:
+		parser.print_help()
+		raise SystemExit, 1
+
+	return opts, args
+
+def main():
+	opts, args = parse_options()
+
+	url = args[0]
+
+	if opts.links:
+		getLinks(url)
+		raise SystemExit, 0
+
+	depth = int(opts.depth)
 	print >> sys.stderr, "Crawling %s (Max Depth: %d)" % (
-			url, maxLinks)
-	crawler = Crawler(url, maxLinks)
+			url, depth)
+	crawler = Crawler(url, depth)
 	crawler.crawl()
 	print >> sys.stderr, "DONE"
 	startTime, countLinks, countFollowed = crawler.getStats()
 	print >> sys.stderr, "Found %d links, following %d urls in %s+%s:%s:%s" % (
 			(countLinks, countFollowed,) + duration(time.time() - startTime))
 
-### Main
-
 if __name__ == "__main__":
-	testCrawler()
+	main()
