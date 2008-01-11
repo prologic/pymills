@@ -10,7 +10,7 @@ class EchoServer(TCPServer):
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
 		print "New connection: %s:%d" % (host, port)
-		self.write(sock, "Ready\r\n")
+		self.write(sock, "Ready\n")
 
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
@@ -18,8 +18,13 @@ class EchoServer(TCPServer):
 
 	@listener("read")
 	def onREAD(self, sock, line):
+		line = line.strip()
 		print "%s: %s" % (sock, line)
-		self.write(sock, line + "\r\n")
+		self.write(sock, "%s\n" % line)
+	
+	@listener("error")
+	def onERROR(self, sock, msg):
+		print "ERROR (%s): %s" % (sock, msg)
 
 def main():
 	e = Manager()
