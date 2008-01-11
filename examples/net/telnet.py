@@ -65,7 +65,7 @@ def main():
 			e.flush()
 			if input.poll():
 				line = input.readline()
-				client.write(line.strip() + "\r\n")
+				client.write(line.strip() + "\n")
 		except UnhandledEvent:
 			pass
 		except KeyboardInterrupt:
