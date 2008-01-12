@@ -23,7 +23,7 @@ def main():
 			"203.213.80.147",
 			)
 
-	e = Remote(nodes)
+	e = Remote(nodes=nodes)
 	foo = Foo(e)
 
 	sTime = time.time()
