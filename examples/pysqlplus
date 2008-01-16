@@ -44,7 +44,6 @@ def doQuery(db, sql):
 			s.close()
 			return r
 	except Exception, e:
-		raise
 		return "ERROR: %s" % e
 
 class CommandHandler:
