@@ -33,6 +33,7 @@ def doQuery(db, sql):
 			for record in records:
 				rows.append(Row([Cell(x) for x in record.values()]))
 			table = Table(headers, rows)
+			table.refresh()
 			s = StringIO()
 			s.write(str(table))
 			if len(rows) > 1:
