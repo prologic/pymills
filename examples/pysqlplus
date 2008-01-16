@@ -9,33 +9,32 @@ from StringIO import StringIO
 
 from pymills.io import Input
 from pymills.db import newDB
-from pymills.table import Table
+from pymills.table import Table, Header, Row, Cell
 
 def doQuery(db, sql):
 	try:
 		stime = time.time()
-		rows = db.do(sql.strip("\r\n\t ;"))
+		records = db.do(sql.strip("\r\n\t ;"))
 		etime = time.time()
 		ttime = "%0.02f" % (etime - stime)
 
-		if rows == []:
+		if records == []:
 			return "0 rows in set (%s sec)" % ttime
 		else:
-			x = rows[0]
+			x = records[0]
 			headers = []
 			for k, v in x.iteritems():
-				headers.append((
-						k,
-						max(
-							max([len(str(x[k])) for x in rows]) + 2,
-							len(k) + 2
-							),
-						Table.LEFT,))
-			table = Table(headers)
-			for row in rows:
-				table.add(row.values())
+				headers.append(Header(k,
+					align="left",
+					width=max(
+						max([len(str(x[k])) for x in records]) + 2,
+						len(k) + 2)))
+			rows = []
+			for record in records:
+				rows.append(Row([Cell(x) for x in record.values()]))
+			table = Table(headers, rows)
 			s = StringIO()
-			s.write(table)
+			s.write(str(table))
 			if len(rows) > 1:
 				s.write("\n%d rows in set (%s sec)" % (len(rows), ttime))
 			else:
@@ -44,6 +43,7 @@ def doQuery(db, sql):
 			s.close()
 			return r
 	except Exception, e:
+		raise
 		return "ERROR: %s" % e
 
 class CommandHandler:
