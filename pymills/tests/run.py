@@ -15,11 +15,13 @@ import unittest
 
 def suite():
 	from pymills.tests import db, event, sockets
+	from pymills.tests import utils
 
 	suite = unittest.TestSuite()
 	suite.addTest(db.suite())
 	suite.addTest(event.suite())
 	suite.addTest(sockets.suite())
+	suite.addTest(utils.suite())
 
 	return suite
 
