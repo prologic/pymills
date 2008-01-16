@@ -6,8 +6,10 @@ import time
 import inspect
 import readline
 from StringIO import StringIO
-from pymills.db import Connection
-from pymills.io import Input, Table
+
+from pymills.io import Input
+from pymills.db import newDB
+from pymills.table import Table
 
 def doQuery(db, sql):
 	try:
@@ -106,7 +108,7 @@ class CommandHandler:
 					return
 
 def main(uri, sql=None):
-	db = Connection(uri)
+	db = newDB(uri)
 
 	if sql is not None:
 		print doQuery(db, sql)
