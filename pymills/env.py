@@ -1,7 +1,6 @@
-# Filename: env.py
 # Module:	env
 # Date:		10th June 2006
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Environment Container
 
