@@ -19,7 +19,7 @@ from utils import ConfigParser
 
 VERSION = 1
 
-class BaseEnvironment:
+class BaseEnvironment(object):
 	"""BaseEnvironment(path, name="PyMills",
 	      version=VERSION, defaultConfig=[], defaultDB=([], []),
 	      url="http://trac.shortcircuit.net.au/projects/pymills/",
