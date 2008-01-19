@@ -14,6 +14,8 @@ just pass a single instance of Environment.
 
 import os
 
+from db import newDB
+from log import newLogger
 from utils import ConfigParser
 
 VERSION = 1
@@ -48,6 +50,8 @@ class BaseEnvironment(object):
 			self.create()
 		else:
 			self.verify()
+
+		os.chdir(self.path)
 
 		self.loadConfig()
 		self.setupLog()
@@ -88,6 +92,7 @@ class BaseEnvironment(object):
 
 		# Create the directory structure
 		os.mkdir(self.path)
+		os.chdir(self.path)
 		os.mkdir(os.path.join(self.path, "db"))
 		os.mkdir(os.path.join(self.path, "log"))
 		os.mkdir(os.path.join(self.path, "conf"))
@@ -181,8 +186,6 @@ class BaseEnvironment(object):
 		is used.
 		"""
 
-		from log import newLogger
-
 		name = self.name
 		logType = self.config.get("logging", "type")
 		logLevel = self.config.get("logging", "level")
@@ -203,7 +206,4 @@ class BaseEnvironment(object):
 		By default the pymills.db library is used.
 		"""
 
-		from pymills.db import Connection
-
-		self.db = Connection(
-				self.config.get(self.name, "database") % self.path)
+		self.db = newDB(self.config.get(self.name, "database"))
