@@ -117,6 +117,9 @@ class BaseEnvironment(object):
 		fp.close()
 		self.loadConfig()
 
+		# Create the logger
+		self.setupLog()
+
 		# Create the database
 		self.loadDB()
 		schemas, data = self.defaultDB
