@@ -175,6 +175,7 @@ class BaseEnvironment(object):
 				self.path, "conf", "%s.ini") % self.name
 		self.config = ConfigParser()
 		self.config.read(configfile)
+		self.config.path = configfile
 
 	def setupLog(self):
 		"""E.setupLog() -> None
