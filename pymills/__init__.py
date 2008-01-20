@@ -2,7 +2,7 @@
 # Date:		4th August 2004
 # Author:	James Mills, prologic at shortcircuit dot net dot au
 
-"""Python library for Component/Event/Distributed Software Architectures
+"""Library for Component/Event/Distributed Software Architectures
 
 Pymills is a collection of works by James Mills containing
 general purpose and special purpose libraries and modules
