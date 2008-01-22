@@ -1,4 +1,3 @@
-# Filename: utils.py
 # Module:	utils
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
@@ -130,9 +129,9 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 	# Now I am a daemon!
 
 	# Redirect standard file descriptors.
-	si = open(stdin, "r")
-	so = open(stdout, "a+")
-	se = open(stderr, "a+", 0)
+	si = open(os.path.abspath(os.path.expanduser(stdin)), "r")
+	so = open(os.path.abspath(os.path.expanduser(stdout)), "a+")
+	se = open(os.path.abspath(os.path.expanduser(stderr)), "a+", 0)
 	os.dup2(si.fileno(), sys.stdin.fileno())
 	os.dup2(so.fileno(), sys.stdout.fileno())
 	os.dup2(se.fileno(), sys.stderr.fileno())
