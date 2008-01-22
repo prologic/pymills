@@ -123,5 +123,5 @@ def sendEmail(sender, recipient, subject, message):
 	"""
 
 	email = Email(sender, recipient, subject)
-	email.add("text/plain", message)
+	email.add(message)
 	email.send()
