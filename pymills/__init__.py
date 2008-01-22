@@ -1,23 +1,22 @@
-# Filename: __init__.py
 # Module:	__init__
-# Date:		04th August 2004
+# Date:		4th August 2004
 # Author:	James Mills, prologic at shortcircuit dot net dot au
 
-"""James Mills Python Library
+"""Library for Component/Event/Distributed Software Architectures
 
-pymills is a collection of works by James Mills containing
+Pymills is a collection of works by James Mills containing
 general purpose and special purpose libraries and modules
 for the Python programming language. Most libraries and
 modules are based around a core component of pymills, the
 "event" library.
 
-pymills provides a very easy to use and powerful event
+Pymills provides a very easy to use and powerful event
 library enabling asyncronous and event-driven applications
 and system to be developed. Software systems and applications
 written with pymills.event are broken up into components
 and can be distributed across different nodes.
 
-pymills also contains an ann library which provides the
+Pymills also contains an ann library which provides the
 building blocks to build artificial neural networks in
 an asyncronous/event-driven manner closely modelling
 biological neural networks.

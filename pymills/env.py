@@ -1,7 +1,6 @@
-# Filename: env.py
 # Module:	env
 # Date:		10th June 2006
-# Author:	James Mills <prologic@shortcircuit.net.au>
+# Author:	James Mills, prologic at shortcircuit dot net dot au
 
 """Environment Container
 
@@ -15,11 +14,13 @@ just pass a single instance of Environment.
 
 import os
 
+from db import newDB
+from log import newLogger
 from utils import ConfigParser
 
 VERSION = 1
 
-class BaseEnvironment:
+class BaseEnvironment(object):
 	"""BaseEnvironment(path, name="PyMills",
 	      version=VERSION, defaultConfig=[], defaultDB=([], []),
 	      url="http://trac.shortcircuit.net.au/projects/pymills/",
@@ -49,6 +50,8 @@ class BaseEnvironment:
 			self.create()
 		else:
 			self.verify()
+
+		os.chdir(self.path)
 
 		self.loadConfig()
 		self.setupLog()
@@ -89,6 +92,7 @@ class BaseEnvironment:
 
 		# Create the directory structure
 		os.mkdir(self.path)
+		os.chdir(self.path)
 		os.mkdir(os.path.join(self.path, "db"))
 		os.mkdir(os.path.join(self.path, "log"))
 		os.mkdir(os.path.join(self.path, "conf"))
@@ -116,6 +120,9 @@ class BaseEnvironment:
 		config.write(fp)
 		fp.close()
 		self.loadConfig()
+
+		# Create the logger
+		self.setupLog()
 
 		# Create the database
 		self.loadDB()
@@ -168,6 +175,7 @@ class BaseEnvironment:
 				self.path, "conf", "%s.ini") % self.name
 		self.config = ConfigParser()
 		self.config.read(configfile)
+		self.config.path = configfile
 
 	def setupLog(self):
 		"""E.setupLog() -> None
@@ -178,8 +186,6 @@ class BaseEnvironment:
 		By default the Python's Standard log module
 		is used.
 		"""
-
-		from log import newLogger
 
 		name = self.name
 		logType = self.config.get("logging", "type")
@@ -201,7 +207,4 @@ class BaseEnvironment:
 		By default the pymills.db library is used.
 		"""
 
-		from pymills.db import Connection
-
-		self.db = Connection(
-				self.config.get(self.name, "database") % self.path)
+		self.db = newDB(self.config.get(self.name, "database"))

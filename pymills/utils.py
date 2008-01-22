@@ -68,15 +68,16 @@ def loadConfig(filename, *paths):
 		return conf
 
 def daemonize(stdin="/dev/null", stdout="/dev/null",
-		stderr="/dev/null"):
+		stderr="/dev/null", path="/"):
 	"""daemonize(stdin="/dev/null", stdout="/dev/null",
-			stderr="/dev/null") -> None
+			stderr="/dev/null", path="/") -> None
 
 	This forks the current process into a daemon.
 
 	The stdin, stdout, and stderr arguments are file names that
 	will be opened and be used to replace the standard file descriptors
-	in sys.stdin, sys.stdout, and sys.stderr.
+	in sys.stdin, sys.stdout, and sys.stderr. The path argument is
+	used to jail the process into the given path, defaults to /
 
 	Example:
 	{{{
@@ -111,7 +112,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 		raise SystemExit, 1
 
 	# Decouple from parent environment.
-	os.chdir("/")
+	os.chdir(path)
 	os.umask(077)
 	os.setsid()
 
