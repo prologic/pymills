@@ -55,7 +55,7 @@ class Email(object):
 			ctype = 'application/octet-stream'
 		return ctype.split('/', 1)
 
-	def add(self, text="", file=None, attach=False):
+	def add(self, text="", file=None, attach=False, filename=None):
 		if file is not None:
 			mainType, subType = self._getType(file)
 
@@ -68,7 +68,7 @@ class Email(object):
 				msg.add_header(
 					'Content-Disposition',
 					'attachment',
-					filename=os.path.basename(file))
+					filename=(filename if filename is not None else os.path.basename(file)))
 			else:
 				if mainType == 'text':
 					fp = open(file, "r")
@@ -91,7 +91,7 @@ class Email(object):
 					msg.add_header(
 						'Content-Disposition',
 						'attachment',
-						filename=os.path.basename(file))
+						filename=(filename if filename is not None else os.path.basename(file)))
 		else:
 			msg = MIMEText(text)
 
