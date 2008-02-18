@@ -366,16 +366,19 @@ class Record(OrderedDict):
 		del self[k]
 		delattr(self, k)
 
-def pivot(rows, left, top, value):
-	"""pivot(rows, left, top, value) -> rows
+def pivot(rows, left, top, value, sort=False):
+	"""pivot(rows, left, top, value, sort=False) -> rows
 
-	Creates a cross-tab or pivot table from a normalised input
+	Creates a cross-tab or pivot table from a normalised input of
 	rows. Use this unction to 'denormalize' a table of normalized
 	records (rows).
 	
 	rows	- list of Record objects.
 	left	- tuple of row headings
 	top	- tuple of column headings
+
+	An optional kwarg 'sort' can be passed to indicate whether
+	to sort the columns headings ('top').
 	"""
 
 	rs = OrderedDict()
@@ -409,7 +412,8 @@ def pivot(rows, left, top, value):
 	for left in ysort:
 		row = list(left)
 		sortedkeys = rs[left].keys()
-		sortedkeys.sort()
+		if sort:
+			sortedkeys.sort()
 		sortedvalues = map(rs[left].get, sortedkeys)
 		row.extend(sortedvalues)
 		newRows.append(Record(zip(headings, row)))
