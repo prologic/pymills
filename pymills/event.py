@@ -45,6 +45,7 @@ import select
 from time import sleep
 import cPickle as pickle
 from threading import Thread
+from pickle import PickleError
 from inspect import getmembers, ismethod, getargspec
 
 from utils import caller
@@ -134,8 +135,11 @@ class Manager(object):
 	remote event managers.
 	"""
 
-	def __init__(self, log=None, debug=False):
+	def __init__(self, *args, **kwargs):
 		super(Manager, self).__init__()
+
+		log = kwargs.get("log", None)
+		debug = kwargs.get("debug", False)
 
 		self._handlers = {"global": []}
 		self._queue = []
@@ -314,13 +318,18 @@ class Component(Manager):
 	}
 	"""
 
-	def __init__(self, manager=None, log=None, debug=False):
-		super(Component, self).__init__(log, debug)
+	def __init__(self, *args, **kwargs):
+		super(Component, self).__init__(*args, **kwargs)
+
+		manager = kwargs.get("manager", None)
 
 		if manager is not None:
 			self.manager = manager
 		else:
 			self.manager = self
+			if len(args) > 0:
+				if isinstance(args[0], Component) or isinstance(args[0], Manager):
+					self.manager = args[0]
 
 		self._links = []
 
@@ -385,8 +394,8 @@ class Component(Manager):
 
 class Worker(Component, Thread):
 
-	def __init__(self, *args):
-		super(Worker, self).__init__(*args)
+	def __init__(self, *args, **kwargs):
+		super(Worker, self).__init__(*args, **kwargs)
 
 		self.__running = True
 		self.setDaemon(True)
@@ -440,8 +449,12 @@ class Event(object):
 
 class Remote(Manager):
 
-	def __init__(self, event=None, nodes=(), address="0.0.0.0", port=64000):
-		super(Remote, self).__init__(event)
+	def __init__(self, *args, **kwargs):
+		super(Remote, self).__init__(*args, **kwargs)
+
+		nodes = kwargs.get("nodes", ())
+		address = kwargs.get("address", "0.0.0.0")
+		port = kwargs.get("port", 64000)
 
 		self._nodes = []
 		for node in nodes:
@@ -523,29 +536,38 @@ class Remote(Manager):
 			self.__read__()
 
 	def flush(self):
-		queue = self._queue
-
-		for i, (event, channel, source) in enumerate(queue[:]):
-			try:
+		if self.manager == self:
+			for event, channel, source in self._queue[:]:
 				try:
 					super(Remote, self).send(event, channel, source)
 				except UnhandledEvent:
 					pass
+				finally:
+					self._queue.remove((event, channel, source))
 
 				if len(self._nodes) > 0:
 					if source is None:
 						source = (socket.gethostname(), self._port,)
-					s = pickle.dumps((event, channel, source))
+
+					try:
+						s = pickle.dumps((event, channel, source))
+					except:
+						try:
+							s = pickle.dumps((event, channel, None))
+						except:
+							event._source = None
+							s = pickle.dumps((event, channel, None))
+
 					if len(self._buffer) + len(s) > 8192:
 						self.__write__(self._buffer)
 						self._buffer = ""
 					self._buffer += s
-			finally:
-				del queue[i]
 
-		if not self._buffer == "":
-			self.__write__(self._buffer)
-			self._buffer = ""
+			if not self._buffer == "":
+				self.__write__(self._buffer)
+				self._buffer = ""
+		else:
+			self.manager.flush()
 
 	def send(self, event, channel, source=None):
 		r = super(Remote, self).send(event, channel, source)
