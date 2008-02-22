@@ -515,6 +515,8 @@ class Remote(Manager):
 
 		event, channel, source = pickle.loads(data)
 
+		source = addr[0], source[1]
+
 		if source not in self._nodes:
 			self._nodes.append(source)
 
