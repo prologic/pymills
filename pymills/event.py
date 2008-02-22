@@ -452,7 +452,12 @@ class Remote(Manager):
 	def __init__(self, *args, **kwargs):
 		super(Remote, self).__init__(*args, **kwargs)
 
-		nodes = kwargs.get("nodes", ())
+		nodes = kwargs.get("nodes", None)
+		if nodes is None:
+			if len(args) > 0:
+				if type(args[0]) in [list, tuple]:
+					nodes = args[0]
+
 		address = kwargs.get("address", "0.0.0.0")
 		port = kwargs.get("port", 64000)
 
@@ -526,6 +531,7 @@ class Remote(Manager):
 
 	def __write__(self, data):
 		for node in self._nodes:
+			print "Writing to %s" % node
 			bytes = self._csock.sendto(data, node)
 			if bytes < len(data):
 				raise EventError(
