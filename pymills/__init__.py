@@ -24,7 +24,7 @@ biological neural networks.
 
 __name__ = "pymills"
 __description__ = "James Mills Python Library"
-__version__ = "3.3.3"
+__version__ = "3.4"
 __author__ = "James Mills"
 __author_email__ = "%s, prologic at shortcircuit dot net dot au" % __author__
 __maintainer__ = __author__
