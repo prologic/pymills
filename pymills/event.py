@@ -452,8 +452,8 @@ class Remote(Manager):
 	def __init__(self, *args, **kwargs):
 		super(Remote, self).__init__(*args, **kwargs)
 
-		nodes = kwargs.get("nodes", None)
-		if nodes is None:
+		nodes = kwargs.get("nodes", ())
+		if len(nodes) == 0:
 			if len(args) > 0:
 				if type(args[0]) in [list, tuple]:
 					nodes = args[0]
