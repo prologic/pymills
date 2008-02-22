@@ -531,7 +531,6 @@ class Remote(Manager):
 
 	def __write__(self, data):
 		for node in self._nodes:
-			print "Writing to %s" % node
 			bytes = self._csock.sendto(data, node)
 			if bytes < len(data):
 				raise EventError(
