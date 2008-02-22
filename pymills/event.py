@@ -570,7 +570,10 @@ class Remote(Manager):
 			self.manager.flush()
 
 	def send(self, event, channel, source=None):
-		r = super(Remote, self).send(event, channel, source)
+		try:
+			r = super(Remote, self).send(event, channel, source)
+		except UnhandledEvent:
+			r = None
 		if not caller() == "flush":
 			if source is None:
 				source = (socket.gethostname(), self._port,)
