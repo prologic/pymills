@@ -553,15 +553,14 @@ class Remote(Manager):
 				if len(self._nodes) > 0:
 					if source is None:
 						source = (socket.gethostname(), self._port,)
+					else:
+						if not type(source) == str:
+							source = repr(source)
 
-					try:
-						s = pickle.dumps((event, channel, source))
-					except:
-						try:
-							s = pickle.dumps((event, channel, None))
-						except:
-							event._source = None
-							s = pickle.dumps((event, channel, None))
+					if not type(event._source) == str:
+						event._source = repr(source)
+
+					s = pickle.dumps((event, channel, source))
 
 					if len(self._buffer) + len(s) > 8192:
 						self.__write__(self._buffer)
