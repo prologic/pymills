@@ -546,9 +546,10 @@ class Remote(Manager):
 		if self.manager == self:
 			for event, channel, source in self._queue[:]:
 				try:
-					super(Remote, self).send(event, channel, source)
-				except UnhandledEvent:
-					pass
+					try:
+						super(Remote, self).send(event, channel, source)
+					except UnhandledEvent:
+						pass
 				finally:
 					self._queue.remove((event, channel, source))
 

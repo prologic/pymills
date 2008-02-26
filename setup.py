@@ -3,22 +3,9 @@
 import os
 import re
 
-name = os.path.basename(os.getcwd())
-pkg = __import__(name)
+from setuptools import setup, find_packages
 
-try:
-	import ez_setup
-	ez_setup.use_setuptools()
-	print "Using ez_setup"
-except ImportError:
-	pass
-
-try:
-	from setuptools import setup, find_packages
-	print "Using setuptools"
-except ImportError:
-	print "Using distutils"
-	from distutils.core import setup
+import pymills
 
 # borrowed from pymills.utils
 def getFiles(paths, tests=[os.path.isfile], pattern=".*", \
@@ -51,30 +38,26 @@ def getFiles(paths, tests=[os.path.isfile], pattern=".*", \
 					list.append(file)
 	return list
 
-def main():
-	setup(
-		name=name,
-		version=pkg.__version__,
-		description=pkg.__description__,
-		long_description=pkg.__doc__,
-		author=pkg.__author__,
-		author_email=pkg.__author_email__,
-		maintainer=pkg.__maintainer__,
-		maintainer_email=pkg.__maintainer_email__,
-		url=pkg.__url__,
-		download_url=pkg.__download_url__,
-		classifiers=pkg.__classifiers__,
-		license=pkg.__license__,
-		keywords=pkg.__keywords__,
-		platforms=pkg.__platforms__,
+setup(
+		name='pymills',
+		version=pymills.__version__,
+		description=pymills.__description__,
+		long_description=pymills.__doc__,
+		author=pymills.__author__,
+		author_email=pymills.__author_email__,
+		maintainer=pymills.__maintainer__,
+		maintainer_email=pymills.__maintainer_email__,
+		url=pymills.__url__,
+		download_url=pymills.__download_url__,
+		classifiers=pymills.__classifiers__,
+		license=pymills.__license__,
+		keywords=pymills.__keywords__,
+		platforms=pymills.__platforms__,
 		packages=find_packages(),
 		scripts=getFiles(["scripts"]),
-		install_requires=pkg.__install_requires__,
-		setup_requires=pkg.__setup_requires__,
-		extras_require=pkg.__extras_require__,
-		entry_points=pkg.__entry_points__,
-		package_data=pkg.__package_data__,
-	)
-
-if __name__ == "__main__":
-	main()
+		install_requires=pymills.__install_requires__,
+		setup_requires=pymills.__setup_requires__,
+		extras_require=pymills.__extras_require__,
+		entry_points=pymills.__entry_points__,
+		package_data=pymills.__package_data__,
+)

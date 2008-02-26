@@ -65,10 +65,14 @@ class Email(object):
 				msg.set_payload(fp.read())
 				fp.close()
 				encoders.encode_base64(msg)
+				if filename is not None:
+					filename_tmp = filename
+				else:
+					filename_tmp = os.path.basename(file)
 				msg.add_header(
 					'Content-Disposition',
 					'attachment',
-					filename=(filename if filename is not None else os.path.basename(file)))
+					filename_tmp)
 			else:
 				if mainType == 'text':
 					fp = open(file, "r")
@@ -88,10 +92,14 @@ class Email(object):
 					msg.set_payload(fp.read())
 					fp.close()
 					encoders.encode_base64(msg)
+					if filename is not None:
+						filename_tmp = filename
+					else:
+						filename_tmp = os.path.basename(file)
 					msg.add_header(
 						'Content-Disposition',
 						'attachment',
-						filename=(filename if filename is not None else os.path.basename(file)))
+						filename_tmp)
 		else:
 			msg = MIMEText(text)
 
