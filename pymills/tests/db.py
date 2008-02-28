@@ -9,9 +9,9 @@ Test all functionality of the db library.
 
 import unittest
 
-from pymills.db import newDB
+from pymills.db import newDB, DriverError
 
-class EventTestCase(unittest.TestCase):
+class DBTestCase(unittest.TestCase):
 
 	def testSQLite(self):
 		"""Test SQLite Sessions
@@ -19,7 +19,12 @@ class EventTestCase(unittest.TestCase):
 		Tests the database library using SQLite Sessions.
 		"""
 
-		db = newDB("sqlite://:memory:")
+		try:
+			db = newDB("sqlite://:memory:")
+		except DriverError:
+			self.assertTrue(True)
+			return
+
 		x = db.do("create table names (firstname, lastname)")
 		self.assertEquals(x, [])
 		x = db.do("insert into names values ('James', 'Mills')")
@@ -31,4 +36,4 @@ class EventTestCase(unittest.TestCase):
 		self.assertEquals(rows[0].lastname, "Mills")
 
 def suite():
-	return unittest.makeSuite(EventTestCase, "test")
+	return unittest.makeSuite(DBTestCase, "test")
