@@ -234,7 +234,7 @@ class SocketsTestCase(unittest.TestCase):
 
 		serverManager = ServerManager()
 		clientManager = ClientManager()
-		server = Server(serverManager, 10000)
+		server = Server(serverManager, 9999)
 		client = Client(clientManager)
 		serverManager.start()
 		clientManager.start()
@@ -245,7 +245,7 @@ class SocketsTestCase(unittest.TestCase):
 
 		try:
 			#1
-			client.open("localhost", 10000)
+			client.open("localhost", 9999)
 			sleep(0.1)
 			self.assertTrue(client.connectedFlag)
 
