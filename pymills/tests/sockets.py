@@ -9,70 +9,38 @@
 
 import unittest
 from time import sleep
-from threading import Thread
 
-from pymills.event import listener, Manager
+from pymills.event import listener, Worker
 from pymills.net.sockets import TCPClient, TCPServer, \
 		SocketError, ConnectEvent, DisconnectEvent, \
 		ReadEvent, WriteEvent
 
-class ClientManager(Manager, Thread):
-
-	def __init__(self, *args, **kwargs):
-		Manager.__init__(self, *args, **kwargs)
-		Thread.__init__(self)
-
-	def start(self):
-		self.running = True
-		Thread.start(self)
-
-	def stop(self):
-		self.running = False
+class ClientManager(Worker):
 
 	def run(self):
-		while self.running:
+		while self.isRunning():
 			self.flush()
 			sleep(0.01)
 
-class ServerManager(Manager, Thread):
-
-	def __init__(self, *args, **kwargs):
-		Manager.__init__(self, *args, **kwargs)
-		Thread.__init__(self)
-
-	def start(self):
-		self.running = True
-		Thread.start(self)
-
-	def stop(self):
-		self.running = False
+class ServerManager(Worker):
 
 	def run(self):
-		while self.running:
+		while self.isRunning():
 			self.flush()
 			sleep(0.01)
 
+class Client(TCPClient, Worker):
 
-class Client(TCPClient, Thread):
-
-	def __init__(self, *args):
-		TCPClient.__init__(self, *args)
-		Thread.__init__(self)
+	def __init__(self, *args, **kwargs):
+		super(Client, self).__init__(*args, **kwargs)
 
 		self.connectedFlag = False
 		self.disconnectedFlag = False
 		self.line = None
 		self.data = None
 
-	def start(self):
-		self.running = True
-		Thread.start(self)
-
-	def stop(self):
-		self.running = False
-
 	def run(self):
-		while self.running:
+		while self.isRunning():
 			if self.connected:
 				self.process()
 			else:
@@ -99,21 +67,10 @@ class Client(TCPClient, Thread):
 	def onERROR(self, error):
 		pass
 
-class Server(TCPServer, Thread):
-
-	def __init__(self, *args):
-		TCPServer.__init__(self, *args)
-		Thread.__init__(self)
-
-	def start(self):
-		self.running = True
-		Thread.start(self)
-
-	def stop(self):
-		self.running = False
+class Server(TCPServer, Worker):
 
 	def run(self):
-		while self.running:
+		while self.isRunning():
 			self.process()
 
 	@listener("connect")
@@ -236,12 +193,6 @@ class SocketsTestCase(unittest.TestCase):
 		clientManager = ClientManager()
 		server = Server(serverManager, 9999)
 		client = Client(clientManager)
-		serverManager.start()
-		clientManager.start()
-		server.start()
-		client.start()
-
-		sleep(0.1)
 
 		try:
 			#1
@@ -263,16 +214,20 @@ class SocketsTestCase(unittest.TestCase):
 			self.assertTrue(client.disconnectedFlag)
 
 		finally:
-			#client.close()
+			client.close()
 			server.close()
 
 			sleep(0.1)
 
 			client.stop()
+			client.join()
 			server.stop()
+			server.join()
 
 			clientManager.stop()
+			clientManager.join()
 			serverManager.stop()
+			serverManager.join()
 
 def suite():
 	return unittest.makeSuite(SocketsTestCase, "test")
