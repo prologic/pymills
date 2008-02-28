@@ -41,8 +41,6 @@ class EventTestCase(unittest.TestCase):
 		self.assertEquals(caller(), "run")
 		self.assertEquals(caller(0), "test_caller")
 		self.assertEquals(caller(-1), "caller")
-		self.assertEquals(caller(-2), "<module>")
-		self.assertEquals(caller(-3), "main")
 
 def suite():
 	return unittest.makeSuite(EventTestCase, "test")
