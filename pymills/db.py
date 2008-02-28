@@ -66,33 +66,33 @@ def newDB(s, **kwargs):
 		try:
 			import cx_Oracle as oracle
 		except:
-			raise DBError("No Oracle support available.")
+			raise DriverError("oracle", "No Oracle support available.")
 
 		try:
 			return OracleSession(oracle.connect(
 				dsn=hostname, user=username,
 				password=password), **kwargs)
 		except Exception, e:
-			raise DBError("Could not open connection: %s" % str(e))
+			raise Error("Could not open connection: %s" % str(e))
 
 	elif schema.lower() == "mysql":
 		try:
 			import MySQLdb as mysql
 		except:
-			raise DBError("No MySQL support available.")
+			raise DriverError("mysql", "No MySQL support available.")
 
 		try:
 			return MySQLSession(mysql.connect(
 				host=hostname,	user=username,
 				passwd=password, db=database), **kwargs)
 		except Exception, e:
-			raise DBError("Could not open database: %s" % e)
+			raise Error("Could not open database: %s" % e)
 
 	elif schema.lower() == "sqlite":
 		try:
 			import sqlite3 as sqlite
 		except:
-			raise DBError("No SQLite support available.")
+			raise DriverError("sqlite", "No SQLite support available.")
 
 		if database.lower() == ":memory:":
 			filename = ":memory:"
@@ -105,10 +105,10 @@ def newDB(s, **kwargs):
 			return SQLiteSession(
 					sqlite.connect(filename), **kwargs)
 		except sqlite.Error, e:
-			raise DBError("Could not open database '%s' -> %s" % (filename, e))
+			raise Error("Could not open database '%s' -> %s" % (filename, e))
 	
 	else:
-		raise DBError("Unsupported schema: %s" % schema)
+		raise Error("Unsupported schema: %s" % schema)
 
 def __parseURI(s):
 	"""__parseURI(s) -> dict
@@ -133,10 +133,17 @@ def __parseURI(s):
 	if m is not None:
 		return m.groupdict()
 	else:
-		raise DBError("Supplied URI is not valid: %s" % s)
+		raise Error("Supplied URI is not valid: %s" % s)
 
-class DBError(Exception):
+class Error(Exception):
 	pass
+
+class DriverError(Error):
+
+	def __init__(self, driver, msg):
+		super(DriverError, self).__init__(msg)
+
+		self.driver = driver
 
 class BaseSession(object):
 	"""BaseSession(cx) -> new database session
@@ -261,7 +268,7 @@ class BaseSession(object):
 		Execute the given SQL statement or a previously prepared
 		statement in the current internal cursor. Return a list of rows
 		if any or return an empty list.
-		If this fails, a DBError exception will be raised.
+		If this fails, a Error exception will be raised.
 		"""
 
 		from time import time
@@ -297,8 +304,7 @@ class BaseSession(object):
 						str(kwargs)))
 				return []
 		except Exception, e:
-			raise
-			raise DBError("Error while executing query \"%s\": %s" % (sql, e))
+			raise Error("Error while executing query \"%s\": %s" % (sql, e))
 
 	def do(self, sql=None, *args, **kwargs):
 		"""Synonym of execute"""
