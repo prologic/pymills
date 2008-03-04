@@ -9,7 +9,24 @@ Various miscellaneous functions that don't fit
 Use as documented.
 """
 
-def hmsToSeconds(h, m, s=0):
+def hmsToSeconds(h=0, m=0, s=0):
+	"""hmsToSeconds(h=0, m=0, s=0) -> int
+
+	Calculates the number of seconds,
+	given hours (h), minutes (m) and
+	seconds (s=0).
+
+	Example:
+	--------
+
+	>>> hmsToSeconds(1)
+	3600
+	>>> hmsToSeconds(1, 24)
+	5040
+	>>> hmsToSeconds(1, 24, 54)
+	5094
+	"""
+
 	return h*3600 + m*60 + s
 
 def getTotalTime(s, e):
