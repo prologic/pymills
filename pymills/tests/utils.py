@@ -11,7 +11,7 @@ import unittest
 
 from pymills.utils import notags, getProgName, caller
 
-class EventTestCase(unittest.TestCase):
+class UtilsTestCase(unittest.TestCase):
 
 	def test_notags(self):
 		"""Test notags functions
@@ -43,4 +43,4 @@ class EventTestCase(unittest.TestCase):
 		self.assertEquals(caller(-1), "caller")
 
 def suite():
-	return unittest.makeSuite(EventTestCase, "test")
+	return unittest.makeSuite(UtilsTestCase, "test")
