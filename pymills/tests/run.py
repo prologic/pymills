@@ -10,23 +10,22 @@ Script to run the PyMills Test Suite.
 """
 
 import sys
-import doctest
 import unittest
 
 def suite():
 	from pymills.tests import db, event, sockets
-	from pymills.tests import utils
+	from pymills.tests import utils, emailtools
 
 	suite = unittest.TestSuite()
 	suite.addTest(db.suite())
 	suite.addTest(event.suite())
 	suite.addTest(sockets.suite())
 	suite.addTest(utils.suite())
+	suite.addTest(emailtools.suite())
 
 	return suite
 
 def main():
-	doctest.testmod(sys.modules[__name__])
 	unittest.main(defaultTest="suite")
 
 if __name__ == "__main__":
