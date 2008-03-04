@@ -72,7 +72,7 @@ class Email(object):
 				msg.add_header(
 					'Content-Disposition',
 					'attachment',
-					filename_tmp)
+					filename=filename_tmp)
 			else:
 				if mainType == 'text':
 					fp = open(file, "r")
@@ -99,7 +99,7 @@ class Email(object):
 					msg.add_header(
 						'Content-Disposition',
 						'attachment',
-						filename_tmp)
+						filename=filename_tmp)
 		else:
 			msg = MIMEText(text)
 
