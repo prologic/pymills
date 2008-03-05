@@ -382,33 +382,42 @@ def pivot(rows, left, top, value, sort=False):
 	rows	- list of Record objects.
 	left	- tuple of row headings
 	top	- tuple of column headings
+	value - data field used
 
 	An optional kwarg 'sort' can be passed to indicate whether
 	to sort the columns headings ('top').
 	"""
 
 	rs = OrderedDict()
+
 	ysort = []
 	xsort = []
+
 	for row in rows:
 		yaxis = tuple([row[c] for c in left])
 		if yaxis not in ysort: ysort.append(yaxis)
+
 		xaxis = tuple([row[c] for c in top])
 		if xaxis not in xsort: xsort.append(xaxis)
-		try:
-			rs[yaxis]
-		except KeyError:
-			rs[yaxis] = {}
+	
+	for y in ysort:
+		for x in xsort:
+			if not rs.has_key(y):
+				rs[y] = OrderedDict()
+			rs[y][x] = None
+
+	for row in rows:
+		yaxis = tuple([row[c] for c in left])
+		if yaxis not in ysort: ysort.append(yaxis)
+
+		xaxis = tuple([row[c] for c in top])
+		if xaxis not in xsort: xsort.append(xaxis)
+
 		if xaxis not in rs[yaxis]:
 			rs[yaxis][xaxis] = 0
-		rs[yaxis][xaxis] += row[value]
+		rs[yaxis][xaxis] = row[value]
 
-	# Handle missing values
-	for key in rs:
-		if len(rs[key]) < len(xsort):
-			for var in xsort:
-				if var not in rs[key].keys():
-					rs[key][var] = None
+	print rs
 
 	headings = list(left)
 	headings.extend(xsort)
