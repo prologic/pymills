@@ -7,6 +7,7 @@
 Test all functionality of the Email Tools library.
 """
 
+import socket
 import unittest
 
 from pymills.emailtools import Email
@@ -30,10 +31,13 @@ class EmailToolsTestCase(unittest.TestCase):
 		file = "/tmp/foo"
 		filename = "foo.txt"
 
-		email = Email(sender, recipient, subject)
-		email.add(body)
-		email.add(file=file, attach=True, filename=filename)
-		email.send()
+		try:
+			email = Email(sender, recipient, subject)
+			email.add(body)
+			email.add(file=file, attach=True, filename=filename)
+			email.send()
+		except socket.error, e:
+			pass
 
 def suite():
 	return unittest.makeSuite(EmailToolsTestCase, "test")
