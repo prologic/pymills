@@ -12,68 +12,73 @@ python library.
 class OrderedDict(dict):
 
 	def __init__(self, d={}):
+		super(OrderedDict, self).__init__(d)
 		self._keys = d.keys()
-		dict.__init__(self, d)
+
+	def __repr__(self):
+		return "{%s}" % ", ".join([("%s: %s" % (repr(k), repr(v))) for k, v in self.iteritems()])
 
 	def __delitem__(self, key):
-		dict.__delitem__(self, key)
+		super(OrderedDict, self).__delitem__(key)
 		self._keys.remove(key)
 
 	def __setitem__(self, key, item):
-		dict.__setitem__(self, key, item)
-		if key not in self._keys:
+		super(OrderedDict, self).__setitem__(key, item)
+		if key not in self.keys():
 			self._keys.append(key)
 
 	def clear(self):
-		dict.clear(self)
+		super(OrderedDict, self).clear()
 		self._keys = []
 
 	def items(self):
-		for i in self._keys:
-			yield i, self[i]
+		for key in self.keys():
+			value = self[key]
+			yield key, value
 
 	def keys(self):
 		return self._keys
 
 	def popitem(self):
-		if len(self._keys) == 0:
+		if len(self.keys()) == 0:
 			raise KeyError("popitem(): dictionary is empty")
 		else:
-			key = self._keys[-1]
-			val = self[key]
+			key = self.keys()[-1]
+			value = self[key]
 			del self[key]
-			return key, val
+			return key, value
 
 	def setdefault(self, key, failobj=None):
-		dict.setdefault(self, key, failobj)
-		if key not in self._keys:
+		super(OrderedDict, self).setdefault(key, failobj)
+		if key not in self.keys():
 			self._keys.append(key)
 
 	def update(self, d):
 		for key in d.keys():
 			if not self.has_key(key):
 				self._keys.append(key)
-		dict.update(self, d)
+		super(OrderedDict, self).update(d)
 
 	def iteritems(self):
-		for key in self._keys:
-			yield key, self[key]
+		for key in self.keys():
+			value = self[key]
+			yield key, value
 
 	def itervalues(self):
-		for key in self._keys:
+		for key in self.keys():
 			yield self[key]
 
 	def values(self):
-		return [self[k] for k in self._keys]
+		return [self[key] for key in self.keys()]
 
 	def iterkeys(self):
-		for key in self._keys:
+		for key in self.keys():
 			yield key
 
 	def index(self, key):
 		if not self.has_key(key):
 			raise KeyError(key)
-		return self._keys.index(key)
+		return self.keys().index(key)
 
 class Stack(object):
 
