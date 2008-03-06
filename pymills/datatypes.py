@@ -223,12 +223,22 @@ class CaselessDict(dict):
 
 class Null(object):
 
+	def __init__(self, *args, **kwargs):
+		return None
+	
+	def __getattr__(self, mname):
+		return self
+
+	def __setattr__(self, name, value):
+		return self
+
+	def __delattr__(self, name):
+		return self
+
 	def __repr__(self):
-		"Return a string representation."
 		return "<Null>"
 
 	def __str__(self):
-		"Convert to a string and return it."
 		return ""
 	
 	def __int__(self):
@@ -240,5 +250,32 @@ class Null(object):
 	def __long__(self):
 		return 0.0
 	
+	def __radd__(self, y):
+		return y
+
+	def __rsub__(self, y):
+		return y
+
+	def __rmul__(self, y):
+		return y
+
+	def __rdiv__(self, y):
+		return y
+	
+	def __eq__(self, y):
+		return isinstance(y, self.__class__)
+	
+	def __len__(self):
+		return 0
+
 	def __add__(self, y):
+		return y
+
+	def __sub__(self, y):
+		return y
+
+	def __mul__(self, y):
+		return y
+
+	def __div__(self, y):
 		return y
