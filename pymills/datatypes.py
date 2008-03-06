@@ -154,8 +154,20 @@ class Queue(object):
 	def peek(self, n=0):
 		return self.get(n)
 
+	def top(self):
+		return self.peek()
+
+	def bottom(self):
+		return self.peek(len(self) - 1)
+
 	def empty(self):
 		return self._queue == []
+
+	def size(self):
+		return self._size
+
+	def full(self):
+		return len(self) == self.size()
 
 class CaselessList(list):
 
