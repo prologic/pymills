@@ -40,7 +40,7 @@ u'Mills'
 
 
 from pymills.misc import duration
-from pymills.datatypes import OrderedDict
+from pymills.datatypes import OrderedDict, Null
 
 def newDB(s, **kwargs):
 	"""newDB(s) -> new session object
@@ -404,7 +404,7 @@ def pivot(rows, left, top, value, sort=False):
 		for x in xsort:
 			if not rs.has_key(y):
 				rs[y] = OrderedDict()
-			rs[y][x] = None
+			rs[y][x] = Null()
 
 	for row in rows:
 		yaxis = tuple([row[c] for c in left])
@@ -453,13 +453,13 @@ def variance(rows, keys=("variance", "pvariance",)):
 		x = row[fields[0]]
 		y = row[fields[1]]
 
-		if None in [x, y]:
-			d = None
-			v = None
+		if Null in [x, y]:
+			d = Null()
+			v = Null()
 		else:
 			d = y - x
 			if x == 0:
-				v = None
+				v = Null()
 			else:
 				v = d / x * 100
 
@@ -469,3 +469,23 @@ def variance(rows, keys=("variance", "pvariance",)):
 		newRows.append(newRow)
 
 	return newRows
+
+def total(rows, fields, label="Totals:"):
+	"""total(rows, fields, label="Totals:") -> rows
+
+	Calculate the total of a set of fields in the
+	given rows and add this as a new row.
+	"""
+
+	totals = [sum(float(row[field]) for row in rows) for field in fields]
+
+	r = Record(zip(rows[0].keys(), ["" for x in rows[0]]))
+	for k in rows[0]:
+		r.add(k, "")
+	r[rows[0].keys()[0]] = label
+	for i, field in enumerate(fields):
+		r[field] = totals[i]
+	
+	rows.append(r)
+
+	return rows

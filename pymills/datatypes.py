@@ -220,3 +220,25 @@ class CaselessDict(dict):
 
 	def has_key(self, key):
 		return dict.has_key(self, key.lower())
+
+class Null(object):
+
+	def __repr__(self):
+		"Return a string representation."
+		return "<Null>"
+
+	def __str__(self):
+		"Convert to a string and return it."
+		return ""
+	
+	def __int__(self):
+		return 0
+	
+	def __float__(self):
+		return 0.0
+	
+	def __long__(self):
+		return 0.0
+	
+	def __add__(self, y):
+		return y
