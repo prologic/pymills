@@ -158,7 +158,9 @@ def main():
 	monitor = Monitor(manager)
 	state = State(manager)
 
-	QueueManager(manager)
+	if opts.connect is None:
+		QueueManager(manager)
+
 	PrimeFinder(manager)
 
 	sTime = time.time()
