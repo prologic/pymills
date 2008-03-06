@@ -453,7 +453,7 @@ def variance(rows, keys=("variance", "pvariance",)):
 		x = row[fields[0]]
 		y = row[fields[1]]
 
-		if Null in [x, y]:
+		if isinstance(x, Null) or isinstance(y, Null):
 			d = Null()
 			v = Null()
 		else:
