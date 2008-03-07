@@ -1,4 +1,3 @@
-# Filename: misc.py
 # Module:	misc
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
@@ -8,6 +7,9 @@
 Various miscellaneous functions that don't fit
 Use as documented.
 """
+
+import time
+import math
 
 def hmsToSeconds(h=0, m=0, s=0):
 	"""hmsToSeconds(h=0, m=0, s=0) -> int
@@ -99,3 +101,57 @@ def beat():
 		y += 1000
 
 	return y
+
+def buildAverage(stime, x):
+
+	ttime = time.time() - stime
+
+	if ttime > 604800:
+		xPerWeek = int(math.floor(
+				float(x) / 
+				float((float(ttime) / float(604800)))))
+	else:
+		xPerWeek = 0
+
+	if ttime > 86400:
+		xPerDay = int(math.floor(
+				float(x) / 
+				float((float(ttime) / float(86400)))))
+	else:
+		xPerDay = 0
+
+	if ttime > 3600:
+		xPerHour = int(math.floor(
+				float(x) / 
+				float((float(ttime) / float(3600)))))
+	else:
+		xPerHour = 0
+
+	if ttime > 60:
+		xPerMinute = int(math.floor(
+				float(x) / 
+				float((float(ttime) / float(60)))))
+	else:
+		xPerMinute = 0
+
+	xPerSecond = int(math.floor(
+			float(x) / 
+			float(ttime)))
+
+	avg = ""
+	if xPerWeek > 0:
+		avg += "%d/w " % xPerWeek
+	if xPerDay > 0:
+		avg += "%d/d " % xPerDay
+	if xPerHour > 0:
+		avg += "%d/h " % xPerHour
+	if xPerMinute > 0:
+		avg += "%d/m " % xPerMinute
+	if xPerSecond > 0:
+		avg += "%d/s " % xPerSecond
+
+	avg = avg.strip()
+	if avg == "":
+		avg = "~=0"
+
+	return avg, x
