@@ -457,11 +457,14 @@ def variance(rows, keys=("variance", "pvariance",)):
 			d = Null()
 			v = Null()
 		else:
-			d = y - x
-			if x == 0:
-				v = Null()
-			else:
-				v = d / x * 100
+			try:
+				d = y - x
+				if x == 0:
+					v = Null()
+				else:
+					v = d / x * 100
+			except:
+				return rows
 
 		newRow = Record(zip(row.keys(), row.values()))
 		newRow.add(keys[0], d)
