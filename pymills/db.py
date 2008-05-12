@@ -38,6 +38,7 @@ u'James'
 u'Mills'
 """
 
+from itertools import izip as zip
 
 from pymills.misc import duration
 from pymills.datatypes import OrderedDict, Null
@@ -187,8 +188,7 @@ class BaseSession(object):
 		last transaction executed and stored in the cursor.
 		"""
 
-		rows = self._cu.fetchall()
-		return [Record(zip(fields, row)) for row in rows]
+		return [Record(zip(fields, row), self, self.getCursor()) for row in self._cu.fetchall()]
 
 	def close(self):
 		"""C.close() -> None
@@ -323,13 +323,18 @@ class MySQLSession(BaseSession):
 
 class OracleSession(BaseSession):
 
+	def __init__(self, *args, **kwargs):
+		super(OracleSession, self).__init__(*args, **kwargs)
+
+		self.getCursor().arraysize = ORACLE_ARRAYSIZE
+
 	def __execute__(self, sql=None, *args, **kwargs):
 		self._cu.execute(sql, *args, **kwargs)
 
 Connection = newDB
 
 class Record(OrderedDict):
-	"""Record(data) -> a new multi-access record
+	"""Record(data, session=None, cursor=None) -> a new multi-access record
 
 	Create a new multi-access record given a list of 2-pair
 	tuplies containing the field and value for that record.
@@ -337,10 +342,13 @@ class Record(OrderedDict):
 	fasion or using attribute names of the record object.
 	"""
 
-	def __init__(self, row):
+	def __init__(self, row, session=None, cursor=None):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		super(Record, self).__init__()
+
+		self.__session = session
+		self.__cursor = cursor
 
 		for k, v in row:
 			self.add(k, v)
@@ -357,11 +365,16 @@ class Record(OrderedDict):
 
 		if type(v) == str:
 			v = unicode(v, "utf-8")
-
+		else:
+			if self.__cursor is not None:
+				if isinstance(v, self.__cursor.__class__):
+					if self.__cursor.description is not None:
+						fields = map(lambda x: x[0], v.description)
+						v = [Record(zip(fields, row), self.__session, v) for row in v.fetchall()]
 
 		self[k] = v
 		setattr(self, k, v)
-	
+
 	def remove(self, k):
 		"""R.remove(k) -> None
 
@@ -416,8 +429,6 @@ def pivot(rows, left, top, value, sort=False):
 		if xaxis not in rs[yaxis]:
 			rs[yaxis][xaxis] = 0
 		rs[yaxis][xaxis] = row[value]
-
-	print rs
 
 	headings = list(left)
 	headings.extend(xsort)
@@ -492,3 +503,5 @@ def total(rows, fields, label="Totals:"):
 	rows.append(r)
 
 	return rows
+
+ORACLE_ARRAYSIZE = 2048
