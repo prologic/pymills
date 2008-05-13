@@ -48,6 +48,7 @@ class Header(object):
 
 		self.type = kwargs.get("type", str)
 		self.align = kwargs.get("align", None)
+		self.hidden = kwargs.get("hidden", False)
 		self.format = kwargs.get("format", "%s")
 		self.width = kwargs.get("width", self.getWidth())
 		self.cls = kwargs.get("cls", None)
@@ -59,6 +60,8 @@ class Header(object):
 		self.width = self.getWidth()
 
 	def getWidth(self):
+		if self.hidden:
+			return 0
 		if self.table:
 			rows = self.table.rows
 			hIndex = self.table.headers.index(self)
@@ -69,6 +72,9 @@ class Header(object):
 			return len(self.name)
 
 	def __str__(self):
+		if self.hidden:
+			return ""
+
 		width = self.width
 		if self.align == "left":
 			return self.name.ljust(width)
@@ -80,6 +86,9 @@ class Header(object):
 			return self.name.ljust(width)
 	
 	def toHTML(self):
+		if self.hidden:
+			return ""
+
 		align, cls, style = (None,) * 3
 		if self.align:
 			align = "align=\"%s\"" % self.align
@@ -170,6 +179,7 @@ class Cell(object):
 	affect how this header is created:
 	 * type   - the data type. Must be compatible with type(x)
 	 * align  - text alignment. one of "left", "center", or "right"
+	 * hidden - whether this cell is displayed
 	 * format - format str or callable
 	 * cls    - class attribute used by toHTML
 	 * style  - style attribute used by toHTML
@@ -194,6 +204,7 @@ class Cell(object):
 
 		self.type = kwargs.get("type", type(self.value))
 		self.align = kwargs.get("align", None)
+		self.hidden = kwargs.get("hidden", False)
 		self.format = kwargs.get("format", None)
 		if self.format is None:
 			if self.type == float:
@@ -209,6 +220,7 @@ class Cell(object):
 		if self.header:
 			self.type = self.header.type or self.type
 			self.align = self.header.align or self.align
+			self.hidden = self.header.hidden or self.hidden
 			self.format = self.header.format or self.format
 			self.cls = self.header.ccls or self.cls
 			self.style = self.header.cstyle or self.style
@@ -220,6 +232,9 @@ class Cell(object):
 			return self.format % self.value
 
 	def __str__(self):
+		if self.hidden:
+			return ""
+
 		if self.header:
 			width = self.header.width
 			if self.align == "left":
@@ -234,6 +249,9 @@ class Cell(object):
 			return self._format()
 
 	def toHTML(self):
+		if self.hidden:
+			return ""
+
 		align, cls, style = (None,) * 3
 		if self.align:
 			align = "align=\"%s\"" % self.align
@@ -311,16 +329,17 @@ class Table(list):
 
 	def __str__(self):
 		s = StringIO()
+
+		separator = "-" * sum([header.width for header in self.headers])
+
 		s.write("".join([str(header) for header in self.headers]))
-		s.write("\n")
-		s.write("-" * sum([header.width for header in self.headers]))
-		s.write("\n")
-		for row in self.rows:
-			s.write("%s\n" % str(row))
-		s.write("-" * sum([header.width for header in self.headers]))
-		s.write("\n")
+		s.write("\n%s\n" % separator)
+		s.write("\n".join([str(row) for row in self.rows]))
+		s.write("\n%s\n" % separator)
+
 		v = s.getvalue()
 		s.close()
+
 		return v
 
 	def toHTML(self):

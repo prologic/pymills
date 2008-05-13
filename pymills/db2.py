@@ -74,7 +74,7 @@ def newDB(s, **kwargs):
 				dsn=hostname, user=username,
 				password=password), **kwargs)
 		except Exception, e:
-			raise Error("Could not open connection: %s" % str(e))
+			raise ConnectionError("oracle", e)
 
 	elif schema.lower() == "mysql":
 		try:
@@ -87,7 +87,7 @@ def newDB(s, **kwargs):
 				host=hostname,	user=username,
 				passwd=password, db=database), **kwargs)
 		except Exception, e:
-			raise Error("Could not open database: %s" % e)
+			raise ConnectionError("mysql", e)
 
 	elif schema.lower() == "sqlite":
 		try:
@@ -106,7 +106,7 @@ def newDB(s, **kwargs):
 			return SQLiteSession(
 					sqlite.connect(filename), **kwargs)
 		except sqlite.Error, e:
-			raise Error("Could not open database '%s' -> %s" % (filename, e))
+			raise ConnectionError("sqlite", e)
 	
 	else:
 		raise Error("Unsupported schema: %s" % schema)
@@ -146,6 +146,20 @@ class DriverError(Error):
 
 		self.driver = driver
 
+class ConnectionError(Error):
+
+	def __init__(self, driver, e):
+		super(ConnectionError, self).__init__(e)
+
+		self.driver = driver
+
+class DatabaseError(Error):
+
+	def __init__(self, sql, e):
+		super(DatabaseError, self).__init__(e)
+
+		self.sql = sql
+
 class BaseSession(object):
 	"""BaseSession(cx) -> new database session
 
@@ -166,29 +180,6 @@ class BaseSession(object):
 			self._log.info("dryrun mode enabled")
 
 		self._cu = self.newCursor()
-
-	def __getFields__(self):
-		"""C.__getFields__() -> [field1, field2, ...]
-
-		Get a list of field names for the current result set
-		stored in the cursor's .description. If there are
-		no fields [] is returned.
-		"""
-
-		if self._cu.description is not None:
-			return map(lambda x: x[0], self._cu.description)
-		else:
-			return []
-
-	def __buildResult__(self, fields):
-		"""C.__buildResult__(fields) -> list of rows from cursor
-
-		Build a list of rows where each row is an instance
-		of Record. The rows returned are retrieved from the
-		last transaction executed and stored in the cursor.
-		"""
-
-		return [Record(zip(fields, row), self, self.getCursor()) for row in self._cu.fetchall()]
 
 	def close(self):
 		"""C.close() -> None
@@ -282,11 +273,7 @@ class BaseSession(object):
 						str(args),
 						str(kwargs)))
 				self.__execute__(sql, *args, **kwargs)
-				fields = self.__getFields__()
-				if fields == []:
-					r = []
-				else:
-					r = self.__buildResult__(fields)
+
 				if self._debug and (self._log is not None):
 					self._log.debug("Rows: %d" % self.getCursor().rowcount)
 					et = time()
@@ -295,16 +282,19 @@ class BaseSession(object):
 						self._log.debug("Time: %0.2f" % (et - st))
 					else:
 						self._log.debug("Time: %s+%s:%s:%s" % duration(et - st))
-				return r
+
+				return Records(self, self.getCursor())
 			else:
 				if self._debug and (self._log is not None):
 					self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
 						sql,
 						str(args),
 						str(kwargs)))
-				return []
+
+				return Records(self, self.getCursor())
+
 		except Exception, e:
-			raise Error("Error while executing query \"%s\": %s" % (sql, e))
+			raise DatabaseError(sql, e)
 
 	def do(self, sql=None, *args, **kwargs):
 		"""Synonym of execute"""
@@ -333,8 +323,53 @@ class OracleSession(BaseSession):
 
 Connection = newDB
 
+class Records(object):
+	"""Records(session, cursor) -> interable data set
+
+	Create an interable set of records that can be efficiently
+	interated through using the interator protocol. Each interation will
+	yield a Record object for that record.
+	"""
+
+	def __init__(self, session, cursor):
+		"initializes x; see x.__class__.__doc__ for signature"
+
+		super(Records, self).__init__()
+
+		self.session = session
+		self.cursor = cursor
+
+		if self.cursor.description is not None:
+			self.fields = [x[0] for x in self.cursor.description]
+		else:
+			self.fields = []
+		
+	def __iter__(self):
+		"x.__iter__() <==> iter(x)"
+
+		return self
+
+	def __len__(self):
+		"x.__len__() <==> len(x)"
+
+		return self.cursor.rowcount
+
+	def next(self):
+		"x.next() -> the next value, or raise StopIteration"
+
+		#for row in self.cursor:
+		#	return Record(self, zip(self.fields, row))
+
+		row = self.cursor.fetchone()
+		if row:
+			return Record(self, zip(self.fields, row))
+		else:
+			raise StopIteration
+
+		#return Record(self, zip(self.fields, self.cursor.next()))
+
 class Record(OrderedDict):
-	"""Record(data, session=None, cursor=None) -> a new multi-access record
+	"""Record(records, data) -> a new multi-access record
 
 	Create a new multi-access record given a list of 2-pair
 	tuplies containing the field and value for that record.
@@ -342,15 +377,14 @@ class Record(OrderedDict):
 	fasion or using attribute names of the record object.
 	"""
 
-	def __init__(self, row, session=None, cursor=None):
+	def __init__(self, records, data):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		super(Record, self).__init__()
 
-		self.__session = session
-		self.__cursor = cursor
+		self.records = records
 
-		for k, v in row:
+		for k, v in data:
 			self.add(k, v)
 	
 	def add(self, k, v):
@@ -363,14 +397,13 @@ class Record(OrderedDict):
 		if type(k) == tuple:
 			k = k[0]
 
-		if type(v) == str:
-			v = unicode(v, "utf-8")
-		else:
-			if self.__cursor is not None:
-				if isinstance(v, self.__cursor.__class__):
-					if self.__cursor.description is not None:
-						fields = map(lambda x: x[0], v.description)
-						v = [Record(zip(fields, row), self.__session, v) for row in v.fetchall()]
+#		if type(v) == str:
+#			v = unicode(v, "utf-8")
+#		else:
+		if isinstance(v, self.records.cursor.__class__):
+			if self.records.cursor.description is not None:
+				fields = map(lambda x: x[0], v.description)
+				v = Records(self.records, v)
 
 		self[k] = v
 		setattr(self, k, v)

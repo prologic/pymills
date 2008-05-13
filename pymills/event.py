@@ -126,6 +126,14 @@ def send(handlers, event, channel, source=None):
 			return
 	return tuple(r)
 
+def _sortHandlers(x, y):
+	if hasattr(x, "filter") and hasattr(y, "filter"):
+		return 0
+	elif hasattr(x, "filter"):
+		return -1
+	else:
+		return 1
+
 class Manager(object):
 	"""Manager() -> new event manager
 
@@ -194,7 +202,7 @@ class Manager(object):
 				if handler not in self._handlers[channel]:
 					self._handlers[channel].append(handler)
 					self._handlers[channel].sort(
-							cmp=lambda x, y: hasattr(x, "filter"))
+							cmp=_sortHandlers)
 			else:
 				self._handlers[channel] = [handler]
 
