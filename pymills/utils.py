@@ -282,14 +282,13 @@ class OptionParser(optparse.OptionParser):
 		return (values, args)
 
 def getFiles(path, tests=[os.path.isfile], pattern=".*", \
-		fullPath=True, recurse=False):
+		include_path=True):
 	"""getFiles(path, tests=[os.path.isfile], pattern=".*", \
-			fullPath=True, recurse=False) -> list of files
+			include_path=True) -> list of files
 
 	Return a list of files in the specified path
 	applying the predicates listed in tests returning
-	only the files that match the pattern. Recurse into
-	sub directories if recurse is True.
+	only the files that match the pattern.
 	"""
 
 	def testFile(file):
@@ -298,22 +297,16 @@ def getFiles(path, tests=[os.path.isfile], pattern=".*", \
 				return False
 		return True
 
-	r = []
-
-	for dirpath, dirnames, filenames in os.walk(path):
-
-		for filename in filenames:
-			if testFile(os.path.join(dirpath, filename)) and \
-					re.match(pattern, filename):
-				if fullPath:
-					r.append(os.path.join(dirpath, filename))
-				else:
-					r.append(filename)
-
-		if not recurse:
-			break
-
-	return r
+	files = os.listdir(path)
+	list = []
+	for file in files:
+		if testFile(os.path.join(path, file)) and \
+				re.match(pattern, file):
+			if include_path:
+				list.append(os.path.join(path, file))
+			else:
+				list.append(file)
+	return list
 
 def isReadable(file):
 	"""isReadable(file) -> bool
