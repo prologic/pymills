@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import optparse
+from os.path import isfile
 from optparse import _match_abbrev
 from ConfigParser import ConfigParser as _ConfigParser
 
@@ -281,14 +282,14 @@ class OptionParser(optparse.OptionParser):
 				self.error("%s not supplied" % option)
 		return (values, args)
 
-def getFiles(path, tests=[os.path.isfile], pattern=".*", \
-		include_path=True):
-	"""getFiles(path, tests=[os.path.isfile], pattern=".*", \
-			include_path=True) -> list of files
+def getFiles(path, find=".*", tests=[isfile], fullPath=False):
+	"""getFiles(path, find=".*", tests=[isfile], fullPath=False) -> list of files
 
 	Return a list of files in the specified path
 	applying the predicates listed in tests returning
-	only the files that match the pattern.
+	only the files that match the pattern "find".
+	Include the full path if fullPath=True for files
+	found.
 	"""
 
 	def testFile(file):
@@ -301,8 +302,8 @@ def getFiles(path, tests=[os.path.isfile], pattern=".*", \
 	list = []
 	for file in files:
 		if testFile(os.path.join(path, file)) and \
-				re.match(pattern, file):
-			if include_path:
+				re.match(find, file):
+			if fullPath:
 				list.append(os.path.join(path, file))
 			else:
 				list.append(file)
