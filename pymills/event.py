@@ -405,9 +405,14 @@ class Worker(Component, Thread):
 	def __init__(self, *args, **kwargs):
 		super(Worker, self).__init__(*args, **kwargs)
 
+		autoStart = kwargs.get("autoStart", False)
+		if autoStart:
+			self.start()
+
+	def start(self):
 		self.__running = True
 		self.setDaemon(True)
-		self.start()
+		super(Worker, self).start()
 
 	def stop(self):
 		self.__running = False
