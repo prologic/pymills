@@ -50,6 +50,8 @@ from inspect import getmembers, ismethod, getargspec
 
 from utils import caller
 
+POLL_INTERVAL=0.001
+
 class EventError(Exception):
 	"Event Error"
 
@@ -512,7 +514,7 @@ class Remote(Manager):
 	def __del__(self):
 		self.__close__()
 
-	def __poll__(self, wait=0.01):
+	def __poll__(self, wait=POLL_INTERVAL):
 		try:
 			r, w, e = select.select([self._ssock], [], [], wait)
 			return not r == []
