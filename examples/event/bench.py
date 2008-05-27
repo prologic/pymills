@@ -132,9 +132,9 @@ def main():
 				port = int(port)
 			else:
 				address, port = opts.bind, 64000
-		manager = Remote(nodes=nodes, address=address, port=port, debug=True)
+		manager = Remote(nodes=nodes, address=address, port=port)
 	else:
-		manager = Manager(debug=True)
+		manager = Manager()
 	monitor = Monitor(manager)
 	state = State(manager)
 
