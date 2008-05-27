@@ -42,6 +42,9 @@ def parse_options():
 	parser.add_option("-l", "--listen",
 			action="store_true", default=False, dest="listen",
 			help="Listen on 0.0.0.0:64000 (UDP) (test remote events)")
+	parser.add_option("-b", "--bind",
+			action="store", default="0.0.0.0", dest="bind",
+			help="Bind to address:[port] (UDP) (test remote events)")
 	parser.add_option("-c", "--connect",
 			action="store", default=None, dest="connect",
 			help="Connect to given host (test remote events)")
@@ -123,9 +126,15 @@ def main():
 		nodes = opts.connect.split(",")
 
 	if opts.listen or opts.connect:
-		manager = Remote(nodes=nodes)
+		if opts.bind is not None:
+			if ":" in opts.bind:
+				address, port = opts.bind.split(":")
+				port = int(port)
+			else:
+				address, port = opts.bind, 64000
+		manager = Remote(nodes=nodes, address=address, port=port, debug=True)
 	else:
-		manager = Manager()
+		manager = Manager(debug=True)
 	monitor = Monitor(manager)
 	state = State(manager)
 
@@ -143,13 +152,14 @@ def main():
 		profiler = hotshot.Profile("bench.prof")
 		profiler.start()
 
-	manager.push(Event(message="hello"), "hello")
+	if opts.connect:
+		manager.push(Event(message="hello"), "hello")
 
 	while not state.done:
 		try:
-			manager.flush()
 			if hasattr(manager, "process"):
 				manager.process()
+			manager.flush()
 
 			if opts.events > 0 and monitor.getEventCount() > opts.events:
 				manager.send(Event(), "stop")
