@@ -152,8 +152,7 @@ def main():
 		profiler = hotshot.Profile("bench.prof")
 		profiler.start()
 
-	if opts.connect:
-		manager.push(Event(message="hello"), "hello")
+	manager.push(Event(message="hello"), "hello")
 
 	while not state.done:
 		try:
