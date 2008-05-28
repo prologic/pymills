@@ -155,6 +155,21 @@ class BaseEnvironment(object):
 		self.config.read(configfile)
 		self.config.path = configfile
 
+	def saveConfig(self):
+		"""E.saveConfig() -> None
+
+		Save the configuration file in the environment.
+		Sub-classes need not override this.
+		By default INI-style config files are saved
+		using Python's Standard ConfigParser Library
+		"""
+
+		configfile = os.path.join(
+				self.path, "conf", "%s.ini") % self.name
+		fp = open(configfile, "w")
+		self.config.write(fp)
+		fp.close()
+
 	def setupLog(self):
 		"""E.setupLog() -> None
 
