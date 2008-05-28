@@ -157,9 +157,9 @@ def main():
 
 	while not state.done:
 		try:
+			manager.flush()
 			if hasattr(manager, "process"):
 				manager.process()
-			manager.flush()
 
 			if opts.events > 0 and monitor.getEventCount() > opts.events:
 				manager.send(Event(), "stop")
