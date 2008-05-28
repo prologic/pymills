@@ -13,7 +13,6 @@ import time
 import urllib2
 import urlparse
 import optparse
-import collections
 from BeautifulSoup import BeautifulSoup
 
 try:
@@ -26,6 +25,7 @@ import spider
 import pymills
 from pymills.web import escape
 from pymills.misc import duration
+from pymills.datatypes import Queue
 from pymills import __version__ as systemVersion
 
 USAGE = "%prog [options] <url>"
@@ -53,7 +53,9 @@ class Crawler(object):
 
 		page = Fetcher(self._root)
 		page.fetch()
-		urls = collections.deque(page.getURLS())
+		urls = Queue()
+		for url in page.getURLS():
+			urls.push(url)
 		followed = [self._root]
 
 		n = 0
@@ -61,7 +63,7 @@ class Crawler(object):
 
 		while not done:
 			n += 1
-			url = urls.popleft()
+			url = urls.pop()
 			if url not in followed:
 				host = urlparse.urlparse(url)[1]
 				if self._lock and re.match(".*%s" % self._host, host):
@@ -73,7 +75,7 @@ class Crawler(object):
 					for i, url in enumerate(page):
 						if url not in urls:
 							self._countLinks += 1
-							urls.append(url)
+							urls.push(url)
 							print "New: %s" % url
 					if n > self._depth and self._depth > 0:
 						done = True
@@ -105,14 +107,14 @@ class Fetcher(object):
 		return (request, handle)
 
 	def fetch(self):
-		(request, handle) = self.open()
+		request, handle = self.open()
 		self._add_headers(request)
-		if handle is not None:
+		if handle:
 			soup = BeautifulSoup()
 			try:
-				content = handle.open(request).read()
+				content = unicode(handle.open(request).read(), errors="ignore")
 				soup.feed(content)
-				if soup.html is not None:
+				if soup.html and soup.html.head:
 					title = soup.html.head.title.string
 				else:
 					title = ""
