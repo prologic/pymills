@@ -19,8 +19,8 @@ instance of an environment which holds all the objects needed by a system.
 
 import os
 
+from utils import Config
 from log import newLogger
-from utils import ConfigParser
 
 VERSION = 1
 
@@ -100,7 +100,7 @@ class BaseEnvironment(object):
 		configfile = os.path.join(
 				self.path, "conf", "%s.ini") % self.name
 		createFile(configfile)
-		config = ConfigParser()
+		config = Config()
 		config.read(configfile)
 		for section, name, value in self.config:
 			if not config.has_section(section):
@@ -151,7 +151,7 @@ class BaseEnvironment(object):
 
 		configfile = os.path.join(
 				self.path, "conf", "%s.ini") % self.name
-		self.config = ConfigParser()
+		self.config = Config()
 		self.config.read(configfile)
 		self.config.path = configfile
 
