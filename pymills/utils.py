@@ -13,7 +13,7 @@ import sys
 import optparse
 from os.path import isfile
 from optparse import _match_abbrev
-from ConfigParser import ConfigParser as _ConfigParser
+from ConfigParser import ConfigParser
 
 from pymills.datatypes import CaselessDict
 
@@ -377,13 +377,22 @@ def safe__import__(moduleName, globals=globals(),
 			if not alreadyImported.has_key(name):
 				del (sys.modules[name])
 
-class ConfigParser(_ConfigParser):
+class Config(ConfigParser, object):
 
-	def get(self, section, option, *args):
+	def get(self, section, option, default=None, raw=False, vars=None):
 		if self.has_option(section, option):
-			return _ConfigParser.get(self, section, option, *args)
+			return super(Config, self).get(section, option, raw, vars)
 		else:
-			return None
+			return default
+
+	def getint(self, section, option, default=0):
+		return int(self.get(section, option, default))
+
+	def getfloat(self, section, option, default=0.0):
+		return float(self.get(section, option, default))
+
+	def getboolean(self, section, option, default=False):
+		return bool(self.get(section, option, default))
 
 def notags(str):
 	"Removes HTML tags from str and returns the new string"
