@@ -256,49 +256,50 @@ class SMTP(Component):
 	def smtpMAIL(self, sock, arg):
 		address = getAddress("FROM:", arg)
 		if not address:
-			self.push("501 Syntax: MAIL FROM:<address>")
+			self.write("501 Syntax: MAIL FROM:<address>")
 			return
 		if self.__mailfrom:
-			self.push("503 Error: nested MAIL command")
+			self.write("503 Error: nested MAIL command")
 			return
 		self.__mailfrom = address
 		print >> DEBUGSTREAM, "sender:", self.__mailfrom
-		self.push("250 Ok")
+		self.write("250 Ok")
 
 	def smtp_RCPT(self, arg):
 		print >> DEBUGSTREAM, "===> RCPT", arg
 		if not self.__mailfrom:
-			self.push("503 Error: need MAIL command")
+			self.write("503 Error: need MAIL command")
 			return
 		address = self.__getaddr("TO:", arg)
 		if not address:
-			self.push("501 Syntax: RCPT TO: <address>")
+			self.write("501 Syntax: RCPT TO: <address>")
 			return
 		self.__rcpttos.append(address)
 		print >> DEBUGSTREAM, "recips:", self.__rcpttos
-		self.push("250 Ok")
+		self.write("250 Ok")
 
 	def smtp_RSET(self, arg):
 		if arg:
-			self.push("501 Syntax: RSET")
+			self.write("501 Syntax: RSET")
 			return
+
 		# Resets the sender, recipients, and data, but not the greeting
 		self.__mailfrom = None
 		self.__rcpttos = []
 		self.__data = ""
 		self.__state = self.COMMAND
-		self.push("250 Ok")
+		self.write("250 Ok")
 
 	def smtp_DATA(self, arg):
 		if not self.__rcpttos:
-			self.push("503 Error: need RCPT command")
+			self.write("503 Error: need RCPT command")
 			return
 		if arg:
-			self.push("501 Syntax: DATA")
+			self.write("501 Syntax: DATA")
 			return
 		self.__state = self.DATA
 		self.set_terminator("\r\n.\r\n")
-		self.push("354 End data with <CR><LF>.<CR><LF>")
+		self.write("354 End data with <CR><LF>.<CR><LF>")
 
 	###
 	### Default Socket Events
