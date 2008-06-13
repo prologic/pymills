@@ -62,6 +62,19 @@ def splitTo(address):
 
 	return (address[sep:end], address[start:end],)
 
+def getAddress(keyword, arg):
+	address = None
+	keylen = len(keyword)
+	if arg[:keylen].upper() == keyword:
+		address = arg[keylen:].strip()
+		if not address:
+			pass
+		elif address[0] == "<" and address[-1] == ">" and address != "<>":
+			# Addresses can be in the form <person@dom.com> but watch out
+			# for null address, e.g. <>
+			address = address[1:-1]
+	return address
+
 ###
 ### Evenets
 ###
@@ -127,10 +140,25 @@ class SMTP(Component):
 		self.__buffer = ""
 		self.__state = self.COMMAND
 		self.__greeting = False
-		self.__mailFrom = None
-		self.__recipients = []
+		self.__mailfrom = None
+		self.__rcpttos = []
 		self.__data = None
 		self.__fqdn = socket.getfqdn()
+
+	###
+	### Methods
+	###
+
+	def reset(self):
+		self.__buffer = ""
+		self.__state = self.COMMAND
+		self.__greetings = False
+		self.__mailfrom = None
+		self.__rcpttos = []
+		self.__date = None
+
+	def processMessage(selfk, sock, data):
+		pass
 
 	###
 	### Properties
@@ -159,22 +187,118 @@ class SMTP(Component):
 		this event and process custom SMTP events.
 		"""
 
-		cmd = line[:4]
-		args = tokens[1:] or []
+		if self.__state == self.COMMAND:
+			if not line:
+				self.write(sock, "500 Syntax error, command unrecognized")
+				return
 
-		if command in ["HELO", "EHLO"]:
-			if not args:
-				self.write(sock, "501 Syntax: %s <hostname>\r\n" % command)
+			method = None
+
+			i = line.find(" ")
+			if i < 0:
+				command = line.upper()
+				arg = None
 			else:
-				hostname = args[0]
-				self.push(HeloEvent(sock, hostname), "helo", self)
-		elif command == "NOOP":
-			if args:
-				self.write(sock, "501 Syntax: NOOP\r\n")
+				command = line[:i].upper()
+				arg = line[i+1:].strip()
+
+			method = getattr(self, "smtp" + command, None)
+
+			if not method:
+				self.write(sock, "502 Command not implemented")
 			else:
-				self.push(NoOpEvent(sock), "noop", self)
-		elif command == "QUIT":
-			self.push(QuitEvent(sock), "quit", self)
+				method(sock, arg)
+		else:
+			if self.__state != self.DATA:
+				self.write(sock, "451 Requested action aborted: local error in processing")
+				return
+
+			if line and line[0] == ".":
+				self.__date.write(line[1:] + "\n")
+			else:
+				self.__date.write(line + "\n")
+
+			status = self.processMessage(sock,
+					self.__mailfrom,  self.__rcpttos, self.__data)
+
+			self.reset()
+
+			if not status:
+				self.write(sock, "250 Ok")
+			else:
+				self.write(sock, status)
+
+	###
+	### SMTP and ESMTP Commands
+	###
+
+	def smtpHELO(self, sock, arg):
+		if not arg:
+			self.write(sock, "501 Syntax: HELO hostname")
+			return
+
+		if self.__greeting:
+			self.write(sock, "503 Duplicate HELO/EHLO")
+		else:
+			self.__greeting = arg
+			self.write(sock, "250 %s" % self.__fqdn)
+
+	def smtpNOOP(self, sock, arg):
+		if arg:
+			self.write(sock, "501 Syntax: NOOP")
+		else:
+			self.write(sock, "250 Ok")
+
+	def smtpQUIT(self, sock, arg):
+		self.write(sock, "221 Bye")
+		self.close(sock)
+
+	def smtpMAIL(self, sock, arg):
+		address = getAddress("FROM:", arg)
+		if not address:
+			self.push("501 Syntax: MAIL FROM:<address>")
+			return
+		if self.__mailfrom:
+			self.push("503 Error: nested MAIL command")
+			return
+		self.__mailfrom = address
+		print >> DEBUGSTREAM, "sender:", self.__mailfrom
+		self.push("250 Ok")
+
+	def smtp_RCPT(self, arg):
+		print >> DEBUGSTREAM, "===> RCPT", arg
+		if not self.__mailfrom:
+			self.push("503 Error: need MAIL command")
+			return
+		address = self.__getaddr("TO:", arg)
+		if not address:
+			self.push("501 Syntax: RCPT TO: <address>")
+			return
+		self.__rcpttos.append(address)
+		print >> DEBUGSTREAM, "recips:", self.__rcpttos
+		self.push("250 Ok")
+
+	def smtp_RSET(self, arg):
+		if arg:
+			self.push("501 Syntax: RSET")
+			return
+		# Resets the sender, recipients, and data, but not the greeting
+		self.__mailfrom = None
+		self.__rcpttos = []
+		self.__data = ""
+		self.__state = self.COMMAND
+		self.push("250 Ok")
+
+	def smtp_DATA(self, arg):
+		if not self.__rcpttos:
+			self.push("503 Error: need RCPT command")
+			return
+		if arg:
+			self.push("501 Syntax: DATA")
+			return
+		self.__state = self.DATA
+		self.set_terminator("\r\n.\r\n")
+		self.push("354 End data with <CR><LF>.<CR><LF>")
 
 	###
 	### Default Socket Events
@@ -198,7 +322,7 @@ class SMTP(Component):
 		self._buffer = buffer
 		for line in lines:
 			self.push(RawEvent(sock, line), "raw", self)
-	
+
 	###
 	### Default SMTP Events
 	###
@@ -251,12 +375,12 @@ replies = {
 		251: "User not local; will forward to %s",
 
 		354: "Start mail input; end with <CRLF>.<CRLF>",
-          
+		  
 		421: "%s Service not available,",
 		450: "Requested mail action not taken: mailbox unavailable",
 		451: "Requested action aborted: local error in processing",
 		452: "Requested action not taken: insufficient system storage",
-          
+		  
 		500: "Syntax error, command unrecognized",
 		501: "Syntax error in parameters or arguments",
 		502: "Command not implemented",
@@ -269,139 +393,3 @@ replies = {
 		553: "Requested action not taken: mailbox name not allowed",
 		554: "Transaction failed",
 		}
-
-""" TODO: Integrate this...
-
-    # Implementation of base class abstract method
-    def found_terminator(self):
-        line = EMPTYSTRING.join(self.__line)
-        print >> DEBUGSTREAM, 'Data:', repr(line)
-        self.__line = []
-        if self.__state == self.COMMAND:
-            if not line:
-                self.push('500 Error: bad syntax')
-                return
-            method = None
-            i = line.find(' ')
-            if i < 0:
-                command = line.upper()
-                arg = None
-            else:
-                command = line[:i].upper()
-                arg = line[i+1:].strip()
-            method = getattr(self, 'smtp_' + command, None)
-            if not method:
-                self.push('502 Error: command "%s" not implemented' % command)
-                return
-            method(arg)
-            return
-        else:
-            if self.__state != self.DATA:
-                self.push('451 Internal confusion')
-                return
-            # Remove extraneous carriage returns and de-transparency according
-            # to RFC 821, Section 4.5.2.
-            data = []
-            for text in line.split('\r\n'):
-                if text and text[0] == '.':
-                    data.append(text[1:])
-                else:
-                    data.append(text)
-            self.__data = NEWLINE.join(data)
-            status = self.__server.process_message(self.__peer,
-                                                   self.__mailfrom,
-                                                   self.__rcpttos,
-                                                   self.__data)
-            self.__rcpttos = []
-            self.__mailfrom = None
-            self.__state = self.COMMAND
-            self.set_terminator('\r\n')
-            if not status:
-                self.push('250 Ok')
-            else:
-                self.push(status)
-
-    # SMTP and ESMTP commands
-    def smtp_HELO(self, arg):
-        if not arg:
-            self.push('501 Syntax: HELO hostname')
-            return
-        if self.__greeting:
-            self.push('503 Duplicate HELO/EHLO')
-        else:
-            self.__greeting = arg
-            self.push('250 %s' % self.__fqdn)
-
-    def smtp_NOOP(self, arg):
-        if arg:
-            self.push('501 Syntax: NOOP')
-        else:
-            self.push('250 Ok')
-
-    def smtp_QUIT(self, arg):
-        # args is ignored
-        self.push('221 Bye')
-        self.close_when_done()
-
-    # factored
-    def __getaddr(self, keyword, arg):
-        address = None
-        keylen = len(keyword)
-        if arg[:keylen].upper() == keyword:
-            address = arg[keylen:].strip()
-            if not address:
-                pass
-            elif address[0] == '<' and address[-1] == '>' and address != '<>':
-                # Addresses can be in the form <person@dom.com> but watch out
-                # for null address, e.g. <>
-                address = address[1:-1]
-        return address
-
-    def smtp_MAIL(self, arg):
-        print >> DEBUGSTREAM, '===> MAIL', arg
-        address = self.__getaddr('FROM:', arg)
-        if not address:
-            self.push('501 Syntax: MAIL FROM:<address>')
-            return
-        if self.__mailfrom:
-            self.push('503 Error: nested MAIL command')
-            return
-        self.__mailfrom = address
-        print >> DEBUGSTREAM, 'sender:', self.__mailfrom
-        self.push('250 Ok')
-
-    def smtp_RCPT(self, arg):
-        print >> DEBUGSTREAM, '===> RCPT', arg
-        if not self.__mailfrom:
-            self.push('503 Error: need MAIL command')
-            return
-        address = self.__getaddr('TO:', arg)
-        if not address:
-            self.push('501 Syntax: RCPT TO: <address>')
-            return
-        self.__rcpttos.append(address)
-        print >> DEBUGSTREAM, 'recips:', self.__rcpttos
-        self.push('250 Ok')
-
-    def smtp_RSET(self, arg):
-        if arg:
-            self.push('501 Syntax: RSET')
-            return
-        # Resets the sender, recipients, and data, but not the greeting
-        self.__mailfrom = None
-        self.__rcpttos = []
-        self.__data = ''
-        self.__state = self.COMMAND
-        self.push('250 Ok')
-
-    def smtp_DATA(self, arg):
-        if not self.__rcpttos:
-            self.push('503 Error: need RCPT command')
-            return
-        if arg:
-            self.push('501 Syntax: DATA')
-            return
-        self.__state = self.DATA
-        self.set_terminator('\r\n.\r\n')
-        self.push('354 End data with <CR><LF>.<CR><LF>')
-"""
