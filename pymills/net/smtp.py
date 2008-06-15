@@ -1,4 +1,3 @@
-# Filename: smtp.py
 # Module:	smtp
 # Date:		13th June 2008
 # Author:	James Mills, prologic at shortcircuit dot net dot au
@@ -12,7 +11,9 @@ library to facilitate conformance to the protocol.
 """
 
 import re
+import sys
 import socket
+from tempfile import TemporaryFile
 
 import pymills
 from pymills.event import Component, Event, listener
@@ -23,8 +24,6 @@ __all__ = ["SMTP"]
 ### Supporting Functions
 ###
 
-linesep = re.compile("\r?\n")
-
 def splitLines(s, buffer):
 	"""splitLines(s, buffer) -> lines, buffer
 
@@ -34,7 +33,8 @@ def splitLines(s, buffer):
 	buffer for further processing.
 	"""
 
-	lines = linesep.split(buffer + s)
+	x = buffer + s
+	lines = x.split("\r\n")
 	return lines[:-1], lines[-1]
 
 def stripAddress(address):
@@ -89,30 +89,40 @@ class HeloEvent(Event):
 	def __init__(self, sock, hostname):
 		super(HeloEvent, self).__init__(sock, hostname)
 
-class MailFromEvent(Event):
+class MailEvent(Event):
 
 	def __init__(self, sock, sender):
-		super(MailFromEvent, self).__init__(sock, sender)
+		super(MailEvent, self).__init__(sock, sender)
 
-class RcptToEvent(Event):
+class RcptEvent(Event):
 
 	def __init__(self, sock, recipient):
-		super(MailFromEvent, self).__init__(sock, recipient)
+		super(RcptEvent, self).__init__(sock, recipient)
 
-class ResetEvent(Event):
-
-	def __init__(self, sock):
-		super(ResetEvent, self).__init__(sock)
-
-class NoOpEvent(Event):
+class DataEvent(Event):
 
 	def __init__(self, sock):
-		super(NoOpEvent, self).__init__(sock)
+		super(DataEvent, self).__init__(sock)
+
+class RsetEvent(Event):
+
+	def __init__(self, sock):
+		super(RsetEvent, self).__init__(sock)
+
+class NoopEvent(Event):
+
+	def __init__(self, sock):
+		super(NoopEvent, self).__init__(sock)
 
 class QuitEvent(Event):
 
 	def __init__(self, sock):
 		super(QuitEvent, self).__init__(sock)
+
+class MessageEvent(Event):
+
+	def __init__(self, sock, mailfrom, rcpttos, data):
+		super(MessageEvent, self).__init__(sock, mailfrom, rcpttos, data)
 
 ###
 ### Protocol Class
@@ -138,11 +148,14 @@ class SMTP(Component):
 		super(SMTP, self).__init__(*args, **kwargs)
 
 		self.__buffer = ""
+
 		self.__state = self.COMMAND
-		self.__greeting = False
+
+		self.__greeting = None
 		self.__mailfrom = None
 		self.__rcpttos = []
 		self.__data = None
+
 		self.__fqdn = socket.getfqdn()
 
 	###
@@ -152,13 +165,17 @@ class SMTP(Component):
 	def reset(self):
 		self.__buffer = ""
 		self.__state = self.COMMAND
-		self.__greetings = False
+		self.__greeting = None
 		self.__mailfrom = None
 		self.__rcpttos = []
-		self.__date = None
+		self.__data = None
 
-	def processMessage(selfk, sock, data):
-		pass
+	def processMessage(self, sock, mailfrom, rcpttos, data):
+		r =  self.send(MessageEvent(sock, mailfrom, rcpttos, data), "message")
+		data.close()
+
+		if r:
+			return r[-1]
 
 	###
 	### Properties
@@ -189,7 +206,7 @@ class SMTP(Component):
 
 		if self.__state == self.COMMAND:
 			if not line:
-				self.write(sock, "500 Syntax error, command unrecognized")
+				self.write(sock, "500 Syntax error, command unrecognized\r\n")
 				return
 
 			method = None
@@ -205,28 +222,31 @@ class SMTP(Component):
 			method = getattr(self, "smtp" + command, None)
 
 			if not method:
-				self.write(sock, "502 Command not implemented")
+				self.write(sock, "502 Command not implemented\r\n")
 			else:
 				method(sock, arg)
 		else:
 			if self.__state != self.DATA:
-				self.write(sock, "451 Requested action aborted: local error in processing")
+				self.write(sock, "451 Internal confusion\r\n")
 				return
 
-			if line and line[0] == ".":
-				self.__date.write(line[1:] + "\n")
+			if line and re.match("^\.$", line):
+					self.__data.flush()
+					self.__data.seek(0)
+					status = self.processMessage(sock,
+							self.__mailfrom,  self.__rcpttos, self.__data)
+
+					self.reset()
+
+					if not status:
+						self.write(sock, "250 Ok\r\n")
+					else:
+						self.write(sock, status + "\r\n")
 			else:
-				self.__date.write(line + "\n")
-
-			status = self.processMessage(sock,
-					self.__mailfrom,  self.__rcpttos, self.__data)
-
-			self.reset()
-
-			if not status:
-				self.write(sock, "250 Ok")
-			else:
-				self.write(sock, status)
+				if line and line[0] == ".":
+					self.__data.write(line[1:] + "\n")
+				else:
+					self.__data.write(line + "\n")
 
 	###
 	### SMTP and ESMTP Commands
@@ -234,72 +254,86 @@ class SMTP(Component):
 
 	def smtpHELO(self, sock, arg):
 		if not arg:
-			self.write(sock, "501 Syntax: HELO hostname")
+			self.write(sock, "501 Syntax: HELO hostname\r\n")
 			return
 
 		if self.__greeting:
-			self.write(sock, "503 Duplicate HELO/EHLO")
+			self.write(sock, "503 Duplicate HELO/EHLO\r\n")
 		else:
 			self.__greeting = arg
-			self.write(sock, "250 %s" % self.__fqdn)
+			self.write(sock, "250 %s\r\n" % self.__fqdn)
+			self.push(HeloEvent(sock, arg), "helo", self)
 
 	def smtpNOOP(self, sock, arg):
 		if arg:
-			self.write(sock, "501 Syntax: NOOP")
+			self.write(sock, "501 Syntax: NOOP\r\n")
 		else:
-			self.write(sock, "250 Ok")
+			self.write(sock, "250 Ok\r\n")
+			self.push(NoopEvent(sock), "noop", self)
 
 	def smtpQUIT(self, sock, arg):
-		self.write(sock, "221 Bye")
+		self.write(sock, "221 Bye\r\n")
 		self.close(sock)
+		self.push(QuitEvent(sock), "quit", self)
 
 	def smtpMAIL(self, sock, arg):
 		address = getAddress("FROM:", arg)
+
 		if not address:
-			self.write("501 Syntax: MAIL FROM:<address>")
+			self.write(sock, "501 Syntax: MAIL FROM:<address>\r\n")
 			return
+
 		if self.__mailfrom:
-			self.write("503 Error: nested MAIL command")
+			self.write(sock, "503 Error: nested MAIL command\r\n")
 			return
+
 		self.__mailfrom = address
-		print >> DEBUGSTREAM, "sender:", self.__mailfrom
-		self.write("250 Ok")
 
-	def smtp_RCPT(self, arg):
-		print >> DEBUGSTREAM, "===> RCPT", arg
+		self.write(sock, "250 Ok\r\n")
+		self.push(MailEvent(sock, address), "mail", self)
+
+	def smtpRCPT(self, sock, arg):
 		if not self.__mailfrom:
-			self.write("503 Error: need MAIL command")
+			self.write(sock, "503 Error: need MAIL command\r\n")
 			return
-		address = self.__getaddr("TO:", arg)
-		if not address:
-			self.write("501 Syntax: RCPT TO: <address>")
-			return
-		self.__rcpttos.append(address)
-		print >> DEBUGSTREAM, "recips:", self.__rcpttos
-		self.write("250 Ok")
 
-	def smtp_RSET(self, arg):
+		address = getAddress("TO:", arg)
+
+		if not address:
+			self.write(sock, "501 Syntax: RCPT TO: <address>\r\n")
+			return
+
+		self.__rcpttos.append(address)
+		self.write(sock, "250 Ok\r\n")
+		self.push(RcptEvent(sock, address), "rcpt", self)
+
+	def smtpRSET(self, sock, arg):
 		if arg:
-			self.write("501 Syntax: RSET")
+			self.write(sock, "501 Syntax: RSET\r\n")
 			return
 
 		# Resets the sender, recipients, and data, but not the greeting
 		self.__mailfrom = None
 		self.__rcpttos = []
-		self.__data = ""
+		self.__data = None
 		self.__state = self.COMMAND
-		self.write("250 Ok")
+		self.write(sock, "250 Ok\r\n")
+		self.push(RsetEvent(sock), "rset", self)
 
-	def smtp_DATA(self, arg):
+	def smtpDATA(self, sock, arg):
 		if not self.__rcpttos:
-			self.write("503 Error: need RCPT command")
+			self.write(sock, "503 Error: need RCPT command\r\n")
 			return
+
 		if arg:
-			self.write("501 Syntax: DATA")
+			self.write(sock, "501 Syntax: DATA\r\n")
 			return
+
 		self.__state = self.DATA
-		self.set_terminator("\r\n.\r\n")
-		self.write("354 End data with <CR><LF>.<CR><LF>")
+		self.__data = TemporaryFile()
+
+		self.write(sock, "354 End data with <CR><LF>.<CR><LF>\r\n")
+		self.push(DataEvent(sock), "data", self)
 
 	###
 	### Default Socket Events
@@ -308,6 +342,10 @@ class SMTP(Component):
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
 		self.write(sock, "220 %s %s\r\n" % (self.__fqdn, pymills.__version__))
+
+	@listener("disconnect")
+	def onDISCONNECT(self, sock):
+		self.reset()
 
 	@listener("read")
 	def onREAD(self, sock, data):
@@ -319,78 +357,7 @@ class SMTP(Component):
 		lines of text, leave in the buffer.
 		"""
 
-		lines, buffer = splitLines(data, self._buffer)
-		self._buffer = buffer
+		lines, buffer = splitLines(data, self.__buffer)
+		self.__buffer = buffer
 		for line in lines:
 			self.push(RawEvent(sock, line), "raw", self)
-
-	###
-	### Default SMTP Events
-	###
-
-	@listener("helo")
-	def onHELO(self, sock):
-		"""HELO Event
-
-		This is a default event for responding to HELO Events.
-		Sub-classes may override this, but be sure to respond to
-		HELO Events by either explitetly calling this method
-		or sending your own appropiate reponse.
-		"""
-
-		self.write(sock, "250 %s\r\n" % self.getFQDN())
-
-	@listener("noop")
-	def onNOOP(self, sock):
-		"""NOOP Event
-
-		This is a default event for responding to NOOP Events.
-		Sub-classes may override this, but be sure to respond to
-		NOOP Events by either explitetly calling this method
-		or sending your own appropiate reponse.
-		"""
-
-		self.write("250 OK\r\n")
-
-	@listener("quit")
-	def onQUIT(self, sock):
-		"""QUIT Event
-
-		This is a default event for responding to QUIT Events.
-		Sub-classes may override this, but be sure to respond to
-		QUIT Events by either explitetly calling this method
-		or sending your own appropiate reponse.
-		"""
-
-		self.write(sock, "221 Bye\r\n")
-		self.close(sock)
-
-###
-### Errors and Numeric Replies
-###
-
-replies = {
-		220: "%s Service ready",
-		221: "%s Service closing transmission channel",
-		250: "Requested mail action okay, completed",
-		251: "User not local; will forward to %s",
-
-		354: "Start mail input; end with <CRLF>.<CRLF>",
-		  
-		421: "%s Service not available,",
-		450: "Requested mail action not taken: mailbox unavailable",
-		451: "Requested action aborted: local error in processing",
-		452: "Requested action not taken: insufficient system storage",
-		  
-		500: "Syntax error, command unrecognized",
-		501: "Syntax error in parameters or arguments",
-		502: "Command not implemented",
-		503: "Bad sequence of commands",
-		504: "Command parameter not implemented",
-		550: "Requested action not taken: mailbox unavailable",
-
-		551: "User not local; please try %s",
-		552: "Requested mail action aborted: exceeded storage allocation",
-		553: "Requested action not taken: mailbox name not allowed",
-		554: "Transaction failed",
-		}
