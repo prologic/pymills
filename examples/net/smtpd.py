@@ -2,14 +2,75 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+"""MTA/MDA
+
+Simple SMTP Server / Mail Transfer Agent (MTA) and Mail Delivery Agent (MDA).
+Mail is delivered into Maildir mailboxes. No filterting or forwarding support
+is available. The MTA only implements the minimum required set of SMTP
+commands.
+"""
+
+import os
 import sys
+import optparse
+from mailbox import Maildir
 from traceback import format_exc
 
+from pymills import __version__
 from pymills.net.smtp import SMTP
+from pymills.utils import daemonize
 from pymills.net.sockets import TCPServer
-from pymills.event import listener, Manager
+from pymills.event import listener, Manager, Component
 
-class SMTPServer(TCPServer, SMTP):
+USAGE = "%prog [options]"
+VERSION = "%prog v" + __version__
+
+def parse_options():
+	"""parse_options() -> opts, args
+
+	Parse any command-line options given returning both
+	the parsed options and arguments.
+	"""
+
+	parser = optparse.OptionParser(usage=USAGE, version=VERSION)
+
+	parser.add_option("-d", "--daemon",
+			action="store_true", default=False, dest="daemon",
+			help="Enable daemon mode (Default: False)")
+
+	parser.add_option("-i", "--interface",
+			action="store", default="0.0.0.0:25", dest="interface",
+			help="Interface to listen on (Default: 0.0.0.0:25)")
+
+	parser.add_option("-p", "--path",
+			action="store", default="/var/mail/", dest="path",
+			help="Path to store mailI (Default: /var/mail/)")
+
+	opts, args = parser.parse_args()
+
+	return opts, args
+
+class MDA(Component):
+
+	def __init__(self, *args, **kwargs):
+		super(MDA, self).__init__(*args, **kwargs)
+
+		self.__path = kwargs.get("path", "/var/mail/")
+
+	@listener("message")
+	def onMESSAGE(self, sock, mailfrom, rcpttos, data):
+		for recipient in rcpttos:
+			self.deliver(data, recipient)
+		data.close()
+
+	def deliver(self, message, recipient):
+		user, domains = recipient.split("@")
+		mailbox = Maildir(os.path.join(self.__path, user), factory=None)
+		mailbox.add(message)
+		mailbox.flush()
+		mailbox.close()
+
+class MTA(TCPServer, SMTP):
 
 	@listener("helo")
 	def onHELO(self, sock, hostname):
@@ -47,8 +108,6 @@ class SMTPServer(TCPServer, SMTP):
 	def onQUIT(self, sock, error):
 		print >> sys.stderr, "%s Error: %s" % (sock, error)
 
-	@listener("message")
-	def onMESSAGE(self, sock, mailfrom, rcpttos, data):
 		print >> sys.stderr, "New Mail Message\n"
 		print >> sys.stderr, "From: %s" % mailfrom
 		print >> sys.stderr, "To: %s\n" % ",".join(rcpttos)
@@ -57,12 +116,23 @@ class SMTPServer(TCPServer, SMTP):
 			print >> sys.stderr, line
 
 def main():
+	opts, args = parse_options()
+
+	path = opts.path
+	daemon = opts.daemon
+	address, port = opts.interface.split(":")
+	port = int(port)
+
+	if not os.path.exists(path):
+		os.makedirs(path)
+
 	manager = Manager()
-	server = SMTPServer(manager, 1025)
+	mta = MTA(manager, address=address, port=port)
+	mda = MDA(manager, path=opts.path)
 
 	while True:
 		try:
-			server.process()
+			mta.process()
 			manager.flush()
 		except Exception, e:
 			print >> sys.stderr, "ERROR: %s" % e
