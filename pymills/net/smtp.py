@@ -76,7 +76,7 @@ def getAddress(keyword, arg):
 	return address
 
 ###
-### Evenets
+### Events
 ###
 
 class RawEvent(Event):
@@ -147,9 +147,9 @@ class SMTP(Component):
 
 		super(SMTP, self).__init__(*args, **kwargs)
 
-		self.__buffer = ""
+		self.__buffers = {}
 
-		self.__state = self.COMMAND
+		self.__states = {}
 
 		self.__greeting = None
 		self.__mailfrom = None
@@ -163,8 +163,8 @@ class SMTP(Component):
 	###
 
 	def reset(self):
-		self.__buffer = ""
-		self.__state = self.COMMAND
+		self.__buffers = {}
+		self.__states = {}
 		self.__greeting = None
 		self.__mailfrom = None
 		self.__rcpttos = []
@@ -357,7 +357,7 @@ class SMTP(Component):
 		lines of text, leave in the buffer.
 		"""
 
-		lines, buffer = splitLines(data, self.__buffer)
-		self.__buffer = buffer
+		lines, buffer = splitLines(data, self.__buffes[sock])
+		self.__buffers[sock] = buffer
 		for line in lines:
 			self.push(RawEvent(sock, line), "raw", self)
