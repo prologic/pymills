@@ -20,7 +20,7 @@ import select
 
 from pymills.event import Event, Component, filter
 
-POLL_INTERVAL = 0.001
+POLL_INTERVAL = 0.00001
 CONNECT_TIMEOUT = 5.0
 
 class SocketError(Exception): pass
@@ -173,8 +173,11 @@ class Client(Component):
 		self.connected = False
 		self.push(DisconnectEvent(), "disconnect", self)
 
-	def write(self, data):
-		self.push(WriteEvent(data), "write", self)
+	def write(self, data, push=True):
+		if push:
+			self.push(WriteEvent(data), "write", self)
+		else:
+			return self.send(WriteEvent(data), "write", self)
 
 	def process(self):
 		if self.__poll__():
@@ -330,8 +333,11 @@ class Server(Component):
 			except socket.error, e:
 				self.push(ErrorEvent(e[1]), "error", self)
 
-	def write(self, sock, data):
-		self.push(WriteEvent(data, sock), "write", self)
+	def write(self, sock, data, push=True):
+		if push:
+			self.push(WriteEvent(data, sock), "write", self)
+		else:
+			return self.send(WriteEvent(data, sock), "write", self)
 
 	def broadcast(self, data):
 		for sock in self._clients:
@@ -371,6 +377,7 @@ class TCPServer(Server):
 		self._sock.setsockopt(
 				socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self._sock.setblocking(False)
+		self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
 		self._sock.bind((address, port))
 		self._sock.listen(5)
