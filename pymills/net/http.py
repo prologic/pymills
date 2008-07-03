@@ -14,19 +14,21 @@ implementations.
 """
 
 import re
-import sys
-import time
-import socket
 import mimetools
+from time import strftime
 from cStringIO import StringIO
 from wsgiref.headers import Headers
 
-from pymills.event import filter, listener, \
+import pymills
+from pymills.event import listener, \
 		Component, Event
 
 ###
-### Defaults
+### Defaults/Constants
 ###
+
+server_version = "pymills/%s" % pymills.__version__
+protocol_version = "HTTP/1.0"
 
 DEFAULT_ERROR_MESSAGE = """\
 <head>
@@ -50,16 +52,6 @@ def quoteHTML(html):
 ###
 ### Events
 ###
-
-class RawEvent(Event):
-
-	def __init__(self, sock, line):
-		super(RawEvent, self).__init__(sock, line)
-
-class ErrorEvent(Event):
-
-	def __init__(self, code, short, long, message):
-		super(ErrorEvent, self).__init__(code, short, long, message)
 
 class RequestEvent(Event):
 
@@ -96,8 +88,10 @@ class Response(object):
 
 	def __init__(self, body=""):
 		"initializes x; see x.__class__.__doc__ for signature"
-
-		self.headers = Headers([])
+		
+		self.headers = Headers([
+			("Server", server_version),
+			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z"))])
 		self.body = StringIO()
 		self.body.write(body)
 		self.status = "HTTP/1.0 200 OK"
@@ -140,31 +134,12 @@ class HTTP(Component):
 	 * ...
 	"""
 
-	protocol_version = "HTTP/1.0"
-
 	def __init__(self, *args, **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		super(HTTP, self).__init__(*args, **kwargs)
 
 		self.__commands = {}
-
-	###
-	### Properties
-	###
-
-	###
-	### HTTP Commands
-	###
-
-	def GET(self, uri, version="HTTP/1.1"):
-		"""H.GET(uri, version="HTTP/1.1") -> None
-
-		Send a GET request
-		"""
-
-		e = WriteEvent("GET %s %s\r\n\r\n" % (uri, version))
-		self.push(e, "write")
 
 	###
 	### Event Processing
@@ -206,7 +181,7 @@ class HTTP(Component):
 				version_number = int(version_number[0]), int(version_number[1])
 			except (ValueError, IndexError):
 				return self.sendError(sock, 400, "Bad request version (%r)" % version)
-			if version_number >= (1, 1) and self.protocol_version >= "HTTP/1.1":
+			if version_number >= (1, 1) and protocol_version >= "HTTP/1.1":
 				closeConnection = False
 			if version_number >= (2, 0):
 				return self.sendError(sock, 505,
@@ -230,7 +205,7 @@ class HTTP(Component):
 		if conntype.lower() == 'close':
 			closeConnection = True
 		elif (conntype.lower() == 'keep-alive' and
-			  self.protocol_version >= "HTTP/1.1"):
+			  protocol_version >= "HTTP/1.1"):
 			closeConnection = False
 
 		v = [x for x in self.send(RequestEvent(req), command.lower()) if x][0]
@@ -276,7 +251,7 @@ class HTTP(Component):
 
 		explain = long
 
-		content = self.errorMessageFormat % {
+		content = DEFAULT_ERROR_MESSAGE % {
 			"code": code,
 			"message": quoteHTML(message),
 			"explain": explain}
@@ -290,12 +265,6 @@ class HTTP(Component):
 			self.write(sock, str(res), False)
 
 		self.close(sock)
-
-	errorMessageFormat = DEFAULT_ERROR_MESSAGE
-
-	###
-	### Default Events
-	###
 
 ###
 ### Response Codes
