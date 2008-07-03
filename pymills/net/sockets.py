@@ -22,6 +22,7 @@ from pymills.event import Event, Component, filter
 
 POLL_INTERVAL = 0.00001
 CONNECT_TIMEOUT = 5.0
+BACKLOG = 10
 
 class SocketError(Exception): pass
 
@@ -380,7 +381,7 @@ class TCPServer(Server):
 		self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
 		self._sock.bind((address, port))
-		self._sock.listen(5)
+		self._sock.listen(BACKLOG)
 
 class UDPServer(Server):
 
