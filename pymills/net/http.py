@@ -1,4 +1,3 @@
-# Filename: http.py
 # Module:	http
 # Date:		13th September 2007
 # Author:	James Mills, prologic at shortcircuit dot net dot au
@@ -19,12 +18,14 @@ import sys
 import time
 import socket
 import mimetools
+from cStringIO import StringIO
+from wsgiref.headers import Headers
 
 from pymills.event import filter, listener, \
 		Component, Event
 
 ###
-### Constants
+### Defaults
 ###
 
 DEFAULT_ERROR_MESSAGE = """\
@@ -43,22 +44,11 @@ DEFAULT_ERROR_MESSAGE = """\
 ### Supporting Functions
 ###
 
-linesep = re.compile("\r?\n")
-
-def splitLines(s, buffer):
-	"""splitLines(s, buffer) -> lines, buffer
-
-	Append s to buffer and find any new lines of text in the
-	string splitting at the standard IRC delimiter \r\n. Any
-	new lines found, return them as a list and the remaining
-	buffer for further processing.
-	"""
-
-	lines = linesep.split(buffer + s)
-	return lines[:-1], lines[-1]
+def quoteHTML(html):
+	return html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 ###
-### Evenets
+### Events
 ###
 
 class RawEvent(Event):
@@ -68,8 +58,55 @@ class RawEvent(Event):
 
 class ErrorEvent(Event):
 
-	def __init__(self, code, msg):
-		super(ErrorEvent, self).__init__(code, msg)
+	def __init__(self, code, short, long, message):
+		super(ErrorEvent, self).__init__(code, short, long, message)
+
+class RequestEvent(Event):
+
+	def __init__(self, request):
+		super(RequestEvent, self).__init__(request)
+
+###
+### Supporting Classes
+###
+
+class Request(object):
+	"""Request(method, uri, version, headers) -> new HTTP Request object
+
+	...
+	"""
+
+	def __init__(self, method, uri, version, headers):
+		"initializes x; see x.__class__.__doc__ for signature"
+
+		self.method = method
+		self.uri = uri
+		self.version = version
+		self.headers = headers
+
+		self.body = StringIO()
+
+class Response(object):
+	"""Response(body="") -> new Response object
+
+	Create a HTTP Response object that holds the response to
+	send back to the client. This ensure that the correct data
+	is sent in the correct order.
+	"""
+
+	def __init__(self, body=""):
+		"initializes x; see x.__class__.__doc__ for signature"
+
+		self.headers = Headers([])
+		self.body = StringIO()
+		self.body.write(body)
+		self.status = "HTTP/1.0 200 OK"
+
+	def __str__(self):
+		self.body.flush()
+		body = self.body.getvalue()
+		self.body.close()
+		return "%s\r\n%s%s\r\n" % (self.status, str(self.headers), body)
 ###
 ### Protocol Class
 ###
@@ -103,12 +140,14 @@ class HTTP(Component):
 	 * ...
 	"""
 
-	def __init__(self, *args):
+	protocol_version = "HTTP/1.0"
+
+	def __init__(self, *args, **kwargs):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		super(HTTP, self).__init__(*args)
+		super(HTTP, self).__init__(*args, **kwargs)
 
-		self._buffer = ""
+		self.__commands = {}
 
 	###
 	### Properties
@@ -118,13 +157,13 @@ class HTTP(Component):
 	### HTTP Commands
 	###
 
-	def GET(self, path, version="HTTP/1.1"):
-		"""H.GET(path, version="HTTP/1.1") -> None
+	def GET(self, uri, version="HTTP/1.1"):
+		"""H.GET(uri, version="HTTP/1.1") -> None
 
 		Send a GET request
 		"""
 
-		e = WriteEvent("GET %s %s\n" % (path, version))
+		e = WriteEvent("GET %s %s\r\n\r\n" % (uri, version))
 		self.push(e, "write")
 
 	###
@@ -141,52 +180,125 @@ class HTTP(Component):
 		lines of text, leave in the buffer.
 		"""
 
-		lines, buffer = splitLines(data, self._buffer)
-		self._buffer = buffer
-		for line in lines:
-			self.push(RawEvent(sock, line), "raw", self)
+		self.__commands[sock] = None
+		closeConnection = True
+		data = data.strip()
 
-	@listener("raw")
-	def onRAW(self, sock, line):
-		"""H.onRAW(line) -> None
+		requestline, data = re.split("\r?\n", data, 1)
+		words = requestline.split()
 
-		Process a line of text and generate the appropiate
-		event. This must not be overridden by sub-classes,
-		if it is, this must be explitetly called by the
-		sub-class. Other Components may however listen to
-		this event and process custom HTTP events.
+		if len(words) == 3:
+			command, path, version = words
+			self.__commands[sock] = command
+			if version[:5] != "HTTP/":
+				return self.sendError(sock, 400, "Bad request version (%r)" % version)
+			try:
+				base_version_number = version.split("/", 1)[1]
+				version_number = base_version_number.split(".")
+				# RFC 2145 section 3.1 says there can be only one "." and
+				#   - major and minor numbers MUST be treated as
+				#	  separate integers;
+				#   - HTTP/2.4 is a lower version than HTTP/2.13, which in
+				#	  turn is lower than HTTP/12.3;
+				#   - Leading zeros MUST be ignored by recipients.
+				if len(version_number) != 2:
+					raise ValueError
+				version_number = int(version_number[0]), int(version_number[1])
+			except (ValueError, IndexError):
+				return self.sendError(sock, 400, "Bad request version (%r)" % version)
+			if version_number >= (1, 1) and self.protocol_version >= "HTTP/1.1":
+				closeConnection = False
+			if version_number >= (2, 0):
+				return self.sendError(sock, 505,
+						  "Invalid HTTP Version (%s)" % base_version_number)
+		elif len(words) == 2:
+			command, path = words
+			self.__commands[sock] = command
+			closeConnection = True
+			if command != "GET":
+				return self.sendError(sock, 400,
+								"Bad HTTP/0.9 request type (%r)" % command)
+		elif not words:
+			return
+		else:
+			return self.sendError(sock, 400, "Bad request syntax (%r)" % requestline)
+
+		headers = mimetools.Message(StringIO(data), 0)
+		req = Request(command, path, version, headers)
+
+		conntype = headers.get('Connection', "")
+		if conntype.lower() == 'close':
+			closeConnection = True
+		elif (conntype.lower() == 'keep-alive' and
+			  self.protocol_version >= "HTTP/1.1"):
+			closeConnection = False
+
+		v = [x for x in self.send(RequestEvent(req), command.lower()) if x][0]
+
+		if type(v) == str:
+			res = Response(v)
+			res.headers.add_header("Content-Type", "text/html")
+			res.headers.add_header("Content-Length", str(len(v)))
+		elif isinstance(v, Response):
+			res = v
+		else:
+			return self.sendError(sock, 501, "Unsupported method (%r)" % command)
+
+		self.write(sock, str(res), not closeConnection)
+		if closeConnection:
+			self.close(sock)
+
+	###
+	### Supporting Functions
+	###
+
+	def sendError(self, sock, code, message=None):
+		"""H.sendError(sock, code, message=None) -> None
+		
+		Send an error reply.
+
+		Arguments are the error code, and a detailed message.
+		The detailed message defaults to the short entry matching the
+		response code.
+
+		This sends an error response (so it must be called before any
+		output has been generated), and sends a piece of HTML explaining
+		the error to the user.
 		"""
 
-		tokens = line.split(" ")
+		try:
+			short, long = RESPONSES[code]
+		except KeyError:
+			short, long = "???", "???"
 
-		if len(tokens) == 3:
-			command, path, version = tokens
-			m = re.match("HTTP/(1)\.([01])", version)
-			if m is None:
-				e = ErrorEvent(
-						400,
-						"Bad request version (%r)" % version)
-				self.push(e, "error")
+		if message is None:
+			message = short
 
-		elif len(tokens) == 2:
-			command, path = tokens
-			if not command == "GET":
-				e = ErrorEvent(
-						400,
-						"Bad HTTP/0.9 request type (%r)" % command)
-				self.push(e, "error")
-		else:
-			e = ErrorEvent(
-					400,
-					"Bad request syntax (%r)" % line)
-			self.push(e, "error")
+		explain = long
+
+		content = self.errorMessageFormat % {
+			"code": code,
+			"message": quoteHTML(message),
+			"explain": explain}
+
+		res = Response(content)
+		res.status = "%s %s" % (code, message)
+		res.headers.add_header("Content-Type", "text/html")
+		res.headers.add_header('Connection', 'close')
+
+		if self.__commands[sock] != "HEAD" and code >= 200 and code not in (204, 304):
+			self.write(sock, str(res), False)
+
+		self.close(sock)
+
+	errorMessageFormat = DEFAULT_ERROR_MESSAGE
 
 	###
 	### Default Events
 	###
 
 ###
-### Error and Reply codes
+### Response Codes
 ###
 
 RESPONSES = {
