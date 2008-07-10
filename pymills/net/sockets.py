@@ -68,8 +68,8 @@ class WriteEvent(Event):
 
 class Client(Component):
 
-	def __init__(self, event=None):
-		super(Client, self).__init__(event)
+	def __init__(self, *args, **kwargs):
+		super(Client, self).__init__(*args, **kwargs)
 
 		self.ssl = False
 		self.server = {}
@@ -260,8 +260,8 @@ class UDPClient(Client):
 
 class Server(Component):
 
-	def __init__(self, event=None):
-		super(Server, self).__init__(event)
+	def __init__(self, *args, **kwargs):
+		super(Server, self).__init__(*args, **kwargs)
 
 		self._clients = []
 
