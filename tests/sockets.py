@@ -189,10 +189,10 @@ class SocketsTestCase(unittest.TestCase):
 		   open connection.
 		"""
 
-		serverManager = ServerManager()
-		clientManager = ClientManager()
-		server = Server(serverManager, 9999)
-		client = Client(clientManager)
+		serverManager = ServerManager(autoStart=True)
+		clientManager = ClientManager(autoStart=True)
+		server = Server(serverManager, 9999, autoStart=True)
+		client = Client(clientManager, autoStart=True)
 
 		try:
 			#1
