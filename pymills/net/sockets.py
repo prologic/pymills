@@ -209,8 +209,8 @@ class Client(Component):
 
 class TCPClient(Client):
 
-	def __init__(self, event):
-		super(TCPClient, self).__init__(event)
+	def __init__(self, *args, **kwargs):
+		super(TCPClient, self).__init__(*args, **kwargs)
 
 	def open(self, host, port, ssl=False, bind=None):
 		self._sock = socket.socket(
