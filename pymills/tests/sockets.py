@@ -231,3 +231,6 @@ class SocketsTestCase(unittest.TestCase):
 
 def suite():
 	return unittest.makeSuite(SocketsTestCase, "test")
+
+if __name__ == "__main__":
+	unittest.main()

@@ -37,3 +37,6 @@ class DBTestCase(unittest.TestCase):
 
 def suite():
 	return unittest.makeSuite(DBTestCase, "test")
+
+if __name__ == "__main__":
+	unittest.main()
