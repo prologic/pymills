@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+import hotshot
 import optparse
+import hotshot.stats
 
 import pymills
 from pymills.net.http import HTTP
@@ -27,6 +29,9 @@ def parse_options():
 	parser.add_option("-b", "--bind",
 			action="store", default="0.0.0.0:8000", dest="bind",
 			help="Bind to address:port")
+	parser.add_option("-p", "--profile",
+			action="store_true", default=False, dest="profile",
+			help="Enable execution profiling support")
 
 	opts, args = parser.parse_args()
 
@@ -47,6 +52,10 @@ def main():
 	else:
 		address, port = opts.bind, 80
 
+	if opts.profile:
+		profiler = hotshot.Profile("httpd.prof")
+		profiler.start()
+
 	e = Manager()
 	server = WebServer(e, port, address)
 
@@ -59,6 +68,15 @@ def main():
 		except KeyboardInterrupt:
 			break
 	e.flush()
+
+	if opts.profile:
+		profiler.stop()
+		profiler.close()
+
+		stats = hotshot.stats.load("httpd.prof")
+		stats.strip_dirs()
+		stats.sort_stats("time", "calls")
+		stats.print_stats(20)
 
 if __name__ == "__main__":
 	main()
