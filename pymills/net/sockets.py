@@ -334,7 +334,6 @@ class Server(Component):
 			self.write(sock, data)
 
 	def process(self):
-		#if self.__poll__():
 		self.__read__()
 
 	@filter("write")

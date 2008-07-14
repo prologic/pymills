@@ -191,12 +191,15 @@ class SocketsTestCase(unittest.TestCase):
 
 		serverManager = ServerManager(autoStart=True)
 		clientManager = ClientManager(autoStart=True)
-		server = Server(serverManager, 9999, autoStart=True)
-		client = Client(clientManager, autoStart=True)
+		server = Server(serverManager, 9999)
+		client = Client(clientManager)
+
+		server.start()
 
 		try:
 			#1
 			client.open("localhost", 9999)
+			client.start()
 			sleep(0.1)
 			self.assertTrue(client.connectedFlag)
 
