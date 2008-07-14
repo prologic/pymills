@@ -14,6 +14,7 @@ import math
 import time
 import hotshot
 import optparse
+import hotshot.stats
 
 import pymills
 from pymills.event import listener, filter, \
