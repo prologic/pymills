@@ -270,7 +270,8 @@ class Server(Component):
 
 	def __poll__(self, wait=POLL_INTERVAL):
 		try:
-			return select.select(self._socks, [], [], wait)[0]
+			r, w, e = select.select(self._socks, [], self._socks, wait)
+			return r
 		except socket.error, error:
 			if error[0] == 9:
 				for sock in e:
