@@ -178,7 +178,7 @@ class Manager(object):
 		if channel is not None:
 			return self._handlers.get(channel, [])
 		else:
-			return self._handlers.values()
+			return reduce(lambda x, y: x + y, self._handlers.values())
 
 	def add(self, handler, *channels):
 		"""E.add(handler, *channels) -> None
