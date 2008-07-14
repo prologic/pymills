@@ -10,7 +10,7 @@ from pymills.net.sockets import TCPServer
 from pymills import __version__ as systemVersion
 from pymills.event import listener, UnhandledEvent, Manager
 
-pymills.net.sockets.POLL_INTERVAL = 0
+#pymills.net.sockets.POLL_INTERVAL = 0
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + systemVersion
@@ -52,8 +52,8 @@ def main():
 
 	while True:
 		try:
-			server.process()
 			e.flush()
+			server.process()
 		except UnhandledEvent:
 			pass
 		except KeyboardInterrupt:
