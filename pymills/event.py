@@ -178,10 +178,7 @@ class Manager(object):
 		if channel is not None:
 			return self._handlers.get(channel, [])
 		else:
-			handlers = []
-			for x in self._handlers.values():
-				handlers += x
-			return handlers
+			return self._handlers.values()
 
 	def add(self, handler, *channels):
 		"""E.add(handler, *channels) -> None
