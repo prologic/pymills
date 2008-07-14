@@ -263,21 +263,15 @@ class Server(Component):
 	def __init__(self, *args, **kwargs):
 		super(Server, self).__init__(*args, **kwargs)
 
-		self._clients = []
+		self._socks = []
 
 	def __del__(self):
 		self.close()
 
 	def __poll__(self, wait=POLL_INTERVAL):
-		if self._sock is None:
-			return
 		try:
-			r, w, e = select.select(
-					[self._sock] + self._clients, [], self._clients,
-					wait)
-			return r
+			return select.select(self._socks, [], [], wait)[0]
 		except socket.error, error:
-			print error
 			if error[0] == 9:
 				for sock in e:
 					self.close(sock)
@@ -289,7 +283,7 @@ class Server(Component):
 				# New Connection
 				newsock, host = self._sock.accept()
 				newsock.setblocking(False)
-				self._clients.append(newsock)
+				self._socks.append(newsock)
 				host, port = host
 				self.push(
 						ConnectEvent(host, port, newsock),
@@ -320,19 +314,13 @@ class Server(Component):
 			except socket.error, e:
 				self.push(
 						ErrorEvent(e[1], sock), "error", self)
-			self._clients.remove(sock)
+			self._socks.remove(sock)
 			self.push(
 					DisconnectEvent(sock), "disconnect", self)
 
 		else:
-			for sock in self._clients:
+			for sock in self._socks:
 				self.close(sock)
-			try:
-				self._sock.shutdown(2)
-				self._sock.close()
-				self._sock = None
-			except socket.error, e:
-				self.push(ErrorEvent(e[1]), "error", self)
 
 	def write(self, sock, data, push=True):
 		if push:
@@ -341,12 +329,12 @@ class Server(Component):
 			return self.send(WriteEvent(data, sock), "write", self)
 
 	def broadcast(self, data):
-		for sock in self._clients:
+		for sock in self._socks[1:]:
 			self.write(sock, data)
 
 	def process(self):
-		if self.__poll__():
-			self.__read__()
+		#if self.__poll__():
+		self.__read__()
 
 	@filter("write")
 	def onWRITE(self, sock, data):
@@ -382,6 +370,8 @@ class TCPServer(Server):
 
 		self._sock.bind((address, port))
 		self._sock.listen(BACKLOG)
+
+		self._socks.append(self._sock)
 
 class UDPServer(Server):
 
