@@ -68,8 +68,8 @@ class WriteEvent(Event):
 
 class Client(Component):
 
-	def __init__(self, event=None):
-		super(Client, self).__init__(event)
+	def __init__(self, *args, **kwargs):
+		super(Client, self).__init__(*args, **kwargs)
 
 		self.ssl = False
 		self.server = {}
@@ -209,8 +209,8 @@ class Client(Component):
 
 class TCPClient(Client):
 
-	def __init__(self, event):
-		super(TCPClient, self).__init__(event)
+	def __init__(self, *args, **kwargs):
+		super(TCPClient, self).__init__(*args, **kwargs)
 
 	def open(self, host, port, ssl=False, bind=None):
 		self._sock = socket.socket(
@@ -260,8 +260,8 @@ class UDPClient(Client):
 
 class Server(Component):
 
-	def __init__(self, event=None):
-		super(Server, self).__init__(event)
+	def __init__(self, *args, **kwargs):
+		super(Server, self).__init__(*args, **kwargs)
 
 		self._clients = []
 
@@ -370,8 +370,8 @@ class Server(Component):
 
 class TCPServer(Server):
 
-	def __init__(self, event=None, port=1234, address=""):
-		super(TCPServer, self).__init__(event)
+	def __init__(self, event=None, port=1234, address="", **kwargs):
+		super(TCPServer, self).__init__(event, **kwargs)
 
 		self._sock = socket.socket(
 				socket.AF_INET, socket.SOCK_STREAM)

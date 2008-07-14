@@ -44,3 +44,6 @@ class UtilsTestCase(unittest.TestCase):
 
 def suite():
 	return unittest.makeSuite(UtilsTestCase, "test")
+
+if __name__ == "__main__":
+	unittest.main()
