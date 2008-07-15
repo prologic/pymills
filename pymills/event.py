@@ -272,8 +272,8 @@ class Manager(object):
 TypeError: a class that defines __slots__ without defining __getstate__ cannot be pickled
 		"""
 
-		if hasattr(source, "__channelPrefix__"):
-			channel = "%s:%s" % (source.__channelPrefix__, channel)
+		if hasattr(source, "channel"):
+			channel = "%s:%s" % (source.channel, channel)
 
 #		if source is None:
 #			source = self
@@ -340,6 +340,9 @@ class Component(Manager):
 
 		self._links = []
 
+		if kwargs.has_key("channel"):
+			self.channel = kwargs["channel"]
+
 		self.register(self.manager)
 
 	def __del__(self):
@@ -352,10 +355,8 @@ class Component(Manager):
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for handler in handlers:
-			if hasattr(self, "__channelPrefix__"):
-				channel = "%s:%s" % (
-						self.__channelPrefix__,
-						handler.channel)
+			if hasattr(self, "channel"):
+				channel = "%s:%s" % (self.channel, handler.channel)
 			else:
 				channel = handler.channel
 
