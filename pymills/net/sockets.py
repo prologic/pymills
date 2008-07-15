@@ -20,7 +20,7 @@ import select
 
 from pymills.event import Event, Component, filter
 
-POLL_INTERVAL = 0.00001
+POLL_INTERVAL = 0.000001
 CONNECT_TIMEOUT = 5.0
 BACKLOG = 10
 
@@ -122,8 +122,8 @@ class Client(Component):
 			if self.ssl:
 				self._ssock = socket.ssl(self._sock)
 		except socket.error, e:
-			self.close()
 			self.push(ErrorEvent(e[1]), "error", self)
+			self.close()
 			return
 
 		self._sock.setblocking(False)
@@ -162,8 +162,8 @@ class Client(Component):
 		etime = time.time()
 		ttime = etime - stime
 
-		self.push(
-				ErrorEvent("Connection timed out"), "error", self)
+		self.push(ErrorEvent("Connection timed out"), "error", self)
+		self.close()
 
 	def close(self):
 		try:
@@ -206,6 +206,7 @@ class Client(Component):
 				self.close()
 			else:
 				self.push(ErrorEvent(e[1]), "error", self)
+				self.close()
 
 class TCPClient(Client):
 
@@ -257,6 +258,7 @@ class UDPClient(Client):
 				self.close()
 			else:
 				self.push(ErrorEvent(e[1]), "error", self)
+				self.close()
 
 class Server(Component):
 
@@ -295,8 +297,7 @@ class Server(Component):
 				try:
 					data = sock.recv(bufsize)
 				except socket.error, e:
-					self.push(
-							ErrorEvent(e[1], sock), "error", self)
+					self.push(ErrorEvent(e[1], sock), "error", self)
 					self.close(sock)
 					continue
 
@@ -313,11 +314,9 @@ class Server(Component):
 				sock.shutdown(2)
 				sock.close()
 			except socket.error, e:
-				self.push(
-						ErrorEvent(e[1], sock), "error", self)
+				self.push(ErrorEvent(e[1], sock), "error", self)
 			self._socks.remove(sock)
-			self.push(
-					DisconnectEvent(sock), "disconnect", self)
+			self.push(DisconnectEvent(sock), "disconnect", self)
 
 		else:
 			for sock in self._socks:
@@ -353,8 +352,8 @@ class Server(Component):
 			if e[0] in [32, 107]:
 				self.close(sock)
 			else:
-				self.push(
-						ErrorEvent(e[1], sock), "error", self)
+				self.push(ErrorEvent(e[1], sock), "error", self)
+				self.close()
 
 class TCPServer(Server):
 
@@ -402,8 +401,7 @@ class UDPServer(Server):
 			try:
 				data, addr = self._sock.recvfrom(bufsize)
 			except socket.error, e:
-				self.push(
-						ErrorEvent(e[1], self._sock), "error", self)
+				self.push(ErrorEvent(e[1], self._sock), "error", self)
 				self.close()
 				return
 
