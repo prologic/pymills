@@ -143,14 +143,14 @@ class EventTestCase(unittest.TestCase):
 
 		a = Event(1, 2, 3, "foo", "bar", foo="1", bar="2")
 
-		self.assertTrue(1 in a._args)
-		self.assertTrue(2 in a._args)
-		self.assertTrue(3 in a._args)
-		self.assertTrue("foo" in a._args)
-		self.assertTrue("bar" in a._args)
+		self.assertTrue(1 in a.args)
+		self.assertTrue(2 in a.args)
+		self.assertTrue(3 in a.args)
+		self.assertTrue("foo" in a.args)
+		self.assertTrue("bar" in a.args)
 
-		self.assertEquals(a._kwargs["foo"], "1")
-		self.assertEquals(a._kwargs["bar"], "2")
+		self.assertEquals(a.kwargs["foo"], "1")
+		self.assertEquals(a.kwargs["bar"], "2")
 
 		self.assertEquals(a.foo, "1")
 		self.assertEquals(a.bar, "2")
