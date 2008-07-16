@@ -70,6 +70,10 @@ def filter(channel="global"):
 	def decorate(f):
 		f.filter = True
 		f.channel = channel
+		f.args = getargspec(f)[0]
+		if len(f.args) > 0:
+			if f.args[0] == "self":
+				del f.args[0]
 		return f
 	return decorate
 
@@ -79,6 +83,10 @@ def listener(channel="global"):
 	def decorate(f):
 		f.listener = True
 		f.channel = channel
+		f.args = getargspec(f)[0]
+		if len(f.args) > 0:
+			if f.args[0] == "self":
+				del f.args[0]
 		return f
 	return decorate
 
@@ -110,16 +118,10 @@ def send(handlers, event, channel, source=None):
 	r = []
 	for handler in handlers:
 		try:
-			args, varargs, varkw, defaults = getargspec(handler)
-			if args[0] == "self":
-				del args[0]
+			args = handler.args
 			if len(args) > 0:
 				if args[0] in ("event", "evt", "e",):
-					del args[0]
-					if len(args) > 0:
-						r.append(handler(event, *event._args, **event._kwargs))
-					else:
-						r.append(handler(event))
+					r.append(handler(event, *event._args, **event._kwargs))
 				else:
 					r.append(handler(*event._args, **event._kwargs))
 			else:
