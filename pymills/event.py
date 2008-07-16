@@ -153,7 +153,7 @@ class Manager(object):
 		log = kwargs.get("log", None)
 		debug = kwargs.get("debug", False)
 
-		self._handlers = {"global": []}
+		self._channels = {"global": []}
 		self._queue = []
 		self._log = log
 		self._debug = debug
@@ -168,7 +168,7 @@ class Manager(object):
 		Return a list of all available channels.
 		"""
 
-		return self._handlers.keys()
+		return self._channels.keys()
 
 	def getHandlers(self, channel=None):
 		"""E.getHandlers(channel=None) -> list
@@ -177,10 +177,10 @@ class Manager(object):
 		If channel is None, then return all handlers.
 		"""
 
-		if channel is not None:
-			return self._handlers.get(channel, [])
+		if channel:
+			return self._channels.get(channel, [])
 		else:
-			return reduce(lambda x, y: x + y, self._handlers.values())
+			return reduce(lambda x, y: x + y, self._channels.values())
 
 	def add(self, handler, *channels):
 		"""E.add(handler, *channels) -> None
@@ -199,13 +199,13 @@ class Manager(object):
 					"%s is not a filter or listener" % handler)
 
 		for channel in channels:
-			if self._handlers.has_key(channel):
-				if handler not in self._handlers[channel]:
-					self._handlers[channel].append(handler)
-					self._handlers[channel].sort(
+			if self._channels.has_key(channel):
+				if handler not in self._channels[channel]:
+					self._channels[channel].append(handler)
+					self._channels[channel].sort(
 							cmp=_sortHandlers)
 			else:
-				self._handlers[channel] = [handler]
+				self._channels[channel] = [handler]
 
 	def remove(self, handler, *channels):
 		"""E.remove(handler, *channels) -> None
@@ -219,13 +219,13 @@ class Manager(object):
 		"""
 
 		if len(channels) == 0:
-			keys = self._handlers.keys()
+			keys = self._channels.keys()
 		else:
 			keys = channels
 
 		for channel in keys:
-			if handler in self._handlers[channel]:
-				self._handlers[channel].remove(handler)
+			if handler in self._channels[channel]:
+				self._channels[channel].remove(handler)
 
 	def push(self, event, channel, source=None):
 		"""E.push(event, channel, source=None) -> None
@@ -351,12 +351,12 @@ class Component(Manager):
 
 			manager.add(handler, channel)
 
-			if self._handlers.has_key(channel):
-				self._handlers[channel].append(handler)
-				self._handlers[channel].sort(
+			if self._channels.has_key(channel):
+				self._channels[channel].append(handler)
+				self._channels[channel].sort(
 						cmp=lambda x, y: hasattr(x, "filter"))
 			else:
-				self._handlers[channel] = [handler]
+				self._channels[channel] = [handler]
 
 	def unregister(self):
 		"""C.unregister() -> None

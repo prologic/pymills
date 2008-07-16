@@ -167,7 +167,7 @@ class EventTestCase(unittest.TestCase):
 		"""
 
 		self.assertTrue(
-				self.manager._handlers.has_key("global"))
+				self.manager._channels.has_key("global"))
 
 		self.assertEquals(len(self.manager), 0)
 
