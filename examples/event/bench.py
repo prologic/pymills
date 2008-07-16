@@ -177,10 +177,9 @@ def main():
 	eTime = time.time()
 
 	tTime = eTime - sTime
-	lTime = duration(tTime)
 
 	print "Total Events: %d" % monitor.getEventCount()
-	print "%d/s after %ds" % (
+	print "%d/s after %0.2fs" % (
 			int(math.ceil(float(monitor.getEventCount()) / tTime)),
 			tTime)
 
