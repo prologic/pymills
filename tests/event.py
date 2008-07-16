@@ -90,7 +90,7 @@ class EventTestCase(unittest.TestCase):
 		filter.unregister()
 		listener.unregister()
 
-		self.assertEquals(self.manager.getHandlers(), [])
+		self.assertEquals(len(self.manager.getHandlers()), 0)
 
 	def testSubClassing(self):
 
@@ -116,7 +116,7 @@ class EventTestCase(unittest.TestCase):
 		foo.unregister()
 		bar.unregister()
 
-		self.assertEquals(self.manager.getHandlers(), [])
+		self.assertEquals(len(self.manager.getHandlers()), 0)
 
 	def testWorker(self):
 		"""Test Worker
@@ -229,7 +229,7 @@ class EventTestCase(unittest.TestCase):
 		self.assertTrue(
 				onBAR not in self.manager.getHandlers())
 
-		self.assertEquals(self.manager.getHandlers(), [])
+		self.assertEquals(len(self.manager.getHandlers()), 0)
 
 	def testManagerPushFlushSend(self):
 		"""Test Manager's push, flush and send
@@ -327,7 +327,7 @@ class EventTestCase(unittest.TestCase):
 		self.manager.remove(onFOO, "test")
 		self.manager.remove(onBAR, "bar")
 
-		self.assertEquals(self.manager.getHandlers(), [])
+		self.assertEquals(len(self.manager.getHandlers()), 0)
 
 def suite():
 	return unittest.makeSuite(EventTestCase, "test")

@@ -153,6 +153,7 @@ class Manager(object):
 		log = kwargs.get("log", None)
 		debug = kwargs.get("debug", False)
 
+		self._handlers = set()
 		self._channels = {"global": []}
 		self._queue = []
 		self._log = log
@@ -180,7 +181,7 @@ class Manager(object):
 		if channel:
 			return self._channels.get(channel, [])
 		else:
-			return reduce(lambda x, y: x + y, self._channels.values())
+			return self._handlers
 
 	def add(self, handler, *channels):
 		"""E.add(handler, *channels) -> None
@@ -197,6 +198,8 @@ class Manager(object):
 				not hasattr(handler, "listener"):
 			raise EventError(
 					"%s is not a filter or listener" % handler)
+
+		self._handlers.add(handler)
 
 		for channel in channels:
 			if self._channels.has_key(channel):
@@ -222,6 +225,9 @@ class Manager(object):
 			keys = self._channels.keys()
 		else:
 			keys = channels
+
+		if handler in self._handlers:
+			self._handlers.remove(handler)
 
 		for channel in keys:
 			if handler in self._channels[channel]:
@@ -351,6 +357,8 @@ class Component(Manager):
 
 			manager.add(handler, channel)
 
+			self._handlers.add(handler)
+
 			if self._channels.has_key(channel):
 				self._channels[channel].append(handler)
 				self._channels[channel].sort(
@@ -365,7 +373,7 @@ class Component(Manager):
 		this component
 		"""
 
-		for handler in self.getHandlers():
+		for handler in self.getHandlers().copy():
 			self.manager.remove(handler)
 			self.remove(handler)
 
