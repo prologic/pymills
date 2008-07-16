@@ -264,16 +264,6 @@ class Manager(object):
 		channel specified.
 		"""
 
-		#TODO: Fix this
-
-		"""
-  File "/home/prologic/lib/python/pymills/event.py", line 547, in flush
-    s = pickle.dumps((event, channel, source))
-  File "/usr/lib/python2.5/copy_reg.py", line 76, in _reduce_ex
-    raise TypeError("a class that defines __slots__ without "
-TypeError: a class that defines __slots__ without defining __getstate__ cannot be pickled
-		"""
-
 		if hasattr(source, "channel"):
 			channel = "%s:%s" % (source.channel, channel)
 
