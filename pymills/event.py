@@ -267,9 +267,6 @@ class Manager(object):
 		if hasattr(source, "channel"):
 			channel = "%s:%s" % (source.channel, channel)
 
-#		if source is None:
-#			source = self
-
 		try:
 			if self._debug:
 				if self._log is not None:
