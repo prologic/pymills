@@ -255,11 +255,11 @@ class Manager(object):
 		"""
 
 		if self.manager == self:
-			for event, channel, source in self._queue[:]:
+			for event in self._queue[:]:
 				try:
-					self.send(event, channel, source)
+					self.send(*event)
 				finally:
-					self._queue.remove((event, channel, source))
+					self._queue.remove(event)
 		else:
 			self.manager.flush()
 
