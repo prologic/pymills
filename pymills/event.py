@@ -112,7 +112,7 @@ def send(handlers, event, channel, source=None):
 	event._source = source
 	event._channel = channel
 
-	if handlers == []:
+	if not handlers:
 		raise UnhandledEvent(event, channel)
 
 	r = []
@@ -121,9 +121,9 @@ def send(handlers, event, channel, source=None):
 			args = handler.args
 			if len(args) > 0:
 				if args[0] in ("event", "evt", "e",):
-					r.append(handler(event, *event._args, **event._kwargs))
+					r.append(handler(event, *event.args, **event.kwargs))
 				else:
-					r.append(handler(*event._args, **event._kwargs))
+					r.append(handler(*event.args, **event.kwargs))
 			else:
 				r.append(handler())
 		except FilterEvent:
@@ -425,27 +425,35 @@ class Event(object):
 
 		super(Event, self).__init__(*args, **kwargs)
 
-		self._args = args
-		self._kwargs = kwargs
-		self.__dict__.update(kwargs)
+		self.args = args
+		self.kwargs = kwargs
 
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
 
-		attrs = ((k, v) for k, v in self.__dict__.items()
-				if not k.startswith("_"))
+		attrs = ((k, v) for k, v in self.kwargs.items())
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
 		channel = getattr(self, "_channel", "None")
 		return "<%s/%s %s {%s}>" % (
 				self.__class__.__name__,
 				channel,
-				self._args, ", ".join(attrStrings))
+				self.args, ", ".join(attrStrings))
 
+	def __getattr__(self, name):
+		"x.__getattr__('name') <==> x.name"
+
+		if self.kwargs.has_key(name):
+			return self.kwargs[name]
+		else:
+			raise AttributeError, name
+	
 	def __getitem__(self, x):
+		"x.__getitem__(y) <==> x[y]"
+
 		if type(x) == int:
-			return self._args[x]
+			return self.args[x]
 		elif type(x) == str:
-			return self._kwargs[x]
+			return self.kwargs[x]
 		else:
 			raise KeyError(x)
 
