@@ -435,6 +435,7 @@ class Event(object):
 
 		self.args = args
 		self.kwargs = kwargs
+		self.__dict__.update(kwargs)
 
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
@@ -447,14 +448,6 @@ class Event(object):
 				channel,
 				self.args, ", ".join(attrStrings))
 
-	def __getattr__(self, name):
-		"x.__getattr__('name') <==> x.name"
-
-		if self.kwargs.has_key(name):
-			return self.kwargs[name]
-		else:
-			raise AttributeError, name
-	
 	def __getitem__(self, x):
 		"x.__getitem__(y) <==> x[y]"
 
