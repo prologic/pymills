@@ -282,9 +282,9 @@ class Manager(object):
 				handlers = self.getHandlers("global") + \
 						self.getHandlers(channel)
 	
-				return send(handlers, event, channel, source)
+				send(handlers, event, channel, source)
 			else:
-				return self.manager.send(event, channel, source)
+				self.manager.send(event, channel, source)
 		finally:
 			if self._debug:
 				if self._log is not None:
