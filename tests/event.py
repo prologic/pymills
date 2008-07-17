@@ -40,9 +40,18 @@ class ListenerComponent(Component):
 
 class Foo(Component):
 
+	def __init__(self, *args, **kwargs):
+		super(Foo, self).__init__(*args, **kwargs)
+
+		self.gotbar = False
+
 	@listener("foo")
 	def onFOO(self):
-		return self.send(Event(), "bar")
+		self.send(Event(), "bar")
+
+	@listener("gotbar")
+	def onGOTBAR(self):
+		self.gotbar = True
 
 class SubFoo(Foo):
 	pass
@@ -51,7 +60,7 @@ class Bar(Component):
 
 	@listener("bar")
 	def onBAR(self):
-		return "bar"
+		self.send(Event(), "gotbar")
 
 class FooWorker(Worker):
 
@@ -110,8 +119,8 @@ class EventTestCase(unittest.TestCase):
 
 		self.assertTrue(bar.onBAR in foo.getHandlers())
 
-		r = self.manager.send(Event(), "foo")
-		self.assertEquals(r, (("bar",),))
+		self.manager.send(Event(), "foo")
+		self.assertTrue(foo.gotbar)
 
 		foo.unregister()
 		bar.unregister()
@@ -244,11 +253,6 @@ class EventTestCase(unittest.TestCase):
 
 		Test that a filter will filter an event and prevent
 		any further processing of this event.
-
-		Test that events sent directly to listeners can have
-		a return value from that listener. The return value
-		should be a list of return values from all listeners
-		listening to the given channel for that event.
 		"""
 
 		import time
@@ -259,16 +263,14 @@ class EventTestCase(unittest.TestCase):
 		@listener("test")
 		def onTEST(test, time, stop=False):
 			test.flag = True
-			return "test"
 
 		@listener("test")
 		def onFOO(test, time, stop=False):
 			test.foo = True
-			return "foo"
 
 		@listener("bar")
 		def onBAR(test, time):
-			return "bar"
+			pass
 
 		@filter()
 		def onSTOP(test, time, stop=False):
@@ -312,15 +314,6 @@ class EventTestCase(unittest.TestCase):
 		self.manager.send(Event(self, time.time(), stop=True),
 				"test")
 		self.assertTrue(self.flag == False)
-
-		r = self.manager.send(Event(self, time.time()), "test")
-		self.assertEquals(r[0], None)
-		self.assertEquals(r[1], "test")
-		self.assertEquals(r[2], "foo")
-
-		self.assertEquals(
-				self.manager.send(Event(self, time.time()), "bar"),
-				(None, "bar",))
 
 		self.manager.remove(onSTOP)
 		self.manager.remove(onTEST, "test")

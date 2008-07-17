@@ -115,20 +115,18 @@ def send(handlers, event, channel, source=None):
 	if not handlers:
 		raise UnhandledEvent(event, channel)
 
-	r = []
 	for handler in handlers:
 		try:
 			args = handler.args
-			if len(args) > 0:
+			if args:
 				if args[0] in ("event", "evt", "e",):
-					r.append(handler(event, *event.args, **event.kwargs))
+					handler(event, *event.args, **event.kwargs)
 				else:
-					r.append(handler(*event.args, **event.kwargs))
+					handler(*event.args, **event.kwargs)
 			else:
-				r.append(handler())
+				handler()
 		except FilterEvent:
 			return
-	return tuple(r)
 
 def _sortHandlers(x, y):
 	if hasattr(x, "filter") and hasattr(y, "filter"):
