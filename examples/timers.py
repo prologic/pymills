@@ -9,7 +9,7 @@ from pymills.event import Component, Manager, \
 class HelloWorld(Component):
 
 	@filter()
-	def onDEBUG(self, event):
+	def onDEBUG(self, event, *args, **kwargs):
 		print event
 
 	@listener("timer")
@@ -34,8 +34,11 @@ def main():
 	timers.add(3, "bar", foo="bar")
 
 	while True:
-		timers.process()
-		e.flush()
+		try:
+			timers.process()
+			e.flush()
+		except KeyboardInterrupt:
+			break
 
 if __name__ == "__main__":
 	main()

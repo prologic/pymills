@@ -11,13 +11,14 @@ class Foo(Component):
 
 	@listener("foo")
 	def onFOO(self, event):
+		print "Foo",
 		self.send(Event(), "bar")
 
 class Bar(Component):
 
 	@listener("bar")
 	def onBAR(self, event):
-		print "FooBar!"
+		print "Bar!"
 
 def main():
 	event = Manager()
@@ -29,7 +30,7 @@ def main():
 	while True:
 		try:
 			event.flush()
-			event.push(Event("foo"), "foo")
+			event.push(Event(), "foo")
 			sleep(1)
 		except KeyboardInterrupt:
 			break
