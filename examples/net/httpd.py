@@ -7,6 +7,7 @@ import math
 import hotshot
 import optparse
 import hotshot.stats
+from traceback import format_exc
 
 import pymills
 from pymills.net.sockets import TCPServer
@@ -15,6 +16,7 @@ from pymills.net.http import HTTP, ResponseEvent, Response
 from pymills.event import listener, UnhandledEvent, Component, Manager
 
 #pymills.net.sockets.POLL_INTERVAL = 0
+pymills.net.http.BUFFER_SIZE = 2048
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + systemVersion
@@ -43,8 +45,25 @@ class WebServer(TCPServer, HTTP):
 
 	@listener("get")
 	def onGET(self, req):
-		res = Response(req, "OK")
+		res = Response(req)
+		#res.write("OK")
+		res.body = open("/dev/urandom", "rb")
 		self.push(ResponseEvent(res), "response")
+
+	@listener("connect")
+	def onCONNECT(self, sock, host, port):
+		pass
+
+	@listener("disconnect")
+	def onDISCONNECT(self, sock):
+		pass
+
+	@listener("error")
+	def onERROR(self, sock, error):
+		print "ERROR: %s" % error
+		print " sock: %s" % sock
+		print format_exc()
+		raise SystemExit, 255
 
 class Stats(Component):
 
@@ -80,8 +99,6 @@ def main():
 		try:
 			e.flush()
 			server.process()
-		except UnhandledEvent:
-			pass
 		except KeyboardInterrupt:
 			break
 	e.flush()
