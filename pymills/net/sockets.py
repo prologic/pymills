@@ -170,15 +170,12 @@ class Client(Component):
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, e:
-			self.push(ErrorEvent(e[1]), "error", self)
+			self.push(ErrorEvent(e), "error", self)
 		self.connected = False
 		self.push(DisconnectEvent(), "disconnect", self)
 
-	def write(self, data, push=True):
-		if push:
-			self.push(WriteEvent(data), "write", self)
-		else:
-			return self.send(WriteEvent(data), "write", self)
+	def write(self, data):
+		self.push(WriteEvent(data), "write", self)
 
 	def process(self):
 		if self.__poll__():
@@ -205,7 +202,7 @@ class Client(Component):
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.push(ErrorEvent(e[1]), "error", self)
+				self.push(ErrorEvent(e), "error", self)
 				self.close()
 
 class TCPClient(Client):
@@ -257,7 +254,7 @@ class UDPClient(Client):
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.push(ErrorEvent(e[1]), "error", self)
+				self.push(ErrorEvent(e), "error", self)
 				self.close()
 
 class Server(Component):
@@ -322,11 +319,8 @@ class Server(Component):
 			for sock in self._socks:
 				self.close(sock)
 
-	def write(self, sock, data, push=True):
-		if push:
-			self.push(WriteEvent(data, sock), "write", self)
-		else:
-			return self.send(WriteEvent(data, sock), "write", self)
+	def write(self, sock, data):
+		self.push(WriteEvent(data, sock), "write", self)
 
 	def broadcast(self, data):
 		for sock in self._socks[1:]:
@@ -351,6 +345,8 @@ class Server(Component):
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close(sock)
+			elif e[0] == 35:
+				self.push(WriteEvent(data, sock), "write", self)
 			else:
 				self.push(ErrorEvent(e[1], sock), "error", self)
 				self.close()
