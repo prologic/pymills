@@ -26,8 +26,9 @@ from pymills.event import listener, Component, Event, UnhandledEvent
 ### Defaults/Constants
 ###
 
-server_version = "pymills/%s" % pymills.__version__
-protocol_version = "HTTP/1.0"
+SERVER_VERSION   = "pymills/%s" % pymills.__version__
+PROTOCOL_VERSION = "HTTP/1.0"
+BUFFER_SIZE      = 1024
 
 DEFAULT_ERROR_MESSAGE = """\
 <head>
@@ -67,6 +68,11 @@ class CloseEvent(Event):
 	def __init__(self, response):
 		super(CloseEvent, self).__init__(response)
 
+class StreamEvent(Event):
+
+	def __init__(self, response):
+		super(StreamEvent, self).__init__(response)
+
 ###
 ### Supporting Classes
 ###
@@ -91,35 +97,51 @@ class Request(object):
 		self.close = True
 
 class Response(object):
-	"""Response(req, body="") -> new Response object
+	"""Response(req) -> new Response object
 
 	Create a HTTP Response object that holds the response to
 	send back to the client. This ensure that the correct data
 	is sent in the correct order.
 	"""
 
-	def __init__(self, req, body=""):
+	def __init__(self, req):
 		"initializes x; see x.__class__.__doc__ for signature"
 		
 		self.req = req
 
 		self.headers = Headers([
-			("Server", server_version),
+			("Server", SERVER_VERSION),
 			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z")),
-			("Content-Type", "text/html"),
-			("Content-Length", len(body))])
+			("Content-Type", "text/html")])
+
 		self.body = StringIO()
-		self.body.write(body)
 		self.status = "HTTP/1.0 200 OK"
 
 	def write(self, s):
 		self.body.write(s)
 
+	def __repr__(self):
+		return "<Response %s %s>" % (
+			self.__class__.__name__,
+			self.headers["Content-Type"])
+
 	def __str__(self):
-		self.body.flush()
-		body = self.body.getvalue()
-		self.body.close()
-		return "%s\r\n%s%s\r\n" % (self.status, str(self.headers), body)
+		if type(self.body) == file:
+			self.body.seek(0, 2)
+			contentLength = self.body.tell()
+			self.body.seek(0)
+			body = ""
+			self.headers["Content-Type"] = "application/octet-stream"
+		else:
+			self.body.flush()
+			body = self.body.getvalue()
+			self.body.close()
+			contentLength = len(body)
+
+		if contentLength:
+			self.headers["Content-Length"] = contentLength
+
+		return "%s\r\n%s%s" % (self.status, str(self.headers), body)
 
 ###
 ### Protocol Class
@@ -165,15 +187,30 @@ class HTTP(Component):
 	### Event Processing
 	###
 
+	@listener("stream")
+	def onSTREAM(self, res):
+		data = res.body.read(BUFFER_SIZE)
+		if data:
+			self.write(res.req.sock, data)
+			self.push(StreamEvent(res), "stream")
+		else:
+			res.body.close()
+			if res.req.close:
+				self.push(CloseEvent(res), "close")
+		
 	@listener("close")
 	def onCLOSE(self, res):
 		self.close(res.req.sock)
 
 	@listener("response")
 	def onRESPONSE(self, res):
-		self.write(res.req.sock, str(res))
-		if res.req.close:
-			self.push(CloseEvent(res), "close")
+		if type(res.body) == file:
+			self.write(res.req.sock, str(res))
+			self.push(StreamEvent(res), "stream")
+		else:
+			self.write(res.req.sock, str(res))
+			if res.req.close:
+				self.push(CloseEvent(res), "close")
 
 	@listener("read")
 	def onREAD(self, sock, data):
@@ -211,7 +248,7 @@ class HTTP(Component):
 				version_number = int(version_number[0]), int(version_number[1])
 			except (ValueError, IndexError):
 				return self.sendError(sock, 400, "Bad request version (%r)" % version)
-			if version_number >= (1, 1) and protocol_version >= "HTTP/1.1":
+			if version_number >= (1, 1) and PROTOCOL_VERSION >= "HTTP/1.1":
 				closeConnection = False
 			if version_number >= (2, 0):
 				return self.sendError(sock, 505,
@@ -235,7 +272,7 @@ class HTTP(Component):
 
 		conntype = headers.get('Connection', "")
 		if (conntype.lower() == 'keep-alive' and
-			  protocol_version >= "HTTP/1.1"):
+			  PROTOCOL_VERSION >= "HTTP/1.1"):
 			req.close = False
 
 		try:
