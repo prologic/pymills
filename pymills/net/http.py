@@ -20,8 +20,7 @@ from cStringIO import StringIO
 from wsgiref.headers import Headers
 
 import pymills
-from pymills.event import listener, \
-		Component, Event
+from pymills.event import listener, Component, Event, UnhandledEvent
 
 ###
 ### Defaults/Constants
@@ -58,6 +57,16 @@ class RequestEvent(Event):
 	def __init__(self, request):
 		super(RequestEvent, self).__init__(request)
 
+class ResponseEvent(Event):
+
+	def __init__(self, response):
+		super(ResponseEvent, self).__init__(response)
+
+class CloseEvent(Event):
+
+	def __init__(self, response):
+		super(CloseEvent, self).__init__(response)
+
 ###
 ### Supporting Classes
 ###
@@ -78,29 +87,40 @@ class Request(object):
 
 		self.body = StringIO()
 
+		self.sock = None
+		self.close = True
+
 class Response(object):
-	"""Response(body="") -> new Response object
+	"""Response(req, body="") -> new Response object
 
 	Create a HTTP Response object that holds the response to
 	send back to the client. This ensure that the correct data
 	is sent in the correct order.
 	"""
 
-	def __init__(self, body=""):
+	def __init__(self, req, body=""):
 		"initializes x; see x.__class__.__doc__ for signature"
 		
+		self.req = req
+
 		self.headers = Headers([
 			("Server", server_version),
-			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z"))])
+			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z")),
+			("Content-Type", "text/html"),
+			("Content-Length", len(body))])
 		self.body = StringIO()
 		self.body.write(body)
 		self.status = "HTTP/1.0 200 OK"
+
+	def write(self, s):
+		self.body.write(s)
 
 	def __str__(self):
 		self.body.flush()
 		body = self.body.getvalue()
 		self.body.close()
 		return "%s\r\n%s%s\r\n" % (self.status, str(self.headers), body)
+
 ###
 ### Protocol Class
 ###
@@ -144,6 +164,16 @@ class HTTP(Component):
 	###
 	### Event Processing
 	###
+
+	@listener("close")
+	def onCLOSE(self, res):
+		self.close(res.req.sock)
+
+	@listener("response")
+	def onRESPONSE(self, res):
+		self.write(res.req.sock, str(res))
+		if res.req.close:
+			self.push(CloseEvent(res), "close")
 
 	@listener("read")
 	def onREAD(self, sock, data):
@@ -199,29 +229,19 @@ class HTTP(Component):
 			return self.sendError(sock, 400, "Bad request syntax (%r)" % requestline)
 
 		headers = mimetools.Message(StringIO(data), 0)
+
 		req = Request(command, path, version, headers)
+		req.sock = sock
 
 		conntype = headers.get('Connection', "")
-		if conntype.lower() == 'close':
-			closeConnection = True
-		elif (conntype.lower() == 'keep-alive' and
+		if (conntype.lower() == 'keep-alive' and
 			  protocol_version >= "HTTP/1.1"):
-			closeConnection = False
+			req.close = False
 
-		v = [x for x in self.send(RequestEvent(req), command.lower()) if x][0]
-
-		if type(v) == str:
-			res = Response(v)
-			res.headers.add_header("Content-Type", "text/html")
-			res.headers.add_header("Content-Length", str(len(v)))
-		elif isinstance(v, Response):
-			res = v
-		else:
-			return self.sendError(sock, 501, "Unsupported method (%r)" % command)
-
-		self.write(sock, str(res), not closeConnection)
-		if closeConnection:
-			self.close(sock)
+		try:
+			self.send(RequestEvent(req), command.lower())
+		except UnhandledEvent:
+			self.sendError(sock, 501, "Unsupported method (%r)" % command)
 
 	###
 	### Supporting Functions
@@ -258,7 +278,6 @@ class HTTP(Component):
 
 		res = Response(content)
 		res.status = "%s %s" % (code, message)
-		res.headers.add_header("Content-Type", "text/html")
 		res.headers.add_header('Connection', 'close')
 
 		if self.__commands[sock] != "HEAD" and code >= 200 and code not in (204, 304):

@@ -9,9 +9,9 @@ import optparse
 import hotshot.stats
 
 import pymills
-from pymills.net.http import HTTP
 from pymills.net.sockets import TCPServer
 from pymills import __version__ as systemVersion
+from pymills.net.http import HTTP, ResponseEvent, Response
 from pymills.event import listener, UnhandledEvent, Component, Manager
 
 #pymills.net.sockets.POLL_INTERVAL = 0
@@ -43,7 +43,8 @@ class WebServer(TCPServer, HTTP):
 
 	@listener("get")
 	def onGET(self, req):
-		return "OK"
+		res = Response(req, "OK")
+		self.push(ResponseEvent(res), "response")
 
 class Stats(Component):
 
