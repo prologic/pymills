@@ -39,12 +39,15 @@ def parse_options():
 
 	return opts, args
 
-class WebServer(TCPServer, HTTP):
+class Test(Component):
 
 	@listener("get")
 	def onGET(self, req):
 		res = Response(req, "OK")
 		self.push(ResponseEvent(res), "response")
+
+class WebServer(TCPServer, HTTP):
+	pass
 
 class Stats(Component):
 
@@ -74,6 +77,7 @@ def main():
 
 	e = Manager()
 	server = WebServer(e, port, address)
+	test = Test(e)
 	stats = Stats(e)
 
 	while True:
