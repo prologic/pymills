@@ -148,14 +148,9 @@ class Manager(object):
 	def __init__(self, *args, **kwargs):
 		super(Manager, self).__init__()
 
-		log = kwargs.get("log", None)
-		debug = kwargs.get("debug", False)
-
 		self._handlers = set()
 		self._channels = {"global": []}
 		self._queue = []
-		self._log = log
-		self._debug = debug
 		self.manager = self
 
 	def __len__(self):
@@ -271,27 +266,13 @@ class Manager(object):
 		if hasattr(source, "channel"):
 			channel = "%s:%s" % (source.channel, channel)
 
-		try:
-			if self._debug:
-				if self._log is not None:
-					self._log.debug("Sending %s to %s" % (event, channel))
-				else:
-					print >> sys.stderr, "Sending %s to %s" % (event, channel)
-
-			if self.manager == self:
-				handlers = self.getHandlers("global") + \
-						self.getHandlers(channel)
+		if self.manager == self:
+			handlers = self.getHandlers("global") + \
+					self.getHandlers(channel)
 	
-				send(handlers, event, channel, source)
-			else:
-				self.manager.send(event, channel, source)
-		finally:
-			if self._debug:
-				if self._log is not None:
-					self._log.debug("Sent: %s" % event)
-				else:
-					print >> sys.stderr, "Sent: %s" % event
-
+			send(handlers, event, channel, source)
+		else:
+			self.manager.send(event, channel, source)
 
 class Component(Manager):
 	"""Component(Manager) -> new component object
