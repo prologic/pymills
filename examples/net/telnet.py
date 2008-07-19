@@ -58,14 +58,12 @@ def main():
 	print "Trying %s..." % host
 	client.open(host, port, ssl=opts.ssl)
 
-	while client.connected:
+	while True:
 		try:
-			client.process()
 			e.flush()
+			client.poll()
 			line = raw_input().strip()
 			client.write("%s\n" % line)
-		except UnhandledEvent:
-			pass
 		except KeyboardInterrupt:
 			break
 	client.close()

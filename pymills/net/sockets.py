@@ -15,13 +15,16 @@ event-driven and should be sub-classed to do something usefull.
 
 import re
 import time
+import errno
 import socket
 import select
+from cStringIO import StringIO
 
 from pymills.event import Event, Component, filter
 
 POLL_INTERVAL = 0.000001
-CONNECT_TIMEOUT = 5.0
+CONNECT_TIMEOUT = 5
+BUFFER_SIZE = 1024
 BACKLOG = 10
 
 class SocketError(Exception): pass
@@ -71,139 +74,114 @@ class Client(Component):
 	def __init__(self, *args, **kwargs):
 		super(Client, self).__init__(*args, **kwargs)
 
+		self.host = ""
+		self.port = 0
 		self.ssl = False
 		self.server = {}
 		self.issuer = {}
 		self.connected = False
+		self.buffer = StringIO()
+
+		self._fds = []
 
 	def __del__(self):
 		if self.connected:
 			self.close()
 
-	def __ready__(self, wait=POLL_INTERVAL):
+	def poll(self, wait=POLL_INTERVAL):
 		try:
-			ready = select.select(
-					[self._sock], [self._sock], [], wait)
-			return (not ready[0] == []) or (not ready[1] == [])
-		except select.error, e:
-			if e[0] == 4:
+			r, w, e = select.select(self._fds, self._fds, [], wait)
+		except socket.error, error:
+			if error[0] == errno.EBADF:
+				self.connected = False
+				return
+		except select.error, error:
+			if error[0] == 4:
 				pass
-
-	def __poll__(self, wait=POLL_INTERVAL):
-		try:
-			return not select.select(
-					[self._sock], [], [], wait)[0] == []
-		except select.error, e:
-			if e[0] == 4:
-				pass
-
-	def __read__(self, bufsize=512):
-		try:
-			if self.ssl and hasattr(self, "_ssock"):
-				data = self._ssock.read(bufsize)
 			else:
-				data = self._sock.recv(bufsize)
-		except socket.error, e:
-			self.push(ErrorEvent(e[1]), "error", self)
-			self.close()
-			return
+				self.push(ErrorEvent(error), "error")
+				return
 
-		if not data:
-			self.close()
+		if (r or w) and not self.connected:
+			self.connected = True
+			self.push(ConnectEvent(self.host, self.port), "connect")
 			return
+			
+		if r:
+			try:
+				if self.ssl and hasattr(self, "_ssock"):
+					data = self._ssock.read(BUFFER_SIZE)
+				else:
+					data = self._sock.recv(BUFFER_SIZE)
+				if data:
+					self.push(ReadEvent(data), "read")
+				else:
+					self.close()
+					return
+			except socket.error, error:
+				self.push(ErrorEvent(error), "error", self)
+				self.close()
+				return
 
-		self.push(ReadEvent(data), "read", self)
+		if w:
+			try:
+				data = self.buffer.read(BUFFER_SIZE)
+
+				if data:
+					if self.ssl:
+						bytes = self._ssock.write(data)
+					else:
+						bytes = self._sock.send(data)
+
+					if bytes < len(data):
+						delta = (BUFFER_SIZE - bytes) * -1
+						self.buffer.seek(delta, 1)
+			except socket.error, error:
+				if error[0] in [32, 107]:
+					self.close()
+				else:
+					self.push(ErrorEvent(error), "error")
+					self.close()
 
 	def open(self, host, port, ssl=False):
 		self.ssl = ssl
+		self.host = host
+		self.port = port
 
 		try:
-			self._sock.connect((host, port))
+			try:
+				self._sock.connect((host, port))
+			except socket.error, error:
+				if error[0] == errno.EINPROGRESS:
+					pass
+
 			if self.ssl:
 				self._ssock = socket.ssl(self._sock)
-		except socket.error, e:
-			self.push(ErrorEvent(e[1]), "error", self)
-			self.close()
-			return
-
-		self._sock.setblocking(False)
-
-		stime = time.time()
-
-		while time.time() - stime < CONNECT_TIMEOUT:
-
-			if self.__ready__():
-
-				etime = time.time()
-				ttime = etime - stime
-
+			
+			r, w, e = select.select([], self._fds, [], CONNECT_TIMEOUT)
+			if w:
 				self.connected = True
-
-				if self.ssl and hasattr(self, "_ssock"):
-					print self._ssock.server()
-
-#					self.server = re.match(
-#							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
-#							"/L=(?P<L>.*)/O=(?P<O>.*)"
-#							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
-#							self._ssock.server()).groupdict()
-
-#					self.issuer = re.match(
-#							"/C=(?P<C>.*)/ST=(?P<ST>.*)"
-#							"/L=(?P<L>.*)/O=(?P<O>.*)"
-#							"/OU=(?P<UO>.*)/CN=(?P<CN>.*)",
-#							self._ssock.issuer()).groupdict()
-
-				self.push(
-						ConnectEvent(host, port), "connect", self)
-
-				return
-
-		etime = time.time()
-		ttime = etime - stime
-
-		self.push(ErrorEvent("Connection timed out"), "error", self)
-		self.close()
+				self.push(ConnectEvent(host, port), "connect")
+			else:
+				self.push(ErrorEvent("Connection timed out"), "error")
+				self.close()
+		except socket.error, error:
+			self.push(ErrorEvent(error), "error")
+			self.close()
 
 	def close(self):
 		try:
 			self._sock.shutdown(2)
 			self._sock.close()
-		except socket.error, e:
-			self.push(ErrorEvent(e), "error", self)
+		except socket.error, error:
+			self.push(ErrorEvent(error), "error")
 		self.connected = False
-		self.push(DisconnectEvent(), "disconnect", self)
+		self.push(DisconnectEvent(), "disconnect")
 
 	def write(self, data):
-		self.push(WriteEvent(data), "write", self)
-
-	def process(self):
-		if self.__poll__():
-			self.__read__()
-
-	@filter("write")
-	def onWRITE(self, data):
-		"""Write Event
-
-		Typically this should NOT be overridden by sub-classes.
-		If it is, this should be called by the sub-class first.
-		"""
-
-		try:
-			if self.ssl and hasattr(self, "_ssock"):
-				bytes = self._ssock.write(data)
-			elif hasattr(self, "_sock"):
-				bytes = self._sock.send(data)
-			else:
-				raise SocketError("Socket not connected")
-			if bytes < len(data):
-				raise SocketError("Didn't write all data!")
-		except socket.error, e:
-			if e[0] in [32, 107]:
-				self.close()
-			else:
-				self.push(ErrorEvent(e), "error", self)
-				self.close()
+		self.buffer.seek(0, 2)
+		self.buffer.write(data)
+		self.buffer.seek(0)
 
 class TCPClient(Client):
 
@@ -214,29 +192,35 @@ class TCPClient(Client):
 		self._sock = socket.socket(
 				socket.AF_INET,
 				socket.SOCK_STREAM)
+		self._sock.setblocking(False)
+		self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
 		if bind is not None:
 			self._sock.bind((bind, 0))
-		Client.open(self, host, port, ssl)
+
+		self._fds.append(self._sock)
+
+		super(TCPClient, self).open(host, port, ssl)
 
 class UDPClient(Client):
 
 	def __init__(self, event):
 		super(UDPClient, self).__init__(event)
 
-	__ready__ = lambda: None
-
 	def open(self, host, port):
 		self._sock = socket.socket(
 				socket.AF_INET,
 				socket.SOCK_DGRAM)
 
+		self.host = host
+		self.port = port
 		self.addr = (host, port)
 
 		self._sock.setblocking(False)
 
 		self.connected = True
 
-		self.push(ConnectEvent(host, port), "connect", self)
+		self.push(ConnectEvent(host, port), "connect")
 
 	@filter("write")
 	def onWRITE(self, data):
