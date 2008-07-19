@@ -42,7 +42,7 @@ class Client(TCPClient, Worker):
 	def run(self):
 		while self.isRunning():
 			if self.connected:
-				self.process()
+				self.poll()
 			else:
 				sleep(0.01)
 
