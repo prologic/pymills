@@ -100,11 +100,6 @@ class Client(Component):
 				self.push(ErrorEvent(error), "error")
 				return
 
-		if (r or w) and not self.connected:
-			self.connected = True
-			self.push(ConnectEvent(self.host, self.port), "connect")
-			return
-			
 		if r:
 			try:
 				if self.ssl and hasattr(self, "_ssock"):
