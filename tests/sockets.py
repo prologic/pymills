@@ -69,7 +69,7 @@ class Server(TCPServer, Worker):
 
 	def run(self):
 		while self.isRunning():
-			self.process()
+			self.poll()
 
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):

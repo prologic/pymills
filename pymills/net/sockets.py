@@ -112,7 +112,7 @@ class Client(Component):
 					self.close()
 					return
 			except socket.error, error:
-				self.push(ErrorEvent(error), "error", self)
+				self.push(ErrorEvent(error), "error")
 				self.close()
 				return
 
@@ -238,12 +238,13 @@ class UDPClient(Client):
 		try:
 			bytes = self._sock.sendto(data, self.addr)
 			if bytes < len(data):
-				raise SocketError("Didn't write all data!")
+				delta = (BUFFER_SIZE - bytes) * -1
+				self.buffer.seek(delta, 1)
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.push(ErrorEvent(e), "error", self)
+				self.push(ErrorEvent(e), "error")
 				self.close()
 
 class Server(Component):
@@ -251,39 +252,46 @@ class Server(Component):
 	def __init__(self, *args, **kwargs):
 		super(Server, self).__init__(*args, **kwargs)
 
-		self._socks = []
+		self.host = ""
+		self.port = 0
+		self.buffers = {}
+
+		self._fds = []
 
 	def __del__(self):
 		self.close()
 
-	def __poll__(self, wait=POLL_INTERVAL):
+	def poll(self, wait=POLL_INTERVAL):
 		try:
-			r, w, e = select.select(self._socks, [], self._socks, wait)
-			return r
+			r, w, e = select.select(self._fds, self._fds, [], wait)
 		except socket.error, error:
 			if error[0] == 9:
 				for sock in e:
 					self.close(sock)
 
-	def __read__(self, bufsize=512):
-		read = self.__poll__()
-		for sock in read:
+		for sock in w:
+			self.buffers[sock].seek(0)
+			data = self.buffers[sock].read(BUFFER_SIZE)
+			if data:
+				self.send(WriteEvent(data, sock), "write")
+			else:
+				self.buffers[sock].seek(0)
+				self.buffers[sock].truncate()
+			
+		for sock in r:
 			if sock == self._sock:
-				# New Connection
 				newsock, host = self._sock.accept()
 				newsock.setblocking(False)
-				self._socks.append(newsock)
+				newsock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+				self._fds.append(newsock)
+				self.buffers[newsock] = StringIO()
 				host, port = host
-				self.push(
-						ConnectEvent(host, port, newsock),
-						"connect", self)
+				self.push(ConnectEvent(host, port, newsock), "connect")
 			else:
-				# Socket has data
-
 				try:
-					data = sock.recv(bufsize)
+					data = sock.recv(BUFFER_SIZE)
 				except socket.error, e:
-					self.push(ErrorEvent(e[1], sock), "error", self)
+					self.push(ErrorEvent(e[1], sock), "error")
 					self.close(sock)
 					continue
 
@@ -291,8 +299,7 @@ class Server(Component):
 					self.close(sock)
 					continue
 
-				self.push(
-						ReadEvent(data, sock), "read", self)
+				self.push(ReadEvent(data, sock), "read")
 
 	def close(self, sock=None):
 		if sock is not None:
@@ -300,23 +307,22 @@ class Server(Component):
 				sock.shutdown(2)
 				sock.close()
 			except socket.error, e:
-				self.push(ErrorEvent(e[1], sock), "error", self)
-			self._socks.remove(sock)
-			self.push(DisconnectEvent(sock), "disconnect", self)
+				self.push(ErrorEvent(e[1], sock), "error")
+
+			self._fds.remove(sock)
+			self.push(DisconnectEvent(sock), "disconnect")
 
 		else:
-			for sock in self._socks:
+			for sock in self._fds:
 				self.close(sock)
 
 	def write(self, sock, data):
-		self.push(WriteEvent(data, sock), "write", self)
+		self.buffers[sock].seek(0, 2)
+		self.buffers[sock].write(data)
 
 	def broadcast(self, data):
-		for sock in self._socks[1:]:
+		for sock in self._fds[1:]:
 			self.write(sock, data)
-
-	def process(self):
-		self.__read__()
 
 	@filter("write")
 	def onWRITE(self, sock, data):
@@ -330,14 +336,15 @@ class Server(Component):
 		try:
 			bytes = sock.send(data)
 			if bytes < len(data):
-				raise SocketError("Didn't write all data!")
+				delta = (BUFFER_SIZE - bytes) * -1
+				self.buffers[sock].seek(delta, 1)
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close(sock)
 			elif e[0] == 35:
-				self.push(WriteEvent(data, sock), "write", self)
+				self.buffers[sock].seek(BUFFER_SIZE, 1)
 			else:
-				self.push(ErrorEvent(e[1], sock), "error", self)
+				self.push(ErrorEvent(e[1], sock), "error")
 				self.close()
 
 class TCPServer(Server):
@@ -355,7 +362,7 @@ class TCPServer(Server):
 		self._sock.bind((address, port))
 		self._sock.listen(BACKLOG)
 
-		self._socks.append(self._sock)
+		self._fds.append(self._sock)
 
 class UDPServer(Server):
 
@@ -367,32 +374,61 @@ class UDPServer(Server):
 		self._sock.setsockopt(
 				socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self._sock.setblocking(False)
+		self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
 		self._sock.bind((address, port))
 
-	def __poll__(self, wait=POLL_INTERVAL):
+		self._fds.append(self._sock)
+
+		self.buffers[self._sock] = StringIO()
+
+	def poll(self, wait=POLL_INTERVAL):
 		try:
-			r, w, e = select.select([self._sock], [], [], wait)
-			if not r == []:
-				return True
+			r, w, e = select.select(self._fds, self._fds, self._fds, wait)
 		except socket.error, error:
 			if error[0] == 9:
 				for sock in e:
 					self.close(sock)
-			return False
 
-	def __read__(self, bufsize=512):
-		if  self.__poll__():
+		for sock in w:
+			self.buffers[sock].seek(0)
+			data = self.buffers[sock].read(BUFFER_SIZE)
+			if data:
+				self.send(WriteEvent(data, sock), "write")
+			else:
+				self.buffers[sock].seek(0)
+				self.buffers[sock].truncate()
+			
+		if r:
 			try:
-				data, addr = self._sock.recvfrom(bufsize)
+				data, addr = self._sock.recvfrom(BUFFER_SIZE)
+
+				if data:
+					self.close(sock)
+				else:
+					self.push(ReadEvent(data, sock), "read")
 			except socket.error, e:
-				self.push(ErrorEvent(e[1], self._sock), "error", self)
-				self.close()
-				return
+				self.push(ErrorEvent(e[1], sock), "error")
+				self.close(sock)
 
-			if not data:
-				self.close()
-				return
+	def onWRITE(self, sock, data):
+		"""Write Event
 
-			self.push(
-					ReadEvent(data, self._sock), "read", self)
+
+		Typically this should NOT be overridden by sub-classes.
+		If it is, this should be called by the sub-class first.
+		"""
+
+		try:
+			bytes = sock.send(data)
+			if bytes < len(data):
+				delta = (BUFFER_SIZE - bytes) * -1
+				self.buffers[sock].seek(delta, 1)
+		except socket.error, e:
+			if e[0] in [32, 107]:
+				self.close(sock)
+			elif e[0] == 35:
+				self.buffers[sock].seek(BUFFER_SIZE, 1)
+			else:
+				self.push(ErrorEvent(e[1], sock), "error")
+				self.close()
