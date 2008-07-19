@@ -201,7 +201,7 @@ class HTTP(Component):
 		else:
 			self.write(res.req.sock, str(res))
 			if res.req.close:
-				self.push(CloseEvent(res), "close")
+				self.close(res.req.sock)
 
 	@listener("read")
 	def onREAD(self, sock, data):
