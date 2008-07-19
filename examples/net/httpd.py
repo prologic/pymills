@@ -47,7 +47,7 @@ class WebServer(TCPServer, HTTP):
 	def onGET(self, req):
 		res = Response(req)
 		#res.write("OK")
-		res.body = open("/dev/urandom", "rb")
+		res.body = open("test.bin", "rb")
 		self.push(ResponseEvent(res), "response")
 
 	@listener("connect")
@@ -57,13 +57,6 @@ class WebServer(TCPServer, HTTP):
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
 		pass
-
-	@listener("error")
-	def onERROR(self, sock, error):
-		print "ERROR: %s" % error
-		print " sock: %s" % sock
-		print format_exc()
-		raise SystemExit, 255
 
 class Stats(Component):
 
@@ -99,6 +92,8 @@ def main():
 		try:
 			e.flush()
 			server.poll()
+		except UnhandledEvent:
+			pass
 		except KeyboardInterrupt:
 			break
 	e.flush()

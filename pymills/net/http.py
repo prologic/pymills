@@ -63,11 +63,6 @@ class ResponseEvent(Event):
 	def __init__(self, response):
 		super(ResponseEvent, self).__init__(response)
 
-class CloseEvent(Event):
-
-	def __init__(self, response):
-		super(CloseEvent, self).__init__(response)
-
 class StreamEvent(Event):
 
 	def __init__(self, response):
@@ -196,12 +191,8 @@ class HTTP(Component):
 		else:
 			res.body.close()
 			if res.req.close:
-				self.push(CloseEvent(res), "close")
+				self.close(res.req.sock)
 		
-	@listener("close")
-	def onCLOSE(self, res):
-		self.close(res.req.sock)
-
 	@listener("response")
 	def onRESPONSE(self, res):
 		if type(res.body) == file:

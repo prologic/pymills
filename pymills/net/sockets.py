@@ -67,6 +67,14 @@ class WriteEvent(Event):
 		else:
 			Event.__init__(self, sock, data)
 
+class CloseEvent(Event):
+
+	def __init__(self, sock=None):
+		if sock is None:
+			Event.__init__(self)
+		else:
+			Event.__init__(self, sock)
+
 class Client(Component):
 
 	def __init__(self, *args, **kwargs):
@@ -78,9 +86,10 @@ class Client(Component):
 		self.server = {}
 		self.issuer = {}
 		self.connected = False
-		self.buffer = StringIO()
+		self.buffer = []
 
 		self._fds = []
+		self._closeFlag = False
 
 	def __del__(self):
 		if self.connected:
@@ -117,13 +126,12 @@ class Client(Component):
 				return
 
 		if w:
-			self.buffer.seek(0)
-			data = self.buffer.read(BUFFER_SIZE)
-			if data:
+			if self.buffer:
+				data = self.buffer[0]
 				self.send(WriteEvent(data), "write")
 			else:
-				self.buffer.seek(0)
-				self.buffer.truncate()
+				if self._closeFlag:
+					self.close()
 
 	def open(self, host, port, ssl=False):
 		self.ssl = ssl
@@ -152,6 +160,23 @@ class Client(Component):
 			self.close()
 
 	def close(self):
+		self.push(CloseEvent(), "close")
+	
+	def write(self, data):
+		self.buffer.append(data)
+
+	@filter("close")
+	def onCLOSE(self):
+		"""Close Event
+
+		Typically this should NOT be overridden by sub-classes.
+		If it is, this should be called by the sub-class first.
+		"""
+
+		if self.buffer:
+			self._closeFlag = True
+			return
+
 		try:
 			self._sock.shutdown(2)
 			self._sock.close()
@@ -159,10 +184,6 @@ class Client(Component):
 			self.push(ErrorEvent(error), "error")
 		self.connected = False
 		self.push(DisconnectEvent(), "disconnect")
-
-	def write(self, data):
-		self.buffer.seek(0, 2)
-		self.buffer.write(data)
 
 class TCPClient(Client):
 
@@ -257,6 +278,7 @@ class Server(Component):
 		self.buffers = {}
 
 		self._fds = []
+		self._closeFlags = []
 
 	def __del__(self):
 		self.close()
@@ -270,13 +292,12 @@ class Server(Component):
 					self.close(sock)
 
 		for sock in w:
-			self.buffers[sock].seek(0)
-			data = self.buffers[sock].read(BUFFER_SIZE)
-			if data:
+			if self.buffers[sock]:
+				data = self.buffers[sock][0]
 				self.send(WriteEvent(data, sock), "write")
 			else:
-				self.buffers[sock].seek(0)
-				self.buffers[sock].truncate()
+				if sock in self._closeFlags:
+					self.close(sock)
 			
 		for sock in r:
 			if sock == self._sock:
@@ -284,7 +305,7 @@ class Server(Component):
 				newsock.setblocking(False)
 				newsock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 				self._fds.append(newsock)
-				self.buffers[newsock] = StringIO()
+				self.buffers[newsock] = []
 				host, port = host
 				self.push(ConnectEvent(host, port, newsock), "connect")
 			else:
@@ -302,23 +323,10 @@ class Server(Component):
 				self.push(ReadEvent(data, sock), "read")
 
 	def close(self, sock=None):
-		if sock is not None:
-			try:
-				sock.shutdown(2)
-				sock.close()
-			except socket.error, e:
-				self.push(ErrorEvent(e[1], sock), "error")
-
-			self._fds.remove(sock)
-			self.push(DisconnectEvent(sock), "disconnect")
-
-		else:
-			for sock in self._fds:
-				self.close(sock)
+		self.push(CloseEvent(sock), "close")
 
 	def write(self, sock, data):
-		self.buffers[sock].seek(0, 2)
-		self.buffers[sock].write(data)
+		self.buffers[sock].append(data)
 
 	def broadcast(self, data):
 		for sock in self._fds[1:]:
@@ -336,16 +344,44 @@ class Server(Component):
 		try:
 			bytes = sock.send(data)
 			if bytes < len(data):
-				delta = (BUFFER_SIZE - bytes) * -1
-				self.buffers[sock].seek(delta, 1)
+				self.buffers[sock][0] = data[bytes:]
+			else:
+				del self.buffers[sock][0]
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close(sock)
-			elif e[0] == 35:
-				self.buffers[sock].seek(BUFFER_SIZE, 1)
 			else:
 				self.push(ErrorEvent(e[1], sock), "error")
 				self.close()
+
+	@filter("close")
+	def onCLOSE(self, sock):
+		"""Close Event
+
+		Typically this should NOT be overridden by sub-classes.
+		If it is, this should be called by the sub-class first.
+		"""
+
+		if sock:
+			if self.buffers[sock]:
+				self._closeFlags.append(sock)
+				return
+
+			if sock in self._closeFlags:
+				self._closeFlags.remove(sock)
+
+			try:
+				sock.shutdown(2)
+				sock.close()
+			except socket.error, e:
+				self.push(ErrorEvent(e[1], sock), "error")
+
+			self._fds.remove(sock)
+			self.push(DisconnectEvent(sock), "disconnect")
+		else:
+			for sock in self._fds:
+				self.close(sock)
+
 
 class TCPServer(Server):
 
@@ -380,7 +416,7 @@ class UDPServer(Server):
 
 		self._fds.append(self._sock)
 
-		self.buffers[self._sock] = StringIO()
+		self.buffers[self._sock] = []
 
 	def poll(self, wait=POLL_INTERVAL):
 		try:
@@ -391,13 +427,9 @@ class UDPServer(Server):
 					self.close(sock)
 
 		for sock in w:
-			self.buffers[sock].seek(0)
-			data = self.buffers[sock].read(BUFFER_SIZE)
-			if data:
+			if self.buffers[sock]:
+				data = self.buffers[sock][0]
 				self.send(WriteEvent(data, sock), "write")
-			else:
-				self.buffers[sock].seek(0)
-				self.buffers[sock].truncate()
 			
 		if r:
 			try:
@@ -422,13 +454,12 @@ class UDPServer(Server):
 		try:
 			bytes = sock.send(data)
 			if bytes < len(data):
-				delta = (BUFFER_SIZE - bytes) * -1
-				self.buffers[sock].seek(delta, 1)
+				self.buffers[sock][0] = data[bytes:]
+			else:
+				del self.buffers[sock][0]
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close(sock)
-			elif e[0] == 35:
-				self.buffers[sock].seek(BUFFER_SIZE, 1)
 			else:
 				self.push(ErrorEvent(e[1], sock), "error")
 				self.close()
