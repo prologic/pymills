@@ -329,7 +329,7 @@ class Component(Manager):
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for handler in handlers:
-			if hasattr(self, "channel"):
+			if hasattr(self, "__channel__"):
 				channel = "%s:%s" % (self.__channel__, handler.channel)
 			else:
 				channel = handler.channel
