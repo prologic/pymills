@@ -315,7 +315,7 @@ class Component(Manager):
 		self._links = []
 
 		if kwargs.has_key("channel"):
-			self.channel = kwargs["channel"]
+			self.__channel__ = kwargs["channel"]
 
 		self.register(self.manager)
 
@@ -330,7 +330,7 @@ class Component(Manager):
 
 		for handler in handlers:
 			if hasattr(self, "channel"):
-				channel = "%s:%s" % (self.channel, handler.channel)
+				channel = "%s:%s" % (self.__channel__, handler.channel)
 			else:
 				channel = handler.channel
 
