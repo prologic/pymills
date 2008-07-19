@@ -98,7 +98,7 @@ def main():
 	while True:
 		try:
 			e.flush()
-			server.process()
+			server.poll()
 		except KeyboardInterrupt:
 			break
 	e.flush()
