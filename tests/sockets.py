@@ -11,9 +11,8 @@ import unittest
 from time import sleep
 
 from pymills.event import listener, Worker
-from pymills.net.sockets import TCPClient, TCPServer, \
-		SocketError, ConnectEvent, DisconnectEvent, \
-		ReadEvent, WriteEvent
+from pymills.net.sockets import TCPClient, TCPServer
+from pymills.net.sockets import ConnectEvent, DisconnectEvent, ReadEvent
 
 class ClientManager(Worker):
 
@@ -36,7 +35,6 @@ class Client(TCPClient, Worker):
 
 		self.connectedFlag = False
 		self.disconnectedFlag = False
-		self.line = None
 		self.data = None
 
 	def run(self):
@@ -55,19 +53,19 @@ class Client(TCPClient, Worker):
 		self.disconnectedFlag = True
 
 	@listener("read")
-	def onREAD(self, line):
-		self.line = line
-
-	@listener("write")
-	def onWRITE(self, data):
-		TCPClient.onWRITE(self, data)
+	def onREAD(self, data):
 		self.data = data
-	
+
 	@listener("error")
 	def onERROR(self, error):
 		pass
 
 class Server(TCPServer, Worker):
+
+	def __init__(self, *args, **kwargs):
+		super(Server, self).__init__(*args, **kwargs)
+
+		self.data = None
 
 	def run(self):
 		while self.isRunning():
@@ -82,28 +80,14 @@ class Server(TCPServer, Worker):
 		pass
 
 	@listener("read")
-	def onREAD(self, sock, line):
-		pass
+	def onREAD(self, sock, data):
+		self.data = data
 
 	@listener("error")
 	def onERROR(self, sock, error):
 		pass
 
 class SocketsTestCase(unittest.TestCase):
-
-	def testSocketError(self):
-		"""Test sockets.SocketError
-
-		1. Test that raising an exception of type SocketError
-		   works and a type and message is shown
-		"""
-
-		try:
-			raise SocketError(123, "test")
-		except SocketError, error:
-			#1
-			self.assertEquals(error[0], 123)
-			self.assertEquals(error[1], "test")
 
 	def testConnectEvent(self):
 		"""Test sockets.ConnectEvent
@@ -158,24 +142,6 @@ class SocketsTestCase(unittest.TestCase):
 		self.assertEquals(event[0], "sock")
 		self.assertEquals(event[1], "foo")
 
-	def testWriteEvent(self):
-		"""Test sockets.WriteEvent
-
-		1. Test that WriteEvent can hold a line of data
-		   with sock == None
-		2. Test that WriteEvent can hold a line of data
-		   for a specific socket with sock not None
-		"""
-
-		#1
-		event = WriteEvent("foo")
-		self.assertEquals(event[0], "foo")
-
-		#2
-		event = WriteEvent("foo", "sock")
-		self.assertEquals(event[0], "sock")
-		self.assertEquals(event[1], "foo")
-
 	def testTCPClient(self):
 		"""Test sockets.TCPClient
 
@@ -204,23 +170,23 @@ class SocketsTestCase(unittest.TestCase):
 			self.assertTrue(client.connectedFlag)
 
 			#2
-			self.assertTrue(client.line == "Ready\n")
+			self.assertTrue(client.data == "Ready\n")
 
 			#3
 			client.write("foo")
 			sleep(0.1)
-			self.assertTrue(client.data == "foo")
+			self.assertTrue(server.data == "foo")
 
 			#4
 			client.close()
-			sleep(0.1)
+			sleep(0.01)
 			self.assertTrue(client.disconnectedFlag)
 
 		finally:
 			client.close()
 			server.close()
 
-			sleep(0.1)
+			sleep(0.01)
 
 			client.stop()
 			client.join()
