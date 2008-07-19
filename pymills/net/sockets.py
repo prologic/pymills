@@ -117,24 +117,13 @@ class Client(Component):
 				return
 
 		if w:
-			try:
-				data = self.buffer.read(BUFFER_SIZE)
-
-				if data:
-					if self.ssl:
-						bytes = self._ssock.write(data)
-					else:
-						bytes = self._sock.send(data)
-
-					if bytes < len(data):
-						delta = (BUFFER_SIZE - bytes) * -1
-						self.buffer.seek(delta, 1)
-			except socket.error, error:
-				if error[0] in [32, 107]:
-					self.close()
-				else:
-					self.push(ErrorEvent(error), "error")
-					self.close()
+			self.buffer.seek(0)
+			data = self.buffer.read(BUFFER_SIZE)
+			if data:
+				self.send(WriteEvent(data), "write")
+			else:
+				self.buffer.seek(0)
+				self.buffer.truncate()
 
 	def open(self, host, port, ssl=False):
 		self.ssl = ssl
@@ -174,7 +163,6 @@ class Client(Component):
 	def write(self, data):
 		self.buffer.seek(0, 2)
 		self.buffer.write(data)
-		self.buffer.seek(0)
 
 class TCPClient(Client):
 
@@ -194,6 +182,30 @@ class TCPClient(Client):
 		self._fds.append(self._sock)
 
 		super(TCPClient, self).open(host, port, ssl)
+
+	@filter("write")
+	def onWRITE(self, data):
+		"""Write Event
+
+		Typically this should NOT be overridden by sub-classes.
+		If it is, this should be called by the sub-class first.
+		"""
+
+		try:
+			if self.ssl:
+				bytes = self._ssock.write(data)
+			else:
+				bytes = self._sock.send(data)
+
+			if bytes < len(data):
+				delta = (BUFFER_SIZE - bytes) * -1
+				self.buffer.seek(delta, 1)
+		except socket.error, error:
+			if error[0] in [32, 107]:
+				self.close()
+			else:
+				self.push(ErrorEvent(error), "error")
+				self.close()
 
 class UDPClient(Client):
 
