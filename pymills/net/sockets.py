@@ -27,8 +27,6 @@ CONNECT_TIMEOUT = 5
 BUFFER_SIZE = 1024
 BACKLOG = 10
 
-class SocketError(Exception): pass
-
 class ErrorEvent(Event):
 
 	def __init__(self, error, sock=None):
