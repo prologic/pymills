@@ -10,82 +10,96 @@
 import unittest
 from time import sleep
 
-from pymills.event import listener, Worker
+from pymills.event import filter, listener, Worker
 from pymills.net.sockets import TCPClient, TCPServer
-from pymills.net.sockets import ConnectEvent, DisconnectEvent, ReadEvent
+from pymills.net.sockets import ConnectEvent, DisconnectEvent, ReadEvent, ErrorEvent, CloseEvent, WriteEvent
 
-class ClientManager(Worker):
+class Manager(Worker):
+
+	client = None
+	server = None
+	events = 0
+
+	@filter()
+	def onDEBUG(self, event, *args, **kwargs):
+		print event
+		self.events += 1
 
 	def run(self):
 		while self.isRunning():
 			self.flush()
-			sleep(0.01)
 
-class ServerManager(Worker):
+			self.server.poll()
+			
+			if self.client.connected:
+				self.client.poll()
 
-	def run(self):
-		while self.isRunning():
-			self.flush()
-			sleep(0.01)
+class Client(TCPClient):
 
-class Client(TCPClient, Worker):
+	__channel__ = "client"
 
-	def __init__(self, *args, **kwargs):
-		super(Client, self).__init__(*args, **kwargs)
-
-		self.connectedFlag = False
-		self.disconnectedFlag = False
-		self.data = None
-
-	def run(self):
-		while self.isRunning():
-			if self.connected:
-				self.poll()
-			else:
-				sleep(0.01)
+	connectedFlag = False
+	disconnectedFlag = False
+	error = None
+	dataIn = ""
+	dataOut = ""
 
 	@listener("connect")
 	def onCONNECT(self, host, port):
+		print "Client connected"
 		self.connectedFlag = True
 
 	@listener("disconnect")
 	def onDISCONNECT(self):
+		print "Client.onDISCONNECT:"
 		self.disconnectedFlag = True
 
 	@listener("read")
 	def onREAD(self, data):
-		self.data = data
+		self.dataIn = data
 
 	@listener("error")
 	def onERROR(self, error):
-		pass
+		self.error = error
 
-class Server(TCPServer, Worker):
+	@listener("write")
+	def onWRITE(self, data):
+		self.dataOut = data
 
-	def __init__(self, *args, **kwargs):
-		super(Server, self).__init__(*args, **kwargs)
+class Server(TCPServer):
 
-		self.data = None
+	__channel__ = "server"
 
-	def run(self):
-		while self.isRunning():
-			self.poll()
+	dataIn = {}
+	dataOut = {}
+	clients = []
+	errors = {}
 
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
-		self.write(sock, "Ready\n")
+		self.clients.append(sock)
+		self.dataIn[sock] = ""
+		self.dataOut[sock] = ""
+		self.write(sock, "Ready")
 
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
-		pass
+		self.clients.remove(sock)
+		del self.dataIn[sock]
+		del self.dataOut[sock]
+		print "Server.onDISCONNECT: %s" % sock
 
 	@listener("read")
 	def onREAD(self, sock, data):
-		self.data = data
+		self.dataIn[sock] = data
+
+	@listener("write")
+	def onWRITE(self, sock, data):
+		self.dataOut[sock] = data
 
 	@listener("error")
 	def onERROR(self, sock, error):
-		pass
+		self.errors[sock] = error
 
 class SocketsTestCase(unittest.TestCase):
 
@@ -142,6 +156,63 @@ class SocketsTestCase(unittest.TestCase):
 		self.assertEquals(event[0], "sock")
 		self.assertEquals(event[1], "foo")
 
+	def testWriteEvent(self):
+		"""Test sockets.WriteEvent
+
+		1. Test that WriteEvent can hold some data
+		   with sock == None
+		2. Test that WriteEvent can hold some data
+		   for a specific socket with sock not None
+		"""
+
+		#1
+		event = WriteEvent("foo")
+		self.assertEquals(event[0], "foo")
+
+		#2
+		event = WriteEvent("foo", "sock")
+		self.assertEquals(event[0], "sock")
+		self.assertEquals(event[1], "foo")
+
+	def testErrorEvent(self):
+		"""Test sockets.ErrorEvent
+
+		1. Test that ErrorEvent can hold an error
+		   with sock == None
+		2. Test that WriteEvent can hold an error
+		   for a specific socket with sock not None
+		"""
+
+		#1
+		event = ErrorEvent("foo")
+		self.assertEquals(event[0], "foo")
+
+		#2
+		event = ErrorEvent("foo", "sock")
+		self.assertEquals(event[0], "sock")
+		self.assertEquals(event[1], "foo")
+
+	def testCloseEvent(self):
+		"""Test sockets.CloseEvent
+
+		1. Test that CloseEvent can be created
+		   with sock == None
+		2. Test that WriteEvent can be created
+		   for a specific socket with sock not None
+		"""
+
+		#1
+		event = None
+		try:
+			event = CloseEvent()
+		except:
+			pass
+		self.assertTrue(event)
+
+		#2
+		event = CloseEvent("sock")
+		self.assertEquals(event[0], "sock")
+
 	def testTCPClient(self):
 		"""Test sockets.TCPClient
 
@@ -155,17 +226,23 @@ class SocketsTestCase(unittest.TestCase):
 		   open connection.
 		"""
 
-		serverManager = ServerManager(autoStart=True)
-		clientManager = ClientManager(autoStart=True)
-		server = Server(serverManager, 9999)
-		client = Client(clientManager)
+		manager = Manager()
+		server = Server(manager, 9999)
+		client = Client(manager)
+		manager.server = server
+		manager.client = client
+		print "Channels: %s" % manager.getChannels()
+		print "Handlers:"
+		for handler in manager.getHandlers():
+			print " %s" % handler
+		print "Server: %s" % server._sock
 
-		server.start()
+		manager.start()
 
 		try:
 			#1
 			client.open("localhost", 9999)
-			client.start()
+			print "Client: %s" % client._sock
 			sleep(0.1)
 			self.assertTrue(client.connectedFlag)
 
@@ -174,29 +251,22 @@ class SocketsTestCase(unittest.TestCase):
 
 			#3
 			client.write("foo")
-			sleep(0.1)
+			#sleep(0.1)
 			self.assertTrue(server.data == "foo")
 
 			#4
 			client.close()
-			sleep(0.01)
-			self.assertTrue(client.disconnectedFlag)
+			#sleep(0.1)
+			#self.assertTrue(client.disconnectedFlag)
 
 		finally:
-			client.close()
-			server.close()
+			#client.close()
+			#server.close()
 
-			sleep(0.01)
+			#sleep(0.01)
 
-			client.stop()
-			client.join()
-			server.stop()
-			server.join()
-
-			clientManager.stop()
-			clientManager.join()
-			serverManager.stop()
-			serverManager.join()
+			manager.stop()
+			manager.join()
 
 def suite():
 	return unittest.makeSuite(SocketsTestCase, "test")
