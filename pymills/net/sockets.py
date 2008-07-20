@@ -91,10 +91,6 @@ class Client(Component):
 		self._fds = []
 		self._closeFlag = False
 
-	def __del__(self):
-		if self.connected:
-			self.close()
-
 	def poll(self, wait=POLL_INTERVAL):
 		try:
 			r, w, e = select.select(self._fds, self._fds, [], wait)
@@ -178,11 +174,14 @@ class Client(Component):
 			return
 
 		try:
+			self._fds.remove(self._sock)
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, error:
 			self.push(ErrorEvent(error), "error")
+
 		self.connected = False
+
 		self.push(DisconnectEvent(), "disconnect")
 
 class TCPClient(Client):
@@ -219,8 +218,9 @@ class TCPClient(Client):
 				bytes = self._sock.send(data)
 
 			if bytes < len(data):
-				delta = (BUFFER_SIZE - bytes) * -1
-				self.buffer.seek(delta, 1)
+				self.buffer[0] = data[bytes:]
+			else:
+				del self.buffer[0]
 		except socket.error, error:
 			if error[0] in [32, 107]:
 				self.close()
@@ -259,8 +259,9 @@ class UDPClient(Client):
 		try:
 			bytes = self._sock.sendto(data, self.addr)
 			if bytes < len(data):
-				delta = (BUFFER_SIZE - bytes) * -1
-				self.buffer.seek(delta, 1)
+				self.buffer[0] = data[bytes:]
+			else:
+				del self.buffer[0]
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close()
@@ -279,9 +280,6 @@ class Server(Component):
 
 		self._fds = []
 		self._closeFlags = []
-
-	def __del__(self):
-		self.close()
 
 	def poll(self, wait=POLL_INTERVAL):
 		try:
@@ -355,7 +353,7 @@ class Server(Component):
 				self.close()
 
 	@filter("close")
-	def onCLOSE(self, sock):
+	def onCLOSE(self, sock=None):
 		"""Close Event
 
 		Typically this should NOT be overridden by sub-classes.
@@ -363,12 +361,13 @@ class Server(Component):
 		"""
 
 		if sock:
-			if self.buffers[sock]:
-				self._closeFlags.append(sock)
-				return
+			if not sock == self._sock:
+				if self.buffers[sock]:
+					self._closeFlags.append(sock)
+					return
 
-			if sock in self._closeFlags:
-				self._closeFlags.remove(sock)
+				if sock in self._closeFlags:
+					self._closeFlags.remove(sock)
 
 			try:
 				sock.shutdown(2)
