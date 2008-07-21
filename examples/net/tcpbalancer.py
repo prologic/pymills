@@ -115,8 +115,8 @@ def main():
 	while True:
 		try:
 			e.flush()
-			server.process()
-			[(e.flush(), client.process()) for client in server.clients]
+			server.poll()
+			[(e.flush(), client.poll()) for client in server.clients]
 		except UnhandledEvent, event:
 			pass
 		except KeyboardInterrupt:
