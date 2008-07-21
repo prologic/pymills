@@ -38,7 +38,7 @@ def parse_options():
 
 class Server(TCPServer):
 
-	channel = "server"
+	__channel__ = "server"
 
 	def __init__(self, *args, **kwargs):
 		super(Server, self).__init__(*args, **kwargs)
