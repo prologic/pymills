@@ -99,14 +99,10 @@ def main():
 
 	tTime = eTime - sTime
 
-	print "Total Requests: %d" % stats.reqs
-	print "%d/s after %0.2fs" % (
-			int(math.ceil(float(stats.reqs) / tTime)),
-			tTime)
-	print "Total Events:   %d" % stats.events
-	print "%d/s after %0.2fs" % (
-			int(math.ceil(float(stats.events) / tTime)),
-			tTime)
+	print "Total Requests: %d (%d/s after %0.2fs)" % (
+			stats.reqs, int(math.ceil(float(stats.reqs) / tTime)), tTime)
+	print "Total Events:   %d (%d/s after %0.2fs)" % (
+			stats.events, int(math.ceil(float(stats.events) / tTime)), tTime)
 
 	if opts.profile:
 		profiler.stop()
