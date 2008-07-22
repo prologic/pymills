@@ -59,4 +59,4 @@ pyflakes:
 	@find . -name "*.py" -exec pyflakes {} +
 
 test:
-	@$(PYTHON) tests/run.py
+	@$(PYTHON) pymills/tests/run.py
