@@ -46,8 +46,7 @@ class Test(Component):
 	@listener("get")
 	def onGET(self, req):
 		res = Response(req)
-		#res.write("OK")
-		res.body = open("test.bin", "rb")
+		res.write("OK")
 		self.push(ResponseEvent(res), "response")
 
 class WebServer(TCPServer, HTTP):
