@@ -20,11 +20,6 @@ class Manager(Worker):
 	server = None
 	events = 0
 
-	@filter()
-	def onDEBUG(self, event, *args, **kwargs):
-		print event
-		self.events += 1
-
 	def run(self):
 		while self.isRunning():
 			self.flush()
@@ -36,22 +31,19 @@ class Manager(Worker):
 
 class Client(TCPClient):
 
-	__channel__ = "client"
+	channel = "client"
 
 	connectedFlag = False
 	disconnectedFlag = False
 	error = None
 	dataIn = ""
-	dataOut = ""
 
 	@listener("connect")
 	def onCONNECT(self, host, port):
-		print "Client connected"
 		self.connectedFlag = True
 
 	@listener("disconnect")
 	def onDISCONNECT(self):
-		print "Client.onDISCONNECT:"
 		self.disconnectedFlag = True
 
 	@listener("read")
@@ -62,40 +54,26 @@ class Client(TCPClient):
 	def onERROR(self, error):
 		self.error = error
 
-	@listener("write")
-	def onWRITE(self, data):
-		self.dataOut = data
-
 class Server(TCPServer):
 
-	__channel__ = "server"
+	channel = "server"
 
-	dataIn = {}
-	dataOut = {}
+	dataIn = ""
 	clients = []
 	errors = {}
 
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
 		self.clients.append(sock)
-		self.dataIn[sock] = ""
-		self.dataOut[sock] = ""
 		self.write(sock, "Ready")
 
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
 		self.clients.remove(sock)
-		del self.dataIn[sock]
-		del self.dataOut[sock]
-		print "Server.onDISCONNECT: %s" % sock
 
 	@listener("read")
 	def onREAD(self, sock, data):
-		self.dataIn[sock] = data
-
-	@listener("write")
-	def onWRITE(self, sock, data):
-		self.dataOut[sock] = data
+		self.dataIn = data
 
 	@listener("error")
 	def onERROR(self, sock, error):
@@ -231,40 +209,28 @@ class SocketsTestCase(unittest.TestCase):
 		client = Client(manager)
 		manager.server = server
 		manager.client = client
-		print "Channels: %s" % manager.getChannels()
-		print "Handlers:"
-		for handler in manager.getHandlers():
-			print " %s" % handler
-		print "Server: %s" % server._sock
 
 		manager.start()
 
 		try:
 			#1
 			client.open("localhost", 9999)
-			print "Client: %s" % client._sock
 			sleep(0.1)
 			self.assertTrue(client.connectedFlag)
 
 			#2
-			self.assertTrue(client.data == "Ready\n")
+			self.assertTrue(client.dataIn == "Ready")
 
 			#3
 			client.write("foo")
-			#sleep(0.1)
-			self.assertTrue(server.data == "foo")
+			sleep(0.1)
+			self.assertTrue(server.dataIn == "foo")
 
 			#4
 			client.close()
-			#sleep(0.1)
-			#self.assertTrue(client.disconnectedFlag)
-
+			sleep(0.1)
+			self.assertTrue(client.disconnectedFlag)
 		finally:
-			#client.close()
-			#server.close()
-
-			#sleep(0.01)
-
 			manager.stop()
 			manager.join()
 

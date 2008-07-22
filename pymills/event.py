@@ -90,12 +90,12 @@ def listener(channel="global"):
 		return f
 	return decorate
 
-def send(handlers, event, channel, source=None):
-	"""send(handlers event, channel, source=None) -> None
+def send(handlers, event, channel, target=None):
+	"""send(handlers event, channel, target=None) -> None
 
 	Given a list of handlers of the given channel (plus the
-	global channel), send the given event.
-	source is expected to be an object.
+	global channel), send the given event. if target is given
+	send this send this event to the given target component.
 
 	Filters are processed first.
 	Filters must return a tuple (halt, event)
@@ -109,8 +109,8 @@ def send(handlers, event, channel, source=None):
 	if channel == "global":
 		raise EventError("Events cannot be sent to the global channel")
 
-	event._source = source
 	event._channel = channel
+	event._target = target
 
 	if not handlers:
 		raise UnhandledEvent(event, channel)
@@ -226,18 +226,20 @@ class Manager(object):
 			if handler in self._channels[channel]:
 				self._channels[channel].remove(handler)
 
-	def push(self, event, channel, source=None):
-		"""E.push(event, channel, source=None) -> None
+	def push(self, event, channel, target=None):
+		"""E.push(event, channel, target=None) -> None
 
 		Push the given event onto the given channel.
 		This will queue the event up to be processed later
-		by flushEvents. source is expected to be an object.
+		by flushEvents. If target is given, the event will
+		be queued for processing by the component given by
+		target.
 		"""
 
 		if self.manager == self:
-			self._queue.append((event, channel, source))
+			self._queue.append((event, channel, target))
 		else:
-			self.manager.push(event, channel, source)
+			self.manager.push(event, channel, target)
 
 	def flush(self):
 		"""E.flushEvents() -> None
@@ -256,23 +258,22 @@ class Manager(object):
 		else:
 			self.manager.flush()
 
-	def send(self, event, channel, source=None):
-		"""E.send(event, channel, source=None) -> None
+	def send(self, event, channel, target=None):
+		"""E.send(event, channel, target=None) -> None
 
 		Send the given event to filters/listeners on the
-		channel specified.
+		channel specified. If target is given, send this
+		event to filters/listeners of the given target
+		component.
 		"""
 
-		if hasattr(source, "channel"):
-			channel = "%s:%s" % (source.channel, channel)
-
 		if self.manager == self:
-			handlers = self.getHandlers("global") + \
-					self.getHandlers(channel)
-	
-			send(handlers, event, channel, source)
+			if target:
+				channel = "%s:%s" % (target, channel)
+			handlers = self.getHandlers("global") + self.getHandlers(channel)
+			send(handlers, event, channel, target)
 		else:
-			self.manager.send(event, channel, source)
+			self.manager.send(event, channel, target)
 
 class Component(Manager):
 	"""Component(Manager) -> new component object
@@ -314,8 +315,9 @@ class Component(Manager):
 
 		self._links = []
 
-		if kwargs.has_key("channel"):
-			self.__channel__ = kwargs["channel"]
+		self.channel = kwargs.get(
+				"channel",
+				getattr(self.__class__, "channel", None))
 
 		self.register(self.manager)
 
@@ -329,8 +331,8 @@ class Component(Manager):
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for handler in handlers:
-			if hasattr(self, "__channel__"):
-				channel = "%s:%s" % (self.__channel__, handler.channel)
+			if self.channel:
+				channel = "%s:%s" % (self.channel, handler.channel)
 			else:
 				channel = handler.channel
 
@@ -437,142 +439,9 @@ class Event(object):
 		else:
 			raise KeyError(x)
 
-class Remote(Manager):
+###
+### FIXME: Refactor RemoteManager to sub-class pymills.net.sockets.TCPServer
+###
 
-	def __init__(self, *args, **kwargs):
-		super(Remote, self).__init__(*args, **kwargs)
-
-		nodes = kwargs.get("nodes", ())
-		if len(nodes) == 0:
-			if len(args) > 0:
-				if type(args[0]) in [list, tuple]:
-					nodes = args[0]
-
-		address = kwargs.get("address", "0.0.0.0")
-		port = kwargs.get("port", 64000)
-
-		self._nodes = []
-		for node in nodes:
-			if ":" in node:
-				x = node.split(":")
-				self._nodes.append((x[0], int(x[1]),))
-			else:
-				self._nodes.append((node, port,))
-
-		self._address = address
-		self._port = port
-		self._buffer = ""
-
-		self._ssock = socket.socket(
-				socket.AF_INET,
-				socket.SOCK_DGRAM)
-		self._ssock.setsockopt(
-				socket.SOL_SOCKET,
-				socket.SO_REUSEADDR,
-				1)
-		self._ssock.setblocking(False)
-		self._ssock.bind((address, port))
-
-		self._csock = socket.socket(
-				socket.AF_INET,
-				socket.SOCK_DGRAM)
-		self._csock.setsockopt(
-				socket.SOL_SOCKET,
-				socket.SO_REUSEADDR,
-				1)
-		self._csock.setsockopt(
-				socket.SOL_SOCKET,
-				socket.SO_BROADCAST,
-				1)
-		self._csock.setblocking(False)
-
-	def __del__(self):
-		self.__close__()
-
-	def __poll__(self, wait=POLL_INTERVAL):
-		try:
-			r, w, e = select.select([self._ssock], [], [], wait)
-			return not r == []
-		except socket.error, error:
-			self.__close__()
-			return False
-
-	def __read__(self, bufsize=8192):
-		try:
-			data, addr = self._ssock.recvfrom(bufsize)
-		except socket.error, e:
-			self.__close__()
-
-		event, channel, source = pickle.loads(data)
-
-		source = addr[0], source[1]
-
-		if source not in self._nodes:
-			self._nodes.append(source)
-
-		try:
-			super(Remote, self).send(event, channel, source)
-		except UnhandledEvent:
-			pass
-
-	def __close__(self):
-		self._ssock.shutdown(2)
-		self._ssock.close()
-		self._csock.shutdown(2)
-		self._csock.close()
-
-	def __write__(self, data):
-		for node in self._nodes:
-			bytes = self._csock.sendto(data, node)
-			if bytes < len(data):
-				raise EventError(
-						"Couldn't send event to %s" % str(node))
-
-	def process(self):
-		if self.__poll__():
-			self.__read__()
-
-	def flush(self):
-		if self.manager == self:
-			for event, channel, source in self._queue[:]:
-				try:
-					try:
-						super(Remote, self).send(event, channel, source)
-					except UnhandledEvent:
-						pass
-				finally:
-					self._queue.remove((event, channel, source))
-
-				if len(self._nodes) > 0:
-					if source is None:
-						source = (socket.gethostname(), self._port,)
-					else:
-						if not type(source) == str:
-							source = repr(source)
-
-					if not type(event._source) == str:
-						event._source = repr(source)
-
-					s = pickle.dumps((event, channel, source))
-
-					if len(self._buffer) + len(s) > 8192:
-						self.__write__(self._buffer)
-						self._buffer = ""
-					self._buffer += s
-
-			if not self._buffer == "":
-				self.__write__(self._buffer)
-				self._buffer = ""
-		else:
-			self.manager.flush()
-
-	def send(self, event, channel, source=None):
-		try:
-			r = super(Remote, self).send(event, channel, source)
-		except UnhandledEvent:
-			r = None
-		if not caller() == "flush":
-			if source is None:
-				source = (socket.gethostname(), self._port,)
-			self.__write__(pickle.dumps((event, channel, source)))
-		return r
+class Remote(object):
+	pass
