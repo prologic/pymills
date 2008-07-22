@@ -3,40 +3,30 @@
 # vim: set sw=3 sts=3 ts=3
 
 from pymills.net.sockets import TCPServer
-from pymills.event import listener, Manager
+from pymills.event import filter, listener, Manager, UnhandledEvent
 
 class EchoServer(TCPServer):
 
-	@listener("connect")
-	def onCONNECT(self, sock, host, port):
-		print "New connection: %s:%d" % (host, port)
-		self.write(sock, "Ready\n")
-
-	@listener("disconnect")
-	def onDISCONNECT(self, sock):
-		print "Disconnection: %s" % sock
+	@filter()
+	def onDEBUG(self, event, *args, **kwargs):
+		print event
 
 	@listener("read")
-	def onREAD(self, sock, line):
-		line = line.strip()
-		print "%s: %s" % (sock, line)
-		self.write(sock, "%s\n" % line)
+	def onREAD(self, sock, data):
+		self.write(sock, data)
 	
-	@listener("error")
-	def onERROR(self, sock, msg):
-		print "ERROR (%s): %s" % (sock, msg)
-
 def main():
 	e = Manager()
-	server = EchoServer(e, 7777)
+	server = EchoServer(e, 8000)
 
 	while True:
 		try:
-			server.process()
 			e.flush()
+			server.poll()
+		except UnhandledEvent:
+			pass
 		except KeyboardInterrupt:
 			break
-	e.flush()
 
 if __name__ == "__main__":
 	main()
