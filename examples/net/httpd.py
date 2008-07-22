@@ -58,6 +58,11 @@ class Stats(Component):
 		super(Stats, self).__init__(*args, **kwargs)
 
 		self.reqs = 0
+		self.events = 0
+
+	@filter()
+	def onDEBUG(self, event, *args, **kwargs):
+		self.events += 1
 
 	@listener("get")
 	def onGET(self, req):
@@ -100,6 +105,10 @@ def main():
 	print "Total Requests: %d" % stats.reqs
 	print "%d/s after %0.2fs" % (
 			int(math.ceil(float(stats.reqs) / tTime)),
+			tTime)
+	print "Total Events:   %d" % stats.events
+	print "%d/s after %0.2fs" % (
+			int(math.ceil(float(stats.events) / tTime)),
 			tTime)
 
 	if opts.profile:
