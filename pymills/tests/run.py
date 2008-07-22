@@ -13,8 +13,8 @@ import sys
 import unittest
 
 def suite():
-	from tests import db, event, sockets
-	from tests import utils, emailtools
+	from pymills.tests import db, event, sockets
+	from pymills.tests import utils, emailtools
 
 	suite = unittest.TestSuite()
 	suite.addTest(db.suite())
