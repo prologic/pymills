@@ -13,10 +13,7 @@ import pymills
 from pymills.net.sockets import TCPServer
 from pymills import __version__ as systemVersion
 from pymills.net.http import HTTP, ResponseEvent, Response
-from pymills.event import listener, UnhandledEvent, Component, Manager
-
-#pymills.net.sockets.POLL_INTERVAL = 0
-pymills.net.http.BUFFER_SIZE = 2048
+from pymills.event import filter, listener, UnhandledEvent, Component, Manager
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + systemVersion
