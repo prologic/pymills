@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
 import md5
+import math
+import time
 import hotshot
 import optparse
 import hotshot.stats
 
+from pymills.event import UnhandledEvent, Event
 from pymills import __version__ as systemVersion
 from pymills.net.sockets import TCPServer, TCPClient
-from pymills.event import filter, listener, Manager, UnhandledEvent, Event
+from pymills.event import filter, listener, Manager, Component
 
 USAGE = "%prog [options] <host1:port1> <host2:port2> [<hostN:portN>]"
 VERSION = "%prog v" + systemVersion
@@ -38,7 +41,7 @@ def parse_options():
 
 class Server(TCPServer):
 
-	__channel__ = "server"
+	channel = "server"
 
 	def __init__(self, *args, **kwargs):
 		super(Server, self).__init__(*args, **kwargs)
@@ -96,6 +99,22 @@ class Client(TCPClient):
 	def onREAD(self, data):
 		self.server.write(self.sock, data)
 
+class Stats(Component):
+
+	def __init__(self, *args, **kwargs):
+		super(Stats, self).__init__(*args, **kwargs)
+
+		self.reqs = 0
+		self.events = 0
+
+	@filter()
+	def onDEBUG(self, event, *args, **kwargs):
+		self.events += 1
+
+	@listener("server:connect")
+	def onGET(self, *args, **kwargs):
+		self.reqs += 1
+
 def main():
 	opts, args = parse_options()
 
@@ -105,12 +124,15 @@ def main():
 	else:
 		address, port = opts.bind, 80
 
+	sTime = time.time()
+
 	if opts.profile:
 		profiler = hotshot.Profile(".tcpbalancer.prof")
 		profiler.start()
 
 	e = Manager()
 	server = Server(e, port, address, targets=args)
+	stats = Stats(e)
 
 	while True:
 		try:
@@ -122,6 +144,15 @@ def main():
 		except KeyboardInterrupt:
 			break
 	e.flush()
+
+	eTime = time.time()
+
+	tTime = eTime - sTime
+
+	print "Total Requests: %d (%d/s after %0.2fs)" % (
+			stats.reqs, int(math.ceil(float(stats.reqs) / tTime)), tTime)
+	print "Total Events:   %d (%d/s after %0.2fs)" % (
+			stats.events, int(math.ceil(float(stats.events) / tTime)), tTime)
 
 	if opts.profile:
 		profiler.stop()
