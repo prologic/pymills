@@ -25,7 +25,7 @@ from pymills.event import Event, Component, filter
 POLL_INTERVAL = 0.000001
 CONNECT_TIMEOUT = 5
 BUFFER_SIZE = 65536
-BACKLOG = 1024
+BACKLOG = 500
 
 class ErrorEvent(Event):
 
@@ -332,7 +332,7 @@ class Server(Component):
 				self.push(ReadEvent(data, sock), "read", self.channel)
 
 	def close(self, sock=None):
-		if sock not in self:
+		if sock in self:
 			self.push(CloseEvent(sock), "close", self.channel)
 
 	def write(self, sock, data):
