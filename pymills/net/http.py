@@ -31,7 +31,7 @@ from pymills.event import listener, Component, Event, UnhandledEvent
 
 SERVER_VERSION   = "pymills/%s" % pymills.__version__
 PROTOCOL_VERSION = "HTTP/1.0"
-BUFFER_SIZE      = 1024
+BUFFER_SIZE      = 65535
 
 DEFAULT_ERROR_MESSAGE = """\
 <head>
@@ -135,7 +135,8 @@ class Response(object):
 			self.body.close()
 			contentLength = len(body)
 
-		self.headers["Content-Length"] = contentLength
+		if contentLength:
+			self.headers["Content-Length"] = contentLength
 
 		return "%s\r\n%s%s" % (self.status, str(self.headers), body)
 
