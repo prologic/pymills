@@ -414,7 +414,6 @@ class Event(object):
 
 		self.args = args
 		self.kwargs = kwargs
-		self.__dict__.update(kwargs)
 
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"

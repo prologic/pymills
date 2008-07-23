@@ -161,9 +161,6 @@ class EventTestCase(unittest.TestCase):
 		self.assertEquals(a.kwargs["foo"], "1")
 		self.assertEquals(a.kwargs["bar"], "2")
 
-		self.assertEquals(a.foo, "1")
-		self.assertEquals(a.bar, "2")
-
 		self.assertEquals(str(a),
 				"<Event/None (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
 
