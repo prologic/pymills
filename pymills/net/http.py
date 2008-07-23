@@ -95,14 +95,14 @@ class Request(object):
 		self.close = True
 
 class Response(object):
-	"""Response(req) -> new Response object
+	"""Response(req, body="") -> new Response object
 
 	Create a HTTP Response object that holds the response to
 	send back to the client. This ensure that the correct data
 	is sent in the correct order.
 	"""
 
-	def __init__(self, req):
+	def __init__(self, req, body=""):
 		"initializes x; see x.__class__.__doc__ for signature"
 		
 		self.req = req
@@ -112,11 +112,8 @@ class Response(object):
 			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z")),
 			("Content-Type", "text/html")])
 
-		self.body = StringIO()
-		self.status = "HTTP/1.0 200 OK"
-
-	def write(self, s):
-		self.body.write(s)
+		self.body = body
+		self.status = "%s 200 OK" % PROTOCOL_VERSION
 
 	def __repr__(self):
 		return "<Response %s %s>" % (
@@ -130,9 +127,7 @@ class Response(object):
 			body = ""
 			self.headers["Content-Type"] = contentType
 		else:
-			self.body.flush()
-			body = self.body.getvalue()
-			self.body.close()
+			body = self.body
 			contentLength = len(body)
 
 		if contentLength:
