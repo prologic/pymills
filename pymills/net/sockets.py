@@ -24,7 +24,7 @@ from pymills.event import Event, Component, filter
 
 POLL_INTERVAL = 0.000001
 CONNECT_TIMEOUT = 5
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 8192
 BACKLOG = 10
 
 class ErrorEvent(Event):
@@ -310,7 +310,7 @@ class Server(Component):
 				try:
 					data = sock.recv(BUFFER_SIZE)
 				except socket.error, e:
-					self.push(ErrorEvent(e[1], sock), "error", self.channel)
+					self.push(ErrorEvent(e, sock), "error", self.channel)
 					self.close(sock)
 					continue
 
@@ -349,7 +349,7 @@ class Server(Component):
 			if e[0] in [32, 107]:
 				self.close(sock)
 			else:
-				self.push(ErrorEvent(e[1], sock), "error", self.channel)
+				self.push(ErrorEvent(e, sock), "error", self.channel)
 				self.close()
 
 	@filter("close")
@@ -373,7 +373,7 @@ class Server(Component):
 				sock.shutdown(2)
 				sock.close()
 			except socket.error, e:
-				self.push(ErrorEvent(e[1], sock), "error", self.channel)
+				self.push(ErrorEvent(e, sock), "error", self.channel)
 
 			self._fds.remove(sock)
 			self.push(DisconnectEvent(sock), "disconnect", self.channel)
@@ -439,7 +439,7 @@ class UDPServer(Server):
 				else:
 					self.push(ReadEvent(data, sock), "read", self.channel)
 			except socket.error, e:
-				self.push(ErrorEvent(e[1], sock), "error", self.channel)
+				self.push(ErrorEvent(e, sock), "error", self.channel)
 				self.close(sock)
 
 	def onWRITE(self, sock, data):
@@ -460,5 +460,5 @@ class UDPServer(Server):
 			if e[0] in [32, 107]:
 				self.close(sock)
 			else:
-				self.push(ErrorEvent(e[1], sock), "error", self.channel)
+				self.push(ErrorEvent(e, sock), "error", self.channel)
 				self.close()
