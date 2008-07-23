@@ -24,8 +24,8 @@ from pymills.event import Event, Component, filter
 
 POLL_INTERVAL = 0.000001
 CONNECT_TIMEOUT = 5
-BUFFER_SIZE = 8192
-BACKLOG = 10
+BUFFER_SIZE = 65536
+BACKLOG = 1024
 
 class ErrorEvent(Event):
 
@@ -156,7 +156,8 @@ class Client(Component):
 			self.close()
 
 	def close(self):
-		self.push(CloseEvent(), "close", self.channel)
+		if self._fds:
+			self.push(CloseEvent(), "close", self.channel)
 	
 	def write(self, data):
 		self.buffer.append(data)
@@ -281,6 +282,16 @@ class Server(Component):
 		self._fds = []
 		self._closeFlags = []
 
+	def __getitem__(self, y):
+		"x.__getitem__(y) <==> x[y]"
+
+		return self._fds[y]
+
+	def __contains__(self, y):
+		"x.__contains__(y) <==> y in x"
+	
+		return y in self._fds
+
 	def poll(self, wait=POLL_INTERVAL):
 		try:
 			r, w, e = select.select(self._fds, self._fds, [], wait)
@@ -321,7 +332,8 @@ class Server(Component):
 				self.push(ReadEvent(data, sock), "read", self.channel)
 
 	def close(self, sock=None):
-		self.push(CloseEvent(sock), "close", self.channel)
+		if sock not in self:
+			self.push(CloseEvent(sock), "close", self.channel)
 
 	def write(self, sock, data):
 		self.buffers[sock].append(data)
