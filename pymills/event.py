@@ -50,8 +50,6 @@ from inspect import getmembers, ismethod, getargspec
 
 from utils import caller
 
-POLL_INTERVAL=0.001
-
 class EventError(Exception):
 	"Event Error"
 
