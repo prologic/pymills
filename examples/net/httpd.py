@@ -74,7 +74,7 @@ class Test(Component):
 		if os.path.exists(self.content):
 			res.body = open(self.content, "rb")
 		else:
-			res.body = content
+			res.body = self.content
 		self.push(ResponseEvent(res), "response")
 
 class WebServer(TCPServer, HTTP):
