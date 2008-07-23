@@ -6,15 +6,12 @@ from pymills.wsgi import WSGIServer
 
 def app(environ, start_response):
 	status = "200 OK"
-	response_headers = [("Content-type", "text/plain")]
+	response_headers = [("Content-type", "text/plain"), ("Content-Length", "2")]
 	start_response(status, response_headers)
-	return ["Hello world!"]
+	return ["OK"]
 
 def main():
-	server = WSGIServer(
-			("0.0.0.0", 8000), app,
-			server_name="www.example.com")
-
+	server = WSGIServer(("0.0.0.0", 8000), app)
 	try:
 		server.start()
 	except KeyboardInterrupt:
