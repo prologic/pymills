@@ -71,7 +71,7 @@ class Test(Component):
 	@listener("get")
 	def onGET(self, req):
 		res = Response(req)
-		if os.path.isfile(self.content):
+		if os.path.exists(self.content):
 			res.body = open(self.content, "rb")
 		else:
 			res.write(self.content)
