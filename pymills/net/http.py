@@ -14,9 +14,12 @@ implementations.
 """
 
 import re
+import os
+import stat
 import mimetools
 from time import strftime
 from cStringIO import StringIO
+from mimetypes import guess_type
 from wsgiref.headers import Headers
 
 import pymills
@@ -122,19 +125,17 @@ class Response(object):
 
 	def __str__(self):
 		if type(self.body) == file:
-			self.body.seek(0, 2)
-			contentLength = self.body.tell()
-			self.body.seek(0)
+			contentLength = os.fstat(self.body.fileno())[stat.ST_SIZE]
+			contentType = guess_type(self.body.name)[0] or "application/octet-stream"
 			body = ""
-			self.headers["Content-Type"] = "application/octet-stream"
+			self.headers["Content-Type"] = contentType
 		else:
 			self.body.flush()
 			body = self.body.getvalue()
 			self.body.close()
 			contentLength = len(body)
 
-		if contentLength:
-			self.headers["Content-Length"] = contentLength
+		self.headers["Content-Length"] = contentLength
 
 		return "%s\r\n%s%s" % (self.status, str(self.headers), body)
 
