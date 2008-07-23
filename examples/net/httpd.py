@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+import os
+import sys
 import time
 import math
 import hotshot
@@ -16,7 +18,7 @@ from pymills import __version__ as systemVersion
 from pymills.net.http import HTTP, ResponseEvent, Response
 from pymills.event import filter, listener, UnhandledEvent, Component, Manager
 
-USAGE = "%prog [options]"
+USAGE = "%prog [options] [content]"
 VERSION = "%prog v" + systemVersion
 
 ERRORS = [
@@ -64,10 +66,15 @@ def parse_options():
 
 class Test(Component):
 
+	content = "OK"
+
 	@listener("get")
 	def onGET(self, req):
 		res = Response(req)
-		res.write("OK")
+		if os.path.isfile(self.content):
+			res.body = open(self.content, "rb")
+		else:
+			res.write(self.content)
 		self.push(ResponseEvent(res), "response")
 
 class WebServer(TCPServer, HTTP):
@@ -108,6 +115,9 @@ def main():
 	server = WebServer(e, port, address)
 	test = Test(e)
 	stats = Stats(e)
+
+	if args:
+		test.content = args[0]
 
 	while True:
 		try:
