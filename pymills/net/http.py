@@ -30,7 +30,7 @@ from pymills.event import listener, Component, Event, UnhandledEvent
 ###
 
 SERVER_VERSION   = "pymills/%s" % pymills.__version__
-PROTOCOL_VERSION = "HTTP/1.0"
+PROTOCOL_VERSION = "HTTP/1.1"
 BUFFER_SIZE      = 65535
 
 DEFAULT_ERROR_MESSAGE = """\
