@@ -248,12 +248,15 @@ class Manager(object):
 		"""
 
 		if self.manager == self:
-			send = self.send
 			_queue = self._queue
 			queue = _queue[:]
-			for event in queue:
-				send(*event)
-				_queue.remove(event)
+			for x in queue:
+				event, channel, target = x
+				if target:
+					channel = "%s:%s" % (target, channel)
+				handlers = self.getHandlers("global") + self.getHandlers(channel)
+				send(handlers, event, channel, target)
+				_queue.remove(x)
 		else:
 			self.manager.flush()
 
