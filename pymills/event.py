@@ -46,6 +46,7 @@ from time import sleep
 import cPickle as pickle
 from threading import Thread
 from pickle import PickleError
+from collections import defaultdict
 from inspect import getmembers, ismethod, getargspec
 
 from utils import caller
@@ -147,7 +148,8 @@ class Manager(object):
 		super(Manager, self).__init__()
 
 		self._handlers = set()
-		self._channels = {"global": []}
+		self._channels = defaultdict(lambda: [])
+		self._channels["global"] = []
 		self._queue = []
 		self.manager = self
 
@@ -170,7 +172,7 @@ class Manager(object):
 		"""
 
 		if channel:
-			return self._channels.get(channel, [])
+			return self._channels[channel]
 		else:
 			return self._handlers
 
@@ -196,8 +198,7 @@ class Manager(object):
 			if self._channels.has_key(channel):
 				if handler not in self._channels[channel]:
 					self._channels[channel].append(handler)
-					self._channels[channel].sort(
-							cmp=_sortHandlers)
+					self._channels[channel].sort(cmp=_sortHandlers)
 			else:
 				self._channels[channel] = [handler]
 
@@ -344,8 +345,7 @@ class Component(Manager):
 
 			if self._channels.has_key(channel):
 				self._channels[channel].append(handler)
-				self._channels[channel].sort(
-						cmp=lambda x, y: hasattr(x, "filter"))
+				self._channels[channel].sort(cmp=_sortHandlers)
 			else:
 				self._channels[channel] = [handler]
 
