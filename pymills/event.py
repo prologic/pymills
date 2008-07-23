@@ -248,11 +248,12 @@ class Manager(object):
 		"""
 
 		if self.manager == self:
-			for event in self._queue[:]:
-				try:
-					self.send(*event)
-				finally:
-					self._queue.remove(event)
+			send = self.send
+			_queue = self._queue
+			queue = _queue[:]
+			for event in queue:
+				send(*event)
+				_queue.remove(event)
 		else:
 			self.manager.flush()
 
