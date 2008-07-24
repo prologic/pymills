@@ -443,25 +443,57 @@ class Event(object):
 		else:
 			raise KeyError(x)
 
-from pymills.net.sockets import UDPServer
+from pymills.net.sockets import UDPServer, WriteEvent, ReadEvent
+
+class HeloEvent(Event):
+
+	def __init__(self, address, port):
+		super(HeloEvent, self).__init__(address, port)
 
 class Bridge(UDPServer):
 
-	nodes = set()
+	IgnoreEvents = [WriteEvent, ReadEvent]
+
+	def __init__(self, *args, **kwargs):
+		super(Bridge, self).__init__(*args, **kwargs)
+
+		self.nodes = set(kwargs.get("nodes", []))
+
+		self.push(HeloEvent(self.address, self.port), "helo")
+
+	@filter("write")
+	def onWRITE(self, address, data):
+		super(Bridge, self).onWRITE(address, data)
+		raise FilterEvent
 
 	@filter()
-	def onEVENTS(self, event):
+	def onEVENTS(self, event, *args, **kwargs):
+		if True in [isinstance(event, cls) for cls in Bridge.IgnoreEvents]:
+			return
+
+		if getattr(event, "_ignore", False):
+			return
+
+		event._ignore = True
+
 		s = pickle(event)
+		print "Pickled: %s" % event
 		for node in self.nodes:
+			print "Writing %s to %s" % (event, node)
 			self.write(node, s)
-		self.poll()
 
 	@filter("helo")
-	def onHELO(self, host, port):
-		self.nodes.add((host, port))
+	def onHELO(self, address, port):
+		print "HELO from (%s, %s)" % (address, port)
 
-	@filter()
-	def onREAD(self, sock, data):
+		if address == self.address and port == self.port:
+			print "Ignoring - it's ourself"
+			return
+
+		self.nodes.add((address, port))
+
+	@filter("read")
+	def onREAD(self, address, data):
 		event = unpickle(data)
 		channel = event._channel
 		target = event._target
