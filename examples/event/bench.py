@@ -10,6 +10,7 @@ doing both local events and remote events and will
 print out some statistics about each run.
 """
 
+import sys
 import math
 import time
 import hotshot
@@ -17,9 +18,8 @@ import optparse
 import hotshot.stats
 
 import pymills
-from pymills.event import listener, filter, \
-		Component, Manager, Remote, Event
 from pymills.misc import duration
+from pymills.event import listener, filter, Component, Manager, Bridge, Event
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + pymills.__version__
@@ -42,7 +42,7 @@ def parse_options():
 
 	parser.add_option("-l", "--listen",
 			action="store_true", default=False, dest="listen",
-			help="Listen on 0.0.0.0:64000 (UDP) (test remote events)")
+			help="Listen on 0.0.0.0:8000 (UDP) (test remote events)")
 	parser.add_option("-b", "--bind",
 			action="store", default="0.0.0.0", dest="bind",
 			help="Bind to address:[port] (UDP) (test remote events)")
@@ -82,22 +82,21 @@ class Sender(Component):
 
 	@listener("received")
 	def onRECEIVED(self, message=""):
-		#print message
 		self.push(Event(message="hello"), "hello")
 
 class Receiver(Component):
 
+	@listener("helo")
+	def onHELO(self, address, port):
+		self.send(Event("hello"), "hello")
+
 	@listener("hello")
 	def onHELLO(self, message=""):
-		self.push(Event(message="Got: %s" % message),
-				"received")
+		self.push(Event(message="Got: %s" % message), "received")
 
 class State(Component):
 
-	def __init__(self, e):
-		super(State, self).__init__(e)
-
-		self.done = False
+	done = False
 
 	@listener("stop")
 	def onSTOP(self):
@@ -105,82 +104,106 @@ class State(Component):
 
 class Monitor(Component):
 
-	def __init__(self, e):
-		super(Monitor, self).__init__(e)
+	sTime = time.time()
+	events = 0
+	state = 0
 
-		self._eventCount = 0
-
-	def getEventCount(self):
-		return self._eventCount
+	@listener("helo")
+	def onHELO(self, *args, **kwargs):
+		print "Resetting sTime"
+		self.sTime = time.time()
 
 	@filter()
-	def onDEBUG(self, *args, **kwargs):
-		self._eventCount += 1
-		return False
+	def onDEBUG(self, event, *args, **kwargs):
+		self.events += 1
+
+class DummyBridge(object):
+
+	def poll(self):
+		pass
 
 def main():
 
 	opts, args = parse_options()
 
-	nodes = []
-	if opts.connect is not None:
-		nodes = opts.connect.split(",")
+	e = Manager()
 
 	if opts.listen or opts.connect:
+
+		nodes = []
+		if opts.connect is not None:
+			for node in opts.connect.split(","):
+				if ":" in node:
+					host, port = node.split(":")
+					port = int(port)
+				else:
+					host = node
+					port = 8000
+				nodes.append((host, port))
+
 		if opts.bind is not None:
 			if ":" in opts.bind:
 				address, port = opts.bind.split(":")
 				port = int(port)
 			else:
-				address, port = opts.bind, 64000
-		manager = Remote(nodes=nodes, address=address, port=port)
+				address, port = opts.bind, 8000
+
+		bridge = Bridge(e, port=port, address=address, nodes=nodes)
 	else:
-		manager = Manager()
-	monitor = Monitor(manager)
-	state = State(manager)
+		bridge = DummyBridge()
+
+	monitor = Monitor(e)
+	state = State(e)
 
 	if opts.listen:
-		receiver = Receiver(manager)
+		print "Setting up Receiver..."
+		Receiver(e)
 	elif opts.connect:
-		sender = Sender(manager)
+		print "Setting up Sender..."
+		Sender(e)
 	else:
-		sender = Sender(manager)
-		receiver = Receiver(manager)
-
-	sTime = time.time()
+		print "Setting up Sender..."
+		print "Setting up Receiver..."
+		Sender(e)
+		Receiver(e)
 
 	if opts.profile:
 		profiler = hotshot.Profile("bench.prof")
 		profiler.start()
 
-	manager.push(Event(message="hello"), "hello")
+	e.send(Event("hello"), "hello")
 
 	while not state.done:
 		try:
-			manager.flush()
-			if hasattr(manager, "process"):
-				manager.process()
+			e.flush()
+			bridge.poll()
 
-			if opts.events > 0 and monitor.getEventCount() > opts.events:
-				manager.send(Event(), "stop")
+			if opts.events > 0 and monitor.events > opts.events:
+				e.send(Event(), "stop")
 				break
-			if opts.time > 0 and (time.time() - sTime) > opts.time:
-				manager.send(Event(), "stop")
+			if opts.time > 0 and (time.time() - monitor.sTime) > opts.time:
+				e.send(Event(), "stop")
 				break
 
 		except KeyboardInterrupt:
-			manager.send(Event(), "stop")
+			e.send(Event(), "stop")
 			break
+
+	print "Done. Cleaning up..."
+
+	for i in xrange(1000):
+		e.flush()
+		bridge.poll()
 
 	print
 
 	eTime = time.time()
 
-	tTime = eTime - sTime
+	tTime = eTime - monitor.sTime
 
-	print "Total Events: %d" % monitor.getEventCount()
+	print "Total Events: %d" % monitor.events
 	print "%d/s after %0.2fs" % (
-			int(math.ceil(float(monitor.getEventCount()) / tTime)),
+			int(math.ceil(float(monitor.events) / tTime)),
 			tTime)
 
 	if opts.profile:
