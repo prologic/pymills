@@ -59,8 +59,8 @@ def parse_options():
 			action="store_true", default=False, dest="profile",
 			help="Enable execution profiling support")
 	parser.add_option("-m", "--mode",
-			action="store", default=False, dest="tput",
-			help="Enable throughput")
+			action="store", default="sync", dest="mode",
+			help="Change operation mode (sync, tput). Default: sync")
 
 	opts, args = parser.parse_args()
 
