@@ -171,6 +171,7 @@ def main():
 		print "Setting up Receiver..."
 		Sender(e)
 		Receiver(e)
+		monitor.sTime = time.time()
 
 	if opts.profile:
 		profiler = hotshot.Profile("bench.prof")
