@@ -484,20 +484,17 @@ class Bridge(UDPServer):
 		event._ignore = True
 
 		s = pickle(event)
-		print "Pickled: %s" % event
 		for node in self.nodes:
-			print "Writing %s to %s" % (event, node)
 			self.write(node, s)
 
 	@filter("helo")
 	def onHELO(self, address, port):
-		print "HELO from (%s, %s)" % (address, port)
-
 		if (address, port) == self.ourself:
-			print "Ignoring - it's ourself"
 			return
 
-		self.nodes.add((address, port))
+		if not (address, port) in self.nodes:
+			self.nodes.add((address, port))
+			self.push(HeloEvent(*self.ourself), "helo")
 
 	@filter("read")
 	def onREAD(self, address, data):
