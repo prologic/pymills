@@ -489,11 +489,16 @@ class Bridge(UDPServer):
 
 	@filter("helo")
 	def onHELO(self, address, port):
+		print "HELO from (%s, %s)" % (repr(address), repr(port))
+
 		if (address, port) == self.ourself:
+			print " Ignoring - it's ourself!"
 			return
 
 		if not (address, port) in self.nodes:
+			print " Added node (%s, %s)" % (repr(address), repr(port))
 			self.nodes.add((address, port))
+			print " Sending HELO to (%s, %s)" % (repr(address), repr(port))
 			self.push(HeloEvent(*self.ourself), "helo")
 
 	@filter("read")
