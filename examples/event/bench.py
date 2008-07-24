@@ -47,13 +47,13 @@ def parse_options():
 			action="store", default="0.0.0.0", dest="bind",
 			help="Bind to address:[port] (UDP) (test remote events)")
 	parser.add_option("-c", "--concurrency",
-			action="store", default=1, dest="concurrency",
+			action="store", type="int", default=1, dest="concurrency",
 			help="Set concurrency level. (Default: 1)")
 	parser.add_option("-t", "--time",
-			action="store", default=0, dest="time",
+			action="store", type="int", default=0, dest="time",
 			help="Stop after specified elapsed seconds")
 	parser.add_option("-e", "--events",
-			action="store", default=0, dest="events",
+			action="store", type="int", default=0, dest="events",
 			help="Stop after specified number of events")
 	parser.add_option("-p", "--profile",
 			action="store_true", default=False, dest="profile",
@@ -86,19 +86,21 @@ def parse_options():
 
 class Sender(Component):
 
+	concurrency = 1
+
 	@listener("received")
 	def onRECEIVED(self, message=""):
-		self.push(Event(message="hello"), "hello")
+		self.push(Event(message="hello"), "hello", self.channel)
 
 class Receiver(Component):
 
 	@listener("helo")
 	def onHELO(self, address, port):
-		self.send(Event("hello"), "hello")
+		self.send(Event("hello"), "hello", self.channel)
 
 	@listener("hello")
 	def onHELLO(self, message=""):
-		self.push(Event(message="Got: %s" % message), "received")
+		self.push(Event(message="Got: %s" % message), "received", self.channel)
 
 class Test(Component):
 
@@ -113,7 +115,7 @@ class State(Component):
 
 	@listener("stop")
 	def onSTOP(self):
-		if self.n < 2:
+		if self.n:
 			self.push(Event(), "stop")
 			self.n += 1
 		else:
@@ -183,27 +185,47 @@ def main():
 
 	if opts.mode.lower() == "tput":
 		print "Setting up Test..."
-		for c in xrange(int(opts.concurrency)):
-			Test(e, channel=c)
+		if opts.concurrency > 1:
+			for c in xrange(int(opts.concurrency)):
+				Test(e, channel=c)
+		else:
+			Test(e)
 		monitor.sTime = time.time()
 	elif opts.listen:
 		print "Setting up Receiver..."
-		Receiver(e)
+		if opts.concurrency > 1:
+			for c in xrange(int(opts.concurrency)):
+				Receiver(e, channel=c)
+		else:
+			Receiver(e)
 	elif args:
 		print "Setting up Sender..."
-		Sender(e)
+		if opts.concurrency > 1:
+			for c in xrange(int(opts.concurrency)):
+				Sender(e, channel=c)
+		else:
+			Sender(e)
 	else:
 		print "Setting up Sender..."
 		print "Setting up Receiver..."
-		Sender(e)
-		Receiver(e)
+		if opts.concurrency > 1:
+			for c in xrange(int(opts.concurrency)):
+				Sender(e, channel=c)
+				Receiver(e, channel=c)
+		else:
+			Sender(e)
+			Receiver(e)
 		monitor.sTime = time.time()
 
 	if opts.profile:
 		profiler = hotshot.Profile("bench.prof")
 		profiler.start()
 
-	e.send(Event("hello"), "hello")
+	if opts.concurrency > 1:
+		for c in xrange(int(opts.concurrency)):
+			e.push(Event("hello"), "hello", c)
+	else:
+		e.push(Event("hello"), "hello")
 
 	while not state.done:
 		try:
