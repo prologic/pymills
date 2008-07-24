@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-from pymills.event import listener, Component, \
-		Event, Remote
+from pymills.event import listener, Component, Event, Manager, Bridge
 
 class Adder(Component):
 
@@ -12,16 +11,16 @@ class Adder(Component):
 		self.push(Event(r), "result")
 
 def main():
-	e = Remote(port=12000)
-	adder = Adder(e)
+	e = Manager()
+	bridge = Bridge(e, port=9000)
+	Adder(e)
 
 	while True:
 		try:
 			e.flush()
-			e.process()
+			bridge.poll()
 		except KeyboardInterrupt:
 			break
-	e.flush()
 
 if __name__ == "__main__":
 	main()

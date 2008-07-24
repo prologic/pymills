@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-from pymills.event import listener, Component, \
-		Event, Remote
+from pymills.event import listener, Component, Event, Manager, Bridge
 
 class Calc(Component):
 
@@ -13,10 +12,11 @@ class Calc(Component):
 
 def main():
 
-	nodes = ("daisy:12000",)
+	nodes = [("localhost", 9000)]
 
-	e = Remote(nodes)
-	calc = Calc(e)
+	e = Manager()
+	bridge = Bridge(e, port=9001, nodes=nodes)
+	Calc(e)
 
 	x = float(raw_input("x: "))
 	y = float(raw_input("y: "))
@@ -26,7 +26,7 @@ def main():
 	while True:
 		try:
 			e.flush()
-			e.process()
+			bridge.poll()
 		except KeyboardInterrupt:
 			break
 
