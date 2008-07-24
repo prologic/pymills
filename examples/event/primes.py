@@ -11,17 +11,12 @@ import sys
 import math
 import time
 import optparse
-from time import sleep
 from uuid import uuid1 as uuid
 
 import pymills
-from pymills.misc import duration
-
 from pymills.event import Event
-from pymills.event import FilterEvent
 from pymills.event import listener, filter
-from pymills.event import DummyBridge, Bridge
-from pymills.event import Component, Manager, Debugger
+from pymills.event import Component, Manager, Bridge, Debugger
 
 USAGE = "%prog [options] [host:[port]]"
 VERSION = "%prog v" + pymills.__version__
@@ -71,6 +66,7 @@ def parse_options():
 
 class Start(Event): pass
 class Stop(Event): pass
+class Term(Event): pass
 class Query(Event): pass
 
 class Busy(Event):
@@ -116,7 +112,9 @@ class PrimeFinder(Component):
 
 	id = uuid()
 
+	term = False
 	busy = False
+
 	n = None
 	start = None
 	stop = None
@@ -128,6 +126,15 @@ class PrimeFinder(Component):
 		self.start = None
 		self.stop = None
 		self.step = None
+
+	@listener("stop")
+	def onSTOP(self):
+		if self.busy:
+			self.push(Busy(self.id), "busy")
+			self.term = True
+			return
+		else:
+			self.push(Term(), "term")
 
 	@listener("query")
 	def onQUERY(self):
@@ -188,10 +195,12 @@ class PrimeFinder(Component):
 			else:
 				self.push(Run(self.id, self.n), "run")
 
-	@listener("done")
+	@filter("done")
 	def onDONE(self, id, n, r):
 		if r:
 			self.push(Prime(n), "prime")
+		if self.term:
+			self.push(Term(), "term")
 
 class TaskManager(Component):
 
@@ -210,6 +219,7 @@ class TaskManager(Component):
 	def onREADY(self, id):
 		self.push(Task(id, self.n), "task")
 		self.n += 1
+		self.push(Query(), "query")
 
 	@listener("done")
 	def onDONE(self, id, n, r):
@@ -226,19 +236,10 @@ class State(Component):
 
 	done = False
 	n = 0
-	N = 1
 
-	@listener("helo")
-	def onHELO(self, host, port):
-		self.N += 1
-
-	@listener("stop")
-	def onSTOP(self):
-		if self.n < self.N:
-			self.push(Event(), "stop")
-			self.n += 1
-		else:
-			self.done = True
+	@listener("term")
+	def onTERM(self):
+		self.done = True
 
 class Stats(Component):
 
@@ -314,7 +315,6 @@ def main():
 		try:
 			e.flush()
 			bridge.poll()
-			#sleep(1)
 
 			if opts.primes > 0 and stats.primes > opts.primes:
 				e.send(Stop(), "stop")
