@@ -60,7 +60,7 @@ def parse_options():
 			help="Enable execution profiling support")
 	parser.add_option("-m", "--mode",
 			action="store", default="sync", dest="mode",
-			help="Change operation mode (sync, tput). Default: sync")
+			help="Operation mode (sync, tpuy). Default: sync")
 
 	opts, args = parser.parse_args()
 
@@ -96,6 +96,12 @@ class Receiver(Component):
 	@listener("hello")
 	def onHELLO(self, message=""):
 		self.push(Event(message="Got: %s" % message), "received")
+
+class Test(Component):
+
+	@listener("hello")
+	def onHELLO(self, message=""):
+		self.push(Event(message=message), "hello")
 
 class State(Component):
 
@@ -163,7 +169,11 @@ def main():
 	monitor = Monitor(e)
 	state = State(e)
 
-	if opts.listen:
+	if opts.mode.lower() == "tput":
+		print "Setting up Test..."
+		Test(e)
+		monitor.sTime = time.time()
+	elif opts.listen:
 		print "Setting up Receiver..."
 		Receiver(e)
 	elif opts.connect:
