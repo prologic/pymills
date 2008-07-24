@@ -493,7 +493,7 @@ class Bridge(UDPServer):
 
 		if (address, port) == self.ourself:
 			print " Ignoring - it's ourself!"
-			return
+			raise FilterEvent
 
 		if not (address, port) in self.nodes:
 			print " Added node (%s, %s)" % (repr(address), repr(port))
