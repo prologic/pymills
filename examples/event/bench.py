@@ -61,6 +61,9 @@ def parse_options():
 	parser.add_option("-m", "--mode",
 			action="store", default="sync", dest="mode",
 			help="Operation mode (sync, tpuy). Default: sync")
+	parser.add_option("-d", "--debug",
+			action="store_true", default=False, dest="debug",
+			help="Enable debug mode. (Default: False)")
 
 	opts, args = parser.parse_args()
 
@@ -128,8 +131,14 @@ class Monitor(Component):
 		self.sTime = time.time()
 
 	@filter()
-	def onDEBUG(self, event, *args, **kwargs):
+	def onEVENTS(self, event, *args, **kwargs):
 		self.events += 1
+
+class Debugger(Component):
+
+	@filter()
+	def onDEBUG(self, event, *args, **kwargs):
+		print >> sys.stderr, event
 
 class DummyBridge(object):
 
@@ -141,6 +150,9 @@ def main():
 	opts, args = parse_options()
 
 	e = Manager()
+
+	if opts.debug:
+		Debugger(e)
 
 	if opts.listen or args:
 
