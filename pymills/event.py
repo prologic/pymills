@@ -48,6 +48,7 @@ from threading import Thread
 from collections import defaultdict
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
+from socket import gethostname, gethostbyname
 from inspect import getmembers, ismethod, getargspec
 
 class EventError(Exception):
@@ -459,7 +460,12 @@ class Bridge(UDPServer):
 
 		self.nodes = set(kwargs.get("nodes", []))
 
-		self.push(HeloEvent(self.address, self.port), "helo")
+		if self.address in ["", "0.0.0.0"]:
+			address = gethostbyname(gethostname())
+		else:
+			address = self.address
+
+		self.push(HeloEvent(address, self.port), "helo")
 
 	@filter("write")
 	def onWRITE(self, address, data):
