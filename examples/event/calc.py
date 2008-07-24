@@ -7,7 +7,7 @@ import optparse
 import pymills
 from pymills.event import listener, Component, Event, Manager, Bridge
 
-USAGE = "%prog [options] <host> <port>"
+USAGE = "%prog [options] <host> [<port>=8000]"
 VERSION = "%prog v" + pymills.__version__
 
 def parse_options():
@@ -25,7 +25,7 @@ def parse_options():
 
 	opts, args = parser.parse_args()
 
-	if len(args) < 2:
+	if len(args) < 1:
 		parser.print_help()
 		raise SystemExit, 1
 
@@ -46,7 +46,10 @@ def main():
 	else:
 		address, port = opts.bind, 8000
 
-	nodes = [(args[0], int(args[1]))]
+	if len(args) == 2:
+		nodes = [(args[0], int(args[1]))]
+	else:
+		nodes = [(args[0], 8000)]
 
 	e = Manager()
 	bridge = Bridge(e, port=port, address=address, nodes=nodes)
