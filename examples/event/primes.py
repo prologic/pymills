@@ -11,7 +11,7 @@ import sys
 import math
 import time
 import optparse
-from uuid import uuid1 as uuid
+from uuid import uuid4 as uuid
 
 import pymills
 from pymills.event import Event
@@ -161,17 +161,14 @@ class PrimeFinder(Component):
 			# 0 and 1 are not primes
 			self.reset()
 			self.push(Done(self.id, n, False), "done")
-			return
 		elif n == 2:
 			# 2 is the only even prime
 			self.reset()
 			self.push(Done(self.id, n, True), "done")
-			return
 		elif not n & 1:
 			# all other even numbers are not primes
 			self.reset()
 			self.push(Done(self.id, n, False), "done")
-			return
 		else:
 			# range starts at 3 and increments by the squareroot of n
 			# for all odd numbers.
@@ -181,7 +178,7 @@ class PrimeFinder(Component):
 			self.step = 2
 
 			self.push(Run(self.id, self.n), "run")
-	
+
 	@listener("run")
 	def onRUN(self, id, n):
 		if self.start % self.n == 0:
