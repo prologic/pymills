@@ -97,10 +97,15 @@ class Receiver(Component):
 class State(Component):
 
 	done = False
+	n = 0
 
 	@listener("stop")
 	def onSTOP(self):
-		self.done = True
+		if self.n < 3:
+			self.push(Event(), "stop")
+			self.n += 1
+		else:
+			self.done = True
 
 class Monitor(Component):
 
@@ -180,20 +185,11 @@ def main():
 
 			if opts.events > 0 and monitor.events > opts.events:
 				e.send(Event(), "stop")
-				break
 			if opts.time > 0 and (time.time() - monitor.sTime) > opts.time:
 				e.send(Event(), "stop")
-				break
 
 		except KeyboardInterrupt:
 			e.send(Event(), "stop")
-			break
-
-	print "Done. Cleaning up..."
-
-	for i in xrange(1000):
-		e.flush()
-		bridge.poll()
 
 	print
 
