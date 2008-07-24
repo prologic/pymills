@@ -109,7 +109,7 @@ class State(Component):
 
 class Monitor(Component):
 
-	sTime = time.time()
+	sTime = sys.maxint
 	events = 0
 	state = 0
 
