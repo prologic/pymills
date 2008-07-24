@@ -10,12 +10,6 @@ from pymills.event import listener, Component, Event, Manager, Bridge
 USAGE = "%prog [options] <host> <port>"
 VERSION = "%prog v" + pymills.__version__
 
-class Calc(Component):
-
-	@listener("result")
-	def onRESULT(self, r):
-		print "Result: %s" % r
-
 def parse_options():
 	"""parse_options() -> opts, args
 
@@ -36,6 +30,12 @@ def parse_options():
 		raise SystemExit, 1
 
 	return opts, args
+
+class Calc(Component):
+
+	@listener("result")
+	def onRESULT(self, r):
+		print "Result: %s" % r
 
 def main():
 	opts, args = parse_options()
