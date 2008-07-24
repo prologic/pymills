@@ -465,12 +465,13 @@ class Bridge(UDPServer):
 		else:
 			address = self.address
 
-		self.push(HeloEvent(address, self.port), "helo")
+		self.ourself = (address, self.port)
+
+		self.push(HeloEvent(*self.ourself), "helo")
 
 	@filter("write")
 	def onWRITE(self, address, data):
 		super(Bridge, self).onWRITE(address, data)
-		raise FilterEvent
 
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
@@ -492,7 +493,7 @@ class Bridge(UDPServer):
 	def onHELO(self, address, port):
 		print "HELO from (%s, %s)" % (address, port)
 
-		if address == self.address and port == self.port:
+		if (address, port) == self.ourself:
 			print "Ignoring - it's ourself"
 			return
 
