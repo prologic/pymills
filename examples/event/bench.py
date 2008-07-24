@@ -46,9 +46,9 @@ def parse_options():
 	parser.add_option("-b", "--bind",
 			action="store", default="0.0.0.0", dest="bind",
 			help="Bind to address:[port] (UDP) (test remote events)")
-	parser.add_option("-c", "--connect",
-			action="store", default=None, dest="connect",
-			help="Connect to given host (test remote events)")
+	parser.add_option("-c", "--concurrency",
+			action="store", default=1, dest="concurrency",
+			help="Set concurrency level. (Default: 1)")
 	parser.add_option("-t", "--time",
 			action="store", default=0, dest="time",
 			help="Stop after specified elapsed seconds")
@@ -76,7 +76,7 @@ def parse_options():
 		print str(e)
 		parser.exit(ERRORS[2][0], ERRORS[2][1])
 
-	if opts.listen and opts.connect is not None:
+	if opts.listen and args:
 		parser.exit(ERRORS[0][0], ERRORS[0][1])
 
 	return opts, args
@@ -101,7 +101,7 @@ class Test(Component):
 
 	@listener("hello")
 	def onHELLO(self, message=""):
-		self.push(Event(message=message), "hello")
+		self.push(Event(message=message), "hello", self.channel)
 
 class State(Component):
 
@@ -142,11 +142,11 @@ def main():
 
 	e = Manager()
 
-	if opts.listen or opts.connect:
+	if opts.listen or args:
 
 		nodes = []
-		if opts.connect is not None:
-			for node in opts.connect.split(","):
+		if args:
+			for node in args:
 				if ":" in node:
 					host, port = node.split(":")
 					port = int(port)
@@ -171,12 +171,13 @@ def main():
 
 	if opts.mode.lower() == "tput":
 		print "Setting up Test..."
-		Test(e)
+		for c in xrange(int(opts.concurrency)):
+			Test(e, channel=c)
 		monitor.sTime = time.time()
 	elif opts.listen:
 		print "Setting up Receiver..."
 		Receiver(e)
-	elif opts.connect:
+	elif args:
 		print "Setting up Sender..."
 		Sender(e)
 	else:
