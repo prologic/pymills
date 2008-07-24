@@ -2,7 +2,13 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+import optparse
+
+import pymills
 from pymills.event import listener, Component, Event, Manager, Bridge
+
+USAGE = "%prog [options] <host> <port>"
+VERSION = "%prog v" + pymills.__version__
 
 class Calc(Component):
 
@@ -10,12 +16,40 @@ class Calc(Component):
 	def onRESULT(self, r):
 		print "Result: %s" % r
 
-def main():
+def parse_options():
+	"""parse_options() -> opts, args
 
-	nodes = [("localhost", 9000)]
+	Parse the command-line options given returning both
+	the parsed options and arguments.
+	"""
+
+	parser = optparse.OptionParser(usage=USAGE, version=VERSION)
+
+	parser.add_option("-b", "--bind",
+			action="store", default="0.0.0.0:8000", dest="bind",
+			help="Bind to address:port")
+
+	opts, args = parser.parse_args()
+
+	if len(args) < 2:
+		parser.print_help()
+		raise SystemExit, 1
+
+	return opts, args
+
+def main():
+	opts, args = parse_options()
+
+	if ":" in opts.bind:
+		address, port = opts.bind.split(":")
+		port = int(port)
+	else:
+		address, port = opts.bind, 8000
+
+	nodes = [(args[0], int(args[1]))]
 
 	e = Manager()
-	bridge = Bridge(e, port=9001, nodes=nodes)
+	bridge = Bridge(e, port=port, address=address, nodes=nodes)
 	Calc(e)
 
 	x = float(raw_input("x: "))
