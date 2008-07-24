@@ -45,11 +45,10 @@ import select
 from time import sleep
 import cPickle as pickle
 from threading import Thread
-from pickle import PickleError
 from collections import defaultdict
+from cPickle import dumps as pickle
+from cPickle import loads as unpickle
 from inspect import getmembers, ismethod, getargspec
-
-from utils import caller
 
 class EventError(Exception):
 	"Event Error"
@@ -419,6 +418,10 @@ class Event(object):
 		self.args = args
 		self.kwargs = kwargs
 
+	def __eq__(self, y):
+		" x.__eq__(y) <==> x==y"
+		return self.args == y.args and self.kwargs == y.kwargs
+
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
 
@@ -440,9 +443,26 @@ class Event(object):
 		else:
 			raise KeyError(x)
 
-###
-### FIXME: Refactor RemoteManager to sub-class pymills.net.sockets.TCPServer
-###
+from pymills.net.sockets import UDPServer
 
-class Remote(object):
-	pass
+class Bridge(UDPServer):
+
+	nodes = set()
+
+	@filter()
+	def onEVENTS(self, event):
+		s = pickle(event)
+		for node in self.nodes:
+			self.write(node, s)
+		self.poll()
+
+	@filter("helo")
+	def onHELO(self, host, port):
+		self.nodes.add((host, port))
+
+	@filter()
+	def onREAD(self, sock, data):
+		event = unpickle(data)
+		channel = event._channel
+		target = event._target
+		self.send(event, channel, target)
