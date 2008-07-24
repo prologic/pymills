@@ -101,8 +101,8 @@ class Task(Event):
 
 class Prime(Event):
 
-	def __init__(self, n):
-		super(Prime, self).__init__(n)
+	def __init__(self, id, n):
+		super(Prime, self).__init__(id, n)
 
 ###
 ### Components
@@ -192,13 +192,6 @@ class PrimeFinder(Component):
 			else:
 				self.push(Run(self.id, self.n), "run")
 
-	@filter("done")
-	def onDONE(self, id, n, r):
-		if r:
-			self.push(Prime(n), "prime")
-		if self.term:
-			self.push(Term(), "term")
-
 class TaskManager(Component):
 
 	n = 1
@@ -222,7 +215,7 @@ class TaskManager(Component):
 	def onDONE(self, id, n, r):
 		if r and (n not in self.primes):
 			self.primes.append(n)
-			self.push(Prime(n), "prime")
+			self.push(Prime(id, n), "prime")
 		self.push(Query(), "query")
 
 ###
@@ -243,7 +236,7 @@ class Stats(Component):
 	sTime = sys.maxint
 	events = 0
 	primes = 0
-	state = 0
+	distribution = {}
 
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
@@ -259,8 +252,13 @@ class Stats(Component):
 		self.sTime = time.time()
 
 	@filter("prime")
-	def onPRIME(self, n):
+	def onPRIME(self, id, n):
 		self.primes += 1
+
+		if not self.distribution.has_key(id):
+			self.distribution[id] = 1
+		else:
+			self.distribution[id] += 1
 
 ###
 ### Main
@@ -327,14 +325,17 @@ def main():
 
 	tTime = eTime - stats.sTime
 
-	if tTime > 0:
+	if not opts.slave:
 
 		print "Total Primes: %d (%d/s after %0.2fs)" % (
 				stats.primes, int(math.ceil(float(stats.primes) / tTime)), tTime)
 		print "Total Events: %d (%d/s after %0.2fs)" % (
 				stats.events, int(math.ceil(float(stats.events) / tTime)), tTime)
 
-	if not opts.slave:
+		print "Distribution:"
+		for node, primes in stats.distribution.iteritems():
+			print " %s: %d" % (node, primes)
+
 		fd = open(opts.output, "w")
 		for prime in taskman.primes:
 			fd.write("%d\n" % prime)
