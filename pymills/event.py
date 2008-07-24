@@ -253,7 +253,7 @@ class Manager(object):
 			queue = _queue[:]
 			for x in queue:
 				event, channel, target = x
-				if target:
+				if target is not None:
 					channel = "%s:%s" % (target, channel)
 				handlers = self.getHandlers("global") + self.getHandlers(channel)
 				send(handlers, event, channel, target)
@@ -334,7 +334,7 @@ class Component(Manager):
 			(hasattr(x, "filter") or hasattr(x, "listener")))]
 
 		for handler in handlers:
-			if self.channel:
+			if self.channel is not None:
 				channel = "%s:%s" % (self.channel, handler.channel)
 			else:
 				channel = handler.channel
@@ -428,7 +428,7 @@ class Event(object):
 
 		attrs = ((k, v) for k, v in self.kwargs.items())
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
-		channel = getattr(self, "_channel", "None")
+		channel = getattr(self, "_channel", "")
 		return "<%s/%s %s {%s}>" % (
 				self.__class__.__name__,
 				channel,
