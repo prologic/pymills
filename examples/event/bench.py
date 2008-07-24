@@ -115,7 +115,7 @@ class State(Component):
 
 	@listener("stop")
 	def onSTOP(self):
-		if self.n:
+		if self.n < 1:
 			self.push(Event(), "stop")
 			self.n += 1
 		else:
