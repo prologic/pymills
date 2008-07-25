@@ -205,9 +205,9 @@ class TaskManager(Component):
 		self.push(Task(id, self.n), "task")
 		self.n += 1
 
-	@listener("busy")
-	def onBUSY(self, id):
-		self.push(Query(), "query")
+#	@listener("busy")
+#	def onBUSY(self, id):
+#		self.push(Query(), "query")
 
 	@listener("done")
 	def onDONE(self, id, n, r):
@@ -225,10 +225,15 @@ class State(Component):
 
 	done = False
 	n = 0
+	N = 1
+
+	@listener("helo")
+	def onHELO(self, host, port):
+		self.N += 1
 
 	@listener("stop")
 	def onSTOP(self):
-		if self.n < 1:
+		if self.n < self.N:
 			self.push(Event(), "stop")
 			self.n += 1
 		else:
@@ -245,8 +250,8 @@ class Stats(Component):
 	def onEVENTS(self, event, *args, **kwargs):
 		self.events += 1
 
-	@filter("newprime")
-	def onNEWPRIME(self, event, *args, **kwargs):
+	@filter("prime")
+	def onPRIME(self, n):
 		self.primes += 1
 
 ###
