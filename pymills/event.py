@@ -444,6 +444,21 @@ class Event(object):
 		else:
 			raise KeyError(x)
 
+class Debugger(Component):
+
+	IgnoreEvents = []
+	IgnoreChannels = []
+
+	@filter()
+	def onEVENTS(self, event, *args, **kwargs):
+		channel = event._channel
+		if True in [isinstance(event, cls) for cls in self.IgnoreEvents]:
+			return
+		elif channel in self.IgnoreChannels:
+			return
+		else:
+			print >> sys.stderr, event
+
 from pymills.net.sockets import UDPServer, WriteEvent, ReadEvent
 
 class HeloEvent(Event):
@@ -451,9 +466,15 @@ class HeloEvent(Event):
 	def __init__(self, address, port):
 		super(HeloEvent, self).__init__(address, port)
 
+class DummyBridge(object):
+
+	def poll(self):
+		pass
+
 class Bridge(UDPServer):
 
 	IgnoreEvents = [WriteEvent, ReadEvent]
+	IgnoreChannels = []
 
 	def __init__(self, *args, **kwargs):
 		super(Bridge, self).__init__(*args, **kwargs)
@@ -471,34 +492,30 @@ class Bridge(UDPServer):
 
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
-		if True in [isinstance(event, cls) for cls in Bridge.IgnoreEvents]:
+		channel = event._channel
+		if True in [isinstance(event, cls) for cls in self.IgnoreEvents]:
 			return
-
-		if getattr(event, "_ignore", False):
+		elif channel in self.IgnoreChannels:
 			return
-
-		event._ignore = True
+		elif getattr(event, "_ignore", False):
+			return
+		else:
+			event._ignore = True
 
 		s = pickle(event)
 		if self.nodes:
 			for node in self.nodes:
 				self.write(node, s)
-		else:
-			print "No nodes. Broadcasting..."
-			self.write(("<broadcast>", self.port), s)
+		#else:
+		#	self.write(("<broadcast>", self.port), s)
 
 	@filter("helo")
 	def onHELO(self, address, port):
-		print "HELO from (%s, %s)" % (repr(address), repr(port))
-
 		if (address, port) == self.ourself:
-			print " Ignoring - it's ourself!"
 			raise FilterEvent
 
 		if not (address, port) in self.nodes:
-			print " Added node (%s, %s)" % (repr(address), repr(port))
 			self.nodes.add((address, port))
-			print " Sending HELO to (%s, %s)" % (repr(address), repr(port))
 			self.push(HeloEvent(*self.ourself), "helo")
 
 	@filter("read")
@@ -506,4 +523,5 @@ class Bridge(UDPServer):
 		event = unpickle(data)
 		channel = event._channel
 		target = event._target
+
 		self.send(event, channel, target)
