@@ -1,19 +1,51 @@
 #!/usr/bin/env python
 
-import sys
+import optparse
 
-from pymills.event import filter, listener, Component, Event, Manager, Bridge
+import pymills
+from pymills.event import Manager, Bridge, Debugger
 
-class Sniffer(Component):
+USAGE = "%prog [options] [host[:port]]"
+VERSION = "%prog v" + pymills.__version__
 
-	@filter()
-	def onEVENTS(self, event, *args, **kwargs):
-		print >> sys.stderr, event
+def parse_options():
+	"""parse_options() -> opts, args
+
+	Parse the command-line options given returning both
+	the parsed options and arguments.
+	"""
+
+	parser = optparse.OptionParser(usage=USAGE, version=VERSION)
+
+	parser.add_option("-b", "--bind",
+			action="store", default="0.0.0.0:9000", dest="bind",
+			help="Bind to address:port")
+
+	opts, args = parser.parse_args()
+
+	return opts, args
 
 def main():
+	opts, args = parse_options()
+
+	if ":" in opts.bind:
+		address, port = opts.bind.split(":")
+		port = int(port)
+	else:
+		address, port = opts.bind, 9000
+
+	if args:
+		x = args[0].split(":")
+		if len(x) > 1:
+			nodes = [(x[0], int(x[1]))]
+		else:
+			nodes = [(x[0], 8000)]
+	else:
+		nodes = []
+
 	e = Manager()
-	sniffer = Sniffer(e)
-	bridge = Bridge(e)
+	bridge = Bridge(e, port=port, address=address, nodes=nodes)
+	Debugger(e)
 
 	while True:
 		try:
