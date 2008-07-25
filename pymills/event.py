@@ -469,10 +469,6 @@ class Bridge(UDPServer):
 
 		self.push(HeloEvent(*self.ourself), "helo")
 
-	@filter("write")
-	def onWRITE(self, address, data):
-		super(Bridge, self).onWRITE(address, data)
-
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
 		if True in [isinstance(event, cls) for cls in Bridge.IgnoreEvents]:
@@ -484,8 +480,12 @@ class Bridge(UDPServer):
 		event._ignore = True
 
 		s = pickle(event)
-		for node in self.nodes:
-			self.write(node, s)
+		if self.nodes:
+			for node in self.nodes:
+				self.write(node, s)
+		else:
+			print "No nodes. Broadcasting..."
+			self.write(("<broadcast>", self.port), s)
 
 	@filter("helo")
 	def onHELO(self, address, port):
