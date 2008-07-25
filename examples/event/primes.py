@@ -57,6 +57,9 @@ def parse_options():
 	parser.add_option("-d", "--debug",
 			action="store_true", default=False, dest="debug",
 			help="Enable debug mode. (Default: False)")
+	parser.add_option("-w", "--wait",
+			action="store_true", default=False, dest="wait",
+			help="Wait for a node HELO before start. (Default: False)")
 
 	opts, args = parser.parse_args()
 
@@ -112,7 +115,6 @@ class Prime(Event):
 class PrimeFinder(Component):
 
 	id = uuid()
-	primes = 0
 
 	busy = False
 	n = None
@@ -156,7 +158,6 @@ class PrimeFinder(Component):
 		elif n == 2:
 			# 2 is the only even prime
 			self.reset()
-			self.primes += 1
 			self.push(Done(self.id, n, True), "done")
 			return
 		elif not n & 1:
@@ -182,18 +183,24 @@ class PrimeFinder(Component):
 		else:
 			self.start += self.step
 			if self.start > self.stop:
-				self.primes += 1
 				self.push(Done(self.id, self.n, True), "done")
 				self.reset()
 			else:
 				self.push(Run(self.id, self.n), "run")
 
+	@listener("done")
+	def onDONE(self, id, n, r):
+		if r:
+			self.push(Prime(n), "prime")
+
 class TaskManager(Component):
 
-	n = 999
+	n = 1
 	primes = []
 
-	jobs = {}
+	@listener("helo")
+	def onHELO(self, host, port):
+		self.push(Query(), "query")
 
 	@listener("start")
 	def onSTART(self):
@@ -201,17 +208,11 @@ class TaskManager(Component):
 
 	@listener("ready")
 	def onREADY(self, id):
-		self.jobs[id] = self.n
 		self.push(Task(id, self.n), "task")
 		self.n += 1
 
-#	@listener("busy")
-#	def onBUSY(self, id):
-#		self.push(Query(), "query")
-
 	@listener("done")
 	def onDONE(self, id, n, r):
-		self.jobs[id] = None
 		if r and (n not in self.primes):
 			self.primes.append(n)
 			self.push(Prime(n), "prime")
@@ -241,7 +242,7 @@ class State(Component):
 
 class Stats(Component):
 
-	sTime = time.time()
+	sTime = sys.maxint
 	events = 0
 	primes = 0
 	state = 0
@@ -249,6 +250,15 @@ class Stats(Component):
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
 		self.events += 1
+
+	@listener("helo")
+	def onHELO(self, host, port):
+		if self.sTime == sys.maxint:
+			self.sTime = time.time()
+
+	@filter("start")
+	def onSTART(self):
+		self.sTime = time.time()
 
 	@filter("prime")
 	def onPRIME(self, n):
@@ -289,15 +299,16 @@ def main():
 			address, port = opts.bind, 8000
 
 	bridge = Bridge(e, port=port, address=address, nodes=nodes)
-	bridge.IgnoreEvents.append(Run)
+	bridge.IgnoreEvents.extend([Run, Prime])
 	if not opts.slave:
-		bridge.IgnoreEvents.extend([Ready, Busy, Done, Prime])
+		bridge.IgnoreEvents.extend([Ready, Busy, Done])
 
-	finder = PrimeFinder(e)
+	PrimeFinder(e)
 
 	if not opts.slave:
 		taskman = TaskManager(e)
-		e.push(Start(), "start")
+		if not opts.wait:
+			e.push(Start(), "start")
 
 	while not state.done:
 		try:
@@ -319,16 +330,14 @@ def main():
 
 	tTime = eTime - stats.sTime
 
-	print "I found %d primes (%d/s after %0.2fs)" % (
-			finder.primes, int(math.ceil(float(finder.primes) / tTime)), tTime)
-
-	if not opts.slave:
+	if tTime > 0:
 
 		print "Total Primes: %d (%d/s after %0.2fs)" % (
 				stats.primes, int(math.ceil(float(stats.primes) / tTime)), tTime)
 		print "Total Events: %d (%d/s after %0.2fs)" % (
 				stats.events, int(math.ceil(float(stats.events) / tTime)), tTime)
 
+	if not opts.slave:
 		fd = open(opts.output, "w")
 		for prime in taskman.primes:
 			fd.write("%d\n" % prime)
