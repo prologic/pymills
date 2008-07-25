@@ -1,27 +1,26 @@
 #!/usr/bin/env python
 
-from pymills.event import filter, listener, Component, \
-		Event, Remote
+import sys
+
+from pymills.event import filter, listener, Component, Event, Manager, Bridge
 
 class Sniffer(Component):
 
 	@filter()
-	def onDEBUG(self, event):
-		print event
+	def onEVENTS(self, event, *args, **kwargs):
+		print >> sys.stderr, event
 
 def main():
-	e = Remote(nodes=("0.0.0.0:64000",), port=12000)
+	e = Manager()
 	sniffer = Sniffer(e)
-
-	e.send(Event(), "")
+	bridge = Bridge(e)
 
 	while True:
 		try:
 			e.flush()
-			e.process()
+			bridge.poll()
 		except KeyboardInterrupt:
 			break
-	e.flush()
 
 if __name__ == "__main__":
 	main()
