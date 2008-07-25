@@ -162,7 +162,7 @@ class EventTestCase(unittest.TestCase):
 		self.assertEquals(a.kwargs["bar"], "2")
 
 		self.assertEquals(str(a),
-				"<Event/None (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
+				"<Event/ (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
 
 	def testManager(self):
 		"""Test Manager
