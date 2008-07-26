@@ -2,43 +2,31 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-from pymills.event import listener, Component, Manager, \
-		Event
+from pymills.event import listener, Component, Manager, Event
 
 class TodoList(Component):
 
-	def __init__(self, *args):
-		super(TodoList, self).__init__(*args)
-
-		self.todos = {}
+	todos = {}
 
 	def add(self, name, description):
 		assert name not in self.todos, "To-do already in list"
 		self.todos[name] = description
-		self.push(
-				Event(name, description),
-				"TodoAdded")
+		self.push(Event("Todo", name, description), "added")
 
 class TodoPrinter(Component):
 
-	@listener("TodoAdded")
-	def onTodoAdded(self, name, description):
-		print "TODO:", name
-		print "	  ", description
+	@listener("added")
+	def onADDED(self, name, description):
+		print "TODO: %s" % name
+		print "      %s" % description
 
 def main():
 	e = Manager()
-
+	TodoPrinter(e)
 	todo = TodoList(e)
-	todo2 = TodoList(e)
 
-	printer = TodoPrinter(e)
-	printer2 = TodoPrinter(e)
-
-	todo.add("Make coffee",
-			"Really need to make some coffee")
-	todo.add("Bug triage",
-			"Double-check that all known issues were addressed")
+	todo.add("Make coffee", "Really need to make some coffee")
+	todo.add("Bug triage", "Double-check that all known issues were addressed")
 
 	e.flush()
 
