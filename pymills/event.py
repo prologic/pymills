@@ -482,7 +482,7 @@ class Helo(Event): pass
 
 class DummyBridge(object):
 
-	def poll(self):
+	def poll(self, *args, **kwargs):
 		pass
 
 class Bridge(UDPServer):
