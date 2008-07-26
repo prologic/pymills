@@ -9,22 +9,12 @@ from pymills.net.sockets import TCPClient
 from pymills import __version__ as systemVersion
 from pymills.event import listener, Manager, Debugger, UnhandledEvent
 
-class TelnetClient(TCPClient):
-
-	@listener("connect")
-	def onCONNECT(self, host, port):
-		print "Connected to %s" % host
-
-	@listener("read")
-	def onREAD(self, data):
-		print data.strip()
-
-	@listener("stdin:read")
-	def onINPUT(self, data):
-		self.write(data)
-
 USAGE = "%prog [options] <host> [<port>]>"
 VERSION = "%prog v" + systemVersion
+
+###
+### Functions
+###
 
 def parse_options():
 	"""parse_options() -> opts, args
@@ -50,6 +40,28 @@ def parse_options():
 
 	return opts, args
 
+###
+### Components
+###
+
+class Telnet(TCPClient):
+
+	@listener("connect")
+	def onCONNECT(self, host, port):
+		print "Connected to %s" % host
+
+	@listener("read")
+	def onREAD(self, data):
+		print data.strip()
+
+	@listener("stdin:read")
+	def onINPUT(self, data):
+		self.write(data)
+
+###
+### Main
+###
+
 def main():
 	opts, args = parse_options()
 
@@ -66,19 +78,23 @@ def main():
 		debugger = Debugger(e)
 		debugger.IgnoreEvents.extend(["Read", "Write"])
 
-	client = TelnetClient(e)
+	telnet = Telnet(e)
 
 	print "Trying %s..." % host
-	client.open(host, port, ssl=opts.ssl)
+	telnet.open(host, port, ssl=opts.ssl)
 
-	while client.connected:
+	while telnet.connected:
 		try:
 			e.flush()
 			stdin.poll()
-			client.poll()
+			telnet.poll()
 		except KeyboardInterrupt:
 			break
-	client.close()
+	telnet.close()
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()
