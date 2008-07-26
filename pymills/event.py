@@ -47,6 +47,7 @@ from threading import Thread
 from collections import defaultdict
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
+from threading import enumerate as threads
 from socket import gethostname, gethostbyname
 from inspect import getmembers, ismethod, getargspec
 
@@ -59,11 +60,16 @@ class UnhandledEvent(EventError):
 	def __init__(self, event, channel):
 		super(UnhandledEvent, self).__init__(event, channel)
 
-def __newobj__(cls, *args):
-	return cls.__new__(cls, *args)
-
 class FilterEvent(Exception):
 	"Filter Event Exception"
+
+def workers():
+	"""workers() -> list of workers
+
+	Get the current list of active Worker's
+	"""
+
+	return [thread for thread in threads() if isinstance(thread, Worker)]
 
 def filter(channel="global"):
 	"Decorator function for a filter"
