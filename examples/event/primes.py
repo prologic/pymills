@@ -68,41 +68,13 @@ class Start(Event): pass
 class Stop(Event): pass
 class Term(Event): pass
 class Query(Event): pass
-
-class Busy(Event):
-
-	def __init__(self, id):
-		super(Busy, self).__init__(id)
-
-class Ready(Event):
-
-	def __init__(self, id):
-		super(Ready, self).__init__(id)
-
-class Task(Event):
-
-	def __init__(self, id, n):
-		super(Task, self).__init__(id, n)
-
-class Run(Event):
-
-	def __init__(self, id, n):
-		super(Run, self).__init__(id, n)
-
-class Done(Event):
-
-	def __init__(self, id, n, r):
-		super(Done, self).__init__(id, n, r)
-
-class Task(Event):
-
-	def __init__(self, id, n):
-		super(Task, self).__init__(id, n)
-
-class Prime(Event):
-
-	def __init__(self, id, n):
-		super(Prime, self).__init__(id, n)
+class Busy(Event): pass
+class Ready(Event): pass
+class Task(Event): pass
+class Run(Event): pass
+class Done(Event): pass
+class Task(Event): pass
+class Prime(Event): pass
 
 ###
 ### Components
@@ -295,9 +267,9 @@ def main():
 			address, port = opts.bind, 8000
 
 	bridge = Bridge(e, port=port, address=address, nodes=nodes)
-	bridge.IgnoreEvents.extend([Run, Prime])
+	bridge.IgnoreEvents.extend(["Run", "Prime"])
 	if not opts.slave:
-		bridge.IgnoreEvents.extend([Ready, Busy, Done])
+		bridge.IgnoreEvents.extend(["Ready", "Busy", "Done"])
 
 	PrimeFinder(e)
 
