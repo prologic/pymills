@@ -261,10 +261,8 @@ def main():
 
 	tTime = eTime - monitor.sTime
 
-	print "Total Events: %d" % monitor.events
-	print "%d/s after %0.2fs" % (
-			int(math.ceil(float(monitor.events) / tTime)),
-			tTime)
+	print "Total Events: %d (%d/s after %0.2fs)" % (
+			monitor.events, int(math.ceil(float(monitor.events) / tTime)), tTime)
 
 	if opts.profile:
 		profiler.stop()
