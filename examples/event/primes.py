@@ -274,7 +274,7 @@ def main():
 
 	if opts.debug:
 		debugger = Debugger(e)
-		debugger.IgnoreChannels.extend(["read", "write"])
+		debugger.IgnoreEvents.extend(["Read", "Write"])
 
 	nodes = []
 	if args:

@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-import readline
 import optparse
 
+from pymills.io import Stdin
 from pymills.net.sockets import TCPClient
 from pymills import __version__ as systemVersion
-from pymills.event import listener, Manager, UnhandledEvent
+from pymills.event import listener, Manager, Debugger, UnhandledEvent
 
 class TelnetClient(TCPClient):
 
@@ -16,8 +16,12 @@ class TelnetClient(TCPClient):
 		print "Connected to %s" % host
 
 	@listener("read")
-	def onREAD(self, line):
-		print line
+	def onREAD(self, data):
+		print data.strip()
+
+	@listener("stdin:read")
+	def onINPUT(self, data):
+		self.write(data)
 
 USAGE = "%prog [options] <host> [<port>]>"
 VERSION = "%prog v" + systemVersion
@@ -34,6 +38,9 @@ def parse_options():
 	parser.add_option("-s", "--ssl",
 			action="store_true", default=False, dest="ssl",
 			help="Enable Secure Socket Layer (SSL)")
+	parser.add_option("-d", "--debug",
+			action="store_true", default=False, dest="debug",
+			help="Enable debug mode. (Default: False)")
 
 	opts, args = parser.parse_args()
 
@@ -53,24 +60,25 @@ def main():
 		port = 23
 
 	e = Manager()
+	stdin = Stdin(e)
+
+	if opts.debug:
+		debugger = Debugger(e)
+		debugger.IgnoreEvents.extend(["Read", "Write"])
+
 	client = TelnetClient(e)
 
 	print "Trying %s..." % host
 	client.open(host, port, ssl=opts.ssl)
 
-	while True:
+	while client.connected:
 		try:
 			e.flush()
+			stdin.poll()
 			client.poll()
-			line = raw_input().strip()
-			client.write("%s\n" % line)
 		except KeyboardInterrupt:
 			break
 	client.close()
-	try:
-		e.flush()
-	except UnhandledEvent:
-		pass
 
 if __name__ == "__main__":
 	main()

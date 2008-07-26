@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+import sys
 import optparse
 
 import pymills
-from pymills.event import listener, Component, Event, Manager, Bridge
+from pymills.io import Stdin
+from pymills.event import listener, Component, Event, Manager, Bridge, Debugger
 
 USAGE = "%prog [options] [host[:port]]"
 VERSION = "%prog v" + pymills.__version__
@@ -22,16 +24,27 @@ def parse_options():
 	parser.add_option("-b", "--bind",
 			action="store", default="0.0.0.0:8000", dest="bind",
 			help="Bind to address:port")
+	parser.add_option("-d", "--debug",
+			action="store_true", default=False, dest="debug",
+			help="Enable debug mode. (Default: False)")
 
 	opts, args = parser.parse_args()
 
 	return opts, args
 
+class Input(Stdin):
+
+	@listener("read")
+	def onREAD(self, data):
+		self.push(Event("Input", data.strip()), "input")
+
 class Calc(Component):
 
 	@listener("result")
 	def onRESULT(self, r):
-		print "Result: %s" % r
+		sys.stdout.write("%s\n" % r)
+		sys.stdout.write(">>> ")
+		sys.stdout.flush()
 
 def main():
 	opts, args = parse_options()
@@ -52,17 +65,22 @@ def main():
 		nodes = []
 
 	e = Manager()
-	bridge = Bridge(e, port=port, address=address, nodes=nodes)
+	input = Input(e)
 	Calc(e)
 
-	x = float(raw_input("x: "))
-	y = float(raw_input("y: "))
+	if opts.debug:
+		debugger = Debugger(e)
+		debugger.IgnoreEvents.extend(["Read", "Write"])
 
-	e.push(Event(x, y), "add")
+	bridge = Bridge(e, port=port, address=address, nodes=nodes)
+
+	sys.stdout.write(">>> ")
+	sys.stdout.flush()
 
 	while True:
 		try:
 			e.flush()
+			input.poll()
 			bridge.poll()
 		except KeyboardInterrupt:
 			break

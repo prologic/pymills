@@ -3,7 +3,7 @@
 import optparse
 
 import pymills
-from pymills.event import Manager, Bridge, Debugger
+from pymills.event import Manager, Bridge, Debugger, Read, Write
 
 USAGE = "%prog [options] [host[:port]]"
 VERSION = "%prog v" + pymills.__version__
@@ -45,7 +45,8 @@ def main():
 
 	e = Manager()
 	bridge = Bridge(e, port=port, address=address, nodes=nodes)
-	Debugger(e)
+	debugger = Debugger(e)
+	debugger.IgnoreEvents.extend(["Read", "Write"])
 
 	while True:
 		try:

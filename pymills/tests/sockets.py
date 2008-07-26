@@ -12,7 +12,6 @@ from time import sleep
 
 from pymills.event import filter, listener, Worker
 from pymills.net.sockets import TCPClient, TCPServer
-from pymills.net.sockets import ConnectEvent, DisconnectEvent, ReadEvent, ErrorEvent, CloseEvent, WriteEvent
 
 class Manager(Worker):
 
@@ -80,116 +79,6 @@ class Server(TCPServer):
 		self.errors[sock] = error
 
 class SocketsTestCase(unittest.TestCase):
-
-	def testConnectEvent(self):
-		"""Test sockets.ConnectEvent
-
-		1. Test that ConnectEvent is able to hold a host and
-		   port with sock == None
-		2. Test that ConnectEvent is able to hold a host and
-		   port for a specific socket with sock not None
-		"""
-
-		#1
-		event = ConnectEvent("localhost", 1234)
-		self.assertEquals(event[0], "localhost")
-		self.assertEquals(event[1], 1234)
-
-		#2
-		event = ConnectEvent("localhost", 1234, "sock")
-		self.assertEquals(event[0], "sock")
-		self.assertEquals(event[1], "localhost")
-		self.assertEquals(event[2], 1234)
-
-	def testDisconnectEvent(self):
-		"""Test sockets.DisconnectEvent
-
-		1. Test that DisconnectEvent works with sock == None
-		2. Test that DisconnectEvent works for a specific
-		   sock with sock not None
-		"""
-
-		#1
-		event = DisconnectEvent()
-
-		#2
-		event = DisconnectEvent("sock")
-		self.assertEquals(event[0], "sock")
-
-	def testReadEvent(self):
-		"""Test sockets.ReadEvent
-
-		1. Test that ReadEvent can hold a line of text
-		   with sock == None
-		2. Test that ReadEvent can hold a line of test
-		   for a specific socket with sock not None
-		"""
-
-		#1
-		event = ReadEvent("foo")
-		self.assertEquals(event[0], "foo")
-
-		#2
-		event = ReadEvent("foo", "sock")
-		self.assertEquals(event[0], "sock")
-		self.assertEquals(event[1], "foo")
-
-	def testWriteEvent(self):
-		"""Test sockets.WriteEvent
-
-		1. Test that WriteEvent can hold some data
-		   with sock == None
-		2. Test that WriteEvent can hold some data
-		   for a specific socket with sock not None
-		"""
-
-		#1
-		event = WriteEvent("foo")
-		self.assertEquals(event[0], "foo")
-
-		#2
-		event = WriteEvent("foo", "sock")
-		self.assertEquals(event[0], "sock")
-		self.assertEquals(event[1], "foo")
-
-	def testErrorEvent(self):
-		"""Test sockets.ErrorEvent
-
-		1. Test that ErrorEvent can hold an error
-		   with sock == None
-		2. Test that WriteEvent can hold an error
-		   for a specific socket with sock not None
-		"""
-
-		#1
-		event = ErrorEvent("foo")
-		self.assertEquals(event[0], "foo")
-
-		#2
-		event = ErrorEvent("foo", "sock")
-		self.assertEquals(event[0], "sock")
-		self.assertEquals(event[1], "foo")
-
-	def testCloseEvent(self):
-		"""Test sockets.CloseEvent
-
-		1. Test that CloseEvent can be created
-		   with sock == None
-		2. Test that WriteEvent can be created
-		   for a specific socket with sock not None
-		"""
-
-		#1
-		event = None
-		try:
-			event = CloseEvent()
-		except:
-			pass
-		self.assertTrue(event)
-
-		#2
-		event = CloseEvent("sock")
-		self.assertEquals(event[0], "sock")
 
 	def testTCPClient(self):
 		"""Test sockets.TCPClient

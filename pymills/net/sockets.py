@@ -27,53 +27,16 @@ CONNECT_TIMEOUT = 5
 BUFFER_SIZE = 65536
 BACKLOG = 500
 
-class ErrorEvent(Event):
+###
+### Events
+###
 
-	def __init__(self, error, sock=None):
-		if sock is None:
-			Event.__init__(self, error)
-		else:
-			Event.__init__(self, sock, error)
-
-class ConnectEvent(Event):
-
-	def __init__(self, host, port, sock=None):
-		if sock is None:
-			Event.__init__(self, host, port)
-		else:
-			Event.__init__(self, sock, host, port)
-
-class DisconnectEvent(Event):
-
-	def __init__(self, sock=None):
-		if sock is None:
-			Event.__init__(self)
-		else:
-			Event.__init__(self, sock)
-
-class ReadEvent(Event):
-
-	def __init__(self, data, sock=None):
-		if sock is None:
-			Event.__init__(self, data)
-		else:
-			Event.__init__(self, sock, data)
-
-class WriteEvent(Event):
-
-	def __init__(self, data, sock=None):
-		if sock is None:
-			Event.__init__(self, data)
-		else:
-			Event.__init__(self, sock, data)
-
-class CloseEvent(Event):
-
-	def __init__(self, sock=None):
-		if sock is None:
-			Event.__init__(self)
-		else:
-			Event.__init__(self, sock)
+class Error(Event): pass
+class Connect(Event): pass
+class Disconnect(Event): pass
+class Read(Event): pass
+class Write(Event): pass
+class Close(Event): pass
 
 class Client(Component):
 
@@ -102,7 +65,7 @@ class Client(Component):
 			if error[0] == 4:
 				pass
 			else:
-				self.push(ErrorEvent(error), "error", self.channel)
+				self.push(Error(error), "error", self.channel)
 				return
 
 		if r:
@@ -112,19 +75,19 @@ class Client(Component):
 				else:
 					data = self._sock.recv(BUFFER_SIZE)
 				if data:
-					self.push(ReadEvent(data), "read", self.channel)
+					self.push(Read(data), "read", self.channel)
 				else:
 					self.close()
 					return
 			except socket.error, error:
-				self.push(ErrorEvent(error), "error", self.channel)
+				self.push(Error(error), "error", self.channel)
 				self.close()
 				return
 
 		if w:
 			if self.buffer:
 				data = self.buffer[0]
-				self.send(WriteEvent(data), "write", self.channel)
+				self.send(Write(data), "write", self.channel)
 			else:
 				if self._closeFlag:
 					self.close()
@@ -147,17 +110,17 @@ class Client(Component):
 			r, w, e = select.select([], self._fds, [], CONNECT_TIMEOUT)
 			if w:
 				self.connected = True
-				self.push(ConnectEvent(host, port), "connect", self.channel)
+				self.push(Connect(host, port), "connect", self.channel)
 			else:
-				self.push(ErrorEvent("Connection timed out"), "error", self.channel)
+				self.push(Error("Connection timed out"), "error", self.channel)
 				self.close()
 		except socket.error, error:
-			self.push(ErrorEvent(error), "error", self.channel)
+			self.push(Error(error), "error", self.channel)
 			self.close()
 
 	def close(self):
 		if self._fds:
-			self.push(CloseEvent(), "close", self.channel)
+			self.push(Close(), "close", self.channel)
 	
 	def write(self, data):
 		self.buffer.append(data)
@@ -179,11 +142,11 @@ class Client(Component):
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, error:
-			self.push(ErrorEvent(error), "error", self.channel)
+			self.push(Error(error), "error", self.channel)
 
 		self.connected = False
 
-		self.push(DisconnectEvent(), "disconnect", self.channel)
+		self.push(Disconnect(), "disconnect", self.channel)
 
 class TCPClient(Client):
 
@@ -226,7 +189,7 @@ class TCPClient(Client):
 			if error[0] in [32, 107]:
 				self.close()
 			else:
-				self.push(ErrorEvent(error), "error", self.channel)
+				self.push(Error(error), "error", self.channel)
 				self.close()
 
 class UDPClient(Client):
@@ -247,7 +210,7 @@ class UDPClient(Client):
 
 		self.connected = True
 
-		self.push(ConnectEvent(host, port), "connect", self.channel)
+		self.push(Connect(host, port), "connect", self.channel)
 
 	@filter("write")
 	def onWRITE(self, data):
@@ -267,7 +230,7 @@ class UDPClient(Client):
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.push(ErrorEvent(e), "error", self.channel)
+				self.push(Error(e), "error", self.channel)
 				self.close()
 
 class Server(Component):
@@ -303,7 +266,7 @@ class Server(Component):
 		for sock in w:
 			if self.buffers[sock]:
 				data = self.buffers[sock][0]
-				self.send(WriteEvent(data, sock), "write", self.channel)
+				self.send(Write(sock, data), "write", self.channel)
 			else:
 				if sock in self._closeFlags:
 					self.close(sock)
@@ -316,12 +279,12 @@ class Server(Component):
 				self._fds.append(newsock)
 				self.buffers[newsock] = []
 				host, port = host
-				self.push(ConnectEvent(host, port, newsock), "connect", self.channel)
+				self.push(Connect(newsock, host, port), "connect", self.channel)
 			else:
 				try:
 					data = sock.recv(BUFFER_SIZE)
 				except socket.error, e:
-					self.push(ErrorEvent(e, sock), "error", self.channel)
+					self.push(Error(sock, e), "error", self.channel)
 					self.close(sock)
 					continue
 
@@ -329,11 +292,11 @@ class Server(Component):
 					self.close(sock)
 					continue
 
-				self.push(ReadEvent(data, sock), "read", self.channel)
+				self.push(Read(sock, data), "read", self.channel)
 
 	def close(self, sock=None):
 		if sock in self:
-			self.push(CloseEvent(sock), "close", self.channel)
+			self.push(Close(sock), "close", self.channel)
 
 	def write(self, sock, data):
 		self.buffers[sock].append(data)
@@ -361,7 +324,7 @@ class Server(Component):
 			if e[0] in [32, 107]:
 				self.close(sock)
 			else:
-				self.push(ErrorEvent(e, sock), "error", self.channel)
+				self.push(Error(sock, e), "error", self.channel)
 				self.close()
 
 	@filter("close")
@@ -385,10 +348,10 @@ class Server(Component):
 				sock.shutdown(2)
 				sock.close()
 			except socket.error, e:
-				self.push(ErrorEvent(e, sock), "error", self.channel)
+				self.push(Error(sock, e), "error", self.channel)
 
 			self._fds.remove(sock)
-			self.push(DisconnectEvent(sock), "disconnect", self.channel)
+			self.push(Disconnect(sock), "disconnect", self.channel)
 		else:
 			for sock in self._fds:
 				self.close(sock)
@@ -441,7 +404,7 @@ class UDPServer(Server):
 		if w:
 			for address, data in self.buffers.iteritems():
 				if data:
-					self.send(WriteEvent(data[0], address), "write", self.channel)
+					self.send(Write(address, data[0]), "write", self.channel)
 
 		if r:
 			try:
@@ -450,9 +413,9 @@ class UDPServer(Server):
 				if not data:
 					self.close()
 				else:
-					self.push(ReadEvent(data, address), "read", self.channel)
+					self.push(Read(address, data), "read", self.channel)
 			except socket.error, e:
-				self.push(ErrorEvent(e, self._sock), "error", self.channel)
+				self.push(Error(self._sock, e), "error", self.channel)
 				self.close()
 
 	def write(self, address, data):
@@ -465,7 +428,7 @@ class UDPServer(Server):
 
 	def close(self):
 		if self._fds:
-			self.push(CloseEvent(), "close", self.channel)
+			self.push(Close(), "close", self.channel)
 
 	@filter("close")
 	def onCLOSE(self):
@@ -480,7 +443,7 @@ class UDPServer(Server):
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, error:
-			self.push(ErrorEvent(error), "error", self.channel)
+			self.push(Error(error), "error", self.channel)
 
 	@filter("write")
 	def onWRITE(self, address, data):
@@ -498,5 +461,5 @@ class UDPServer(Server):
 			if e[0] in [32, 107]:
 				self.close()
 			else:
-				self.push(ErrorEvent(e), "error", self.channel)
+				self.push(Error(e), "error", self.channel)
 				self.close()

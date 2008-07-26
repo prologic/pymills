@@ -29,13 +29,13 @@ class ListenerComponent(Component):
 	@listener("foo")
 	def onFOO(self, test, msg=""):
 		if msg.lower() == "start":
-			self.push(Event(msg="foo"), "foo")
+			self.push(Event("Test", msg="foo"), "foo")
 
 	@listener("bar")
 	def onBAR(self, event, test, msg=""):
 		if msg.lower() == "test":
 			self.push(
-					Event(msg="hello world"),
+					Event("Test", msg="hello world"),
 					event._channel)
 
 class Foo(Component):
@@ -47,7 +47,7 @@ class Foo(Component):
 
 	@listener("foo")
 	def onFOO(self):
-		self.send(Event(), "bar")
+		self.send(Event("Test"), "bar")
 
 	@listener("gotbar")
 	def onGOTBAR(self):
@@ -60,7 +60,7 @@ class Bar(Component):
 
 	@listener("bar")
 	def onBAR(self):
-		self.send(Event(), "gotbar")
+		self.send(Event("Test"), "gotbar")
 
 class FooWorker(Worker):
 
@@ -150,19 +150,20 @@ class EventTestCase(unittest.TestCase):
 		arguments and keyword arguments are stored correctly.
 		"""
 
-		a = Event(1, 2, 3, "foo", "bar", foo="1", bar="2")
+		e = Event("Test", 1, 2, 3, "foo", "bar", foo="1", bar="2")
 
-		self.assertTrue(1 in a.args)
-		self.assertTrue(2 in a.args)
-		self.assertTrue(3 in a.args)
-		self.assertTrue("foo" in a.args)
-		self.assertTrue("bar" in a.args)
+		self.assertEquals(e.name, "Test")
+		self.assertEquals(e.channel, None)
+		self.assertEquals(e.target, None)
+		self.assertFalse(e.ignore)
 
-		self.assertEquals(a.kwargs["foo"], "1")
-		self.assertEquals(a.kwargs["bar"], "2")
+		self.assertTrue((1, 2, 3, "foo", "bar") == e.args)
 
-		self.assertEquals(str(a),
-				"<Event/ (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
+		self.assertEquals(e.kwargs["foo"], "1")
+		self.assertEquals(e.kwargs["bar"], "2")
+
+		self.assertEquals(str(e),
+				"<Test/ (1, 2, 3, 'foo', 'bar') {foo=1, bar=2}>")
 
 	def testManager(self):
 		"""Test Manager
@@ -285,7 +286,7 @@ class EventTestCase(unittest.TestCase):
 		self.assertTrue(onBAR in self.manager.getHandlers("bar"))
 		self.assertEquals(len(self.manager.getHandlers()), 4)
 
-		self.manager.push(Event(self, time.time()), "test")
+		self.manager.push(Event("Test", self, time.time()), "test")
 		self.manager.flush()
 		self.assertTrue(self.flag == True)
 		self.flag = False
@@ -294,7 +295,7 @@ class EventTestCase(unittest.TestCase):
 
 		self.assertEquals(len(self.manager), 0)
 
-		self.manager.send(Event(self, time.time()), "test")
+		self.manager.send(Event("Test", self, time.time()), "test")
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
@@ -304,12 +305,11 @@ class EventTestCase(unittest.TestCase):
 		except EventError:
 			self.assertTrue(True)
 
-		self.manager.send(Event(self, time.time()), "test")
+		self.manager.send(Event("Test", self, time.time()), "test")
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
-		self.manager.send(Event(self, time.time(), stop=True),
-				"test")
+		self.manager.send(Event("Test", self, time.time(), stop=True), "test")
 		self.assertTrue(self.flag == False)
 
 		self.manager.remove(onSTOP)

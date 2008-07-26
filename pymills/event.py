@@ -27,7 +27,7 @@ event's date (args and kwargs) to that handler. The handler
 of a filter or listener thus becomes an API which must be
 conformed to.
 
-If any error occurs, an EventError is raised with the
+If any error occurs, an Error is raised with the
 appropiate message.
 
 A Component is an object that holds a copy of the
@@ -43,7 +43,6 @@ import sys
 import socket
 import select
 from time import sleep
-import cPickle as pickle
 from threading import Thread
 from collections import defaultdict
 from cPickle import dumps as pickle
@@ -59,6 +58,9 @@ class UnhandledEvent(EventError):
 
 	def __init__(self, event, channel):
 		super(UnhandledEvent, self).__init__(event, channel)
+
+def __newobj__(cls, *args):
+	return cls.__new__(cls, *args)
 
 class FilterEvent(Exception):
 	"Filter Event Exception"
@@ -108,8 +110,8 @@ def send(handlers, event, channel, target=None):
 	if channel == "global":
 		raise EventError("Events cannot be sent to the global channel")
 
-	event._channel = channel
-	event._target = target
+	event.channel = channel
+	event.target = target
 
 	if not handlers:
 		raise UnhandledEvent(event, channel)
@@ -385,8 +387,8 @@ class Worker(Component, Thread):
 	def __init__(self, *args, **kwargs):
 		super(Worker, self).__init__(*args, **kwargs)
 
-		autoStart = kwargs.get("autoStart", False)
-		if autoStart:
+		start = kwargs.get("start", False)
+		if start:
 			self.start()
 
 	def start(self):
@@ -411,27 +413,42 @@ class Event(object):
 	list of arguments and dictionary of keyword arguments.
 	"""
 
-	def __init__(self, *args, **kwargs):
-		"initializes x; see x.__class__.__doc__ for signature"
+	def __new__(cls, *args, **kwargs):
+		self = object.__new__(Event)
 
-		super(Event, self).__init__(*args, **kwargs)
+		if cls == Event:
+			if args:
+				self.name = args[0]
+				args = args[1:]
+			else:
+				self.name = "Event"
+		else:
+			self.name = cls.__name__
 
 		self.args = args
 		self.kwargs = kwargs
 
+		self.channel = None
+		self.target = None
+		self.ignore = False # Used by Bridge
+
+		return self
+
 	def __eq__(self, y):
 		" x.__eq__(y) <==> x==y"
-		return self.args == y.args and self.kwargs == y.kwargs
+
+		attrs = ["name", "args", "kwargs", "channel"]
+		r = [getattr(self, a) == getattr(y, a) for a in attrs]
+		return False not in r
 
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
 
 		attrs = ((k, v) for k, v in self.kwargs.items())
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
-		channel = getattr(self, "_channel", "")
+		channel = self.channel or ""
 		return "<%s/%s %s {%s}>" % (
-				self.__class__.__name__,
-				channel,
+				self.name,channel,
 				self.args, ", ".join(attrStrings))
 
 	def __getitem__(self, x):
@@ -451,20 +468,17 @@ class Debugger(Component):
 
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
-		channel = event._channel
-		if True in [isinstance(event, cls) for cls in self.IgnoreEvents]:
+		channel = event.channel
+		if True in [event.name == name for name in self.IgnoreEvents]:
 			return
 		elif channel in self.IgnoreChannels:
 			return
 		else:
 			print >> sys.stderr, event
 
-from pymills.net.sockets import UDPServer, WriteEvent, ReadEvent
+from pymills.net.sockets import UDPServer, Write, Read
 
-class HeloEvent(Event):
-
-	def __init__(self, address, port):
-		super(HeloEvent, self).__init__(address, port)
+class Helo(Event): pass
 
 class DummyBridge(object):
 
@@ -473,7 +487,7 @@ class DummyBridge(object):
 
 class Bridge(UDPServer):
 
-	IgnoreEvents = [WriteEvent, ReadEvent]
+	IgnoreEvents = ["Read", "Write"]
 	IgnoreChannels = []
 
 	def __init__(self, *args, **kwargs):
@@ -488,21 +502,21 @@ class Bridge(UDPServer):
 
 		self.ourself = (address, self.port)
 
-		self.push(HeloEvent(*self.ourself), "helo")
+		self.push(Helo(*self.ourself), "helo")
 
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
-		channel = event._channel
-		if True in [isinstance(event, cls) for cls in self.IgnoreEvents]:
+		channel = event.channel
+		if True in [event.name == name for name in self.IgnoreEvents]:
 			return
 		elif channel in self.IgnoreChannels:
 			return
-		elif getattr(event, "_ignore", False):
+		elif event.ignore:
 			return
 		else:
-			event._ignore = True
+			event.ignore = True
 
-		s = pickle(event)
+		s = pickle(event, -1)
 		if self.nodes:
 			for node in self.nodes:
 				self.write(node, s)
@@ -516,12 +530,11 @@ class Bridge(UDPServer):
 
 		if not (address, port) in self.nodes:
 			self.nodes.add((address, port))
-			self.push(HeloEvent(*self.ourself), "helo")
+			self.push(Helo(*self.ourself), "helo")
 
 	@filter("read")
 	def onREAD(self, address, data):
 		event = unpickle(data)
-		channel = event._channel
-		target = event._target
-
+		channel = event.channel
+		target = event.target
 		self.send(event, channel, target)

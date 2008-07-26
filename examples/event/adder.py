@@ -31,7 +31,13 @@ class Adder(Component):
 	def onADD(self, x, y):
 		print "Adding %s + %s" % (x, y)
 		r = x + y
-		self.push(Event(r), "result")
+		self.push(Event("Result", r), "result")
+
+	@listener("input")
+	def onINPUT(self, s):
+		print "Evaluating: %s" % s
+		r = eval(s)
+		self.push(Event("Result", r), "result")
 
 def main():
 	opts, args = parse_options()
