@@ -4,38 +4,32 @@
 
 from time import sleep
 
-from pymills.event import listener, Component, \
-		Event, Manager
+from pymills.event import listener, Component, Event, Manager
 
 class Foo(Component):
 
 	@listener("foo")
-	def onFOO(self, event):
+	def onFOO(self):
 		print "Foo",
-		self.send(Event(), "bar")
+		self.send(Event("Bar"), "bar")
 
 class Bar(Component):
 
 	@listener("bar")
-	def onBAR(self, event):
+	def onBAR(self):
 		print "Bar!"
 
 def main():
-	event = Manager()
-	foo = Foo(event)
-	bar = Bar(event)
-
-	foo.link(bar)
+	e = Manager()
+	Foo(e).link(Bar(e))
 
 	while True:
 		try:
-			event.flush()
-			event.push(Event(), "foo")
+			e.flush()
+			e.push(Event("Foo"), "foo")
 			sleep(1)
 		except KeyboardInterrupt:
 			break
-
-	event.flush()
 
 if __name__ == "__main__":
 	main()
