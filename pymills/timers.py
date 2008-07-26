@@ -11,102 +11,85 @@ in your running application/process.
 
 from time import time
 
-from event import Event, Component
-
-class TimerEvent(Event):
-
-	def __init__(self, n, **kwargs):
-		Event.__init__(self, n, **kwargs)
+from event import Component
 
 class Timers(Component):
-	"""Timers(event) -> new timers component
+	"""Timers(manager) -> new timers component
 
-	Creates a new timer component that allows you to add
-	timed-events which will fire a "timer" event when
+	Creates a new timers component that allows you to add
+	timed-events which will fire a "Timer" event when
 	they are triggered.
 	"""
 
-	def __init__(self, event):
-		"initializes x; see x.__class__.__doc__ for signature"
+	timers = []
 
-		Component.__init__(self, event)
+	def __len__(self):
+		"T.__len__() <==> len(T)"
 
-		self._timers = []
+		return len(self.timers)
+	
+	def __getitem__(self, y):
+		"T.__getitem__(y) <==> T[y]"
 
-	def find(self, **kwargs):
-		for i, timer in enumerate(self._timers):
-			found = True
-			for k, v in kwargs.iteritems():
-				try:
-					if not timer._kwargs[k] == v:
-						found = False
-						break
-				except KeyError:
-					foudn = False
-			if found:
-				return i
+		return self.timers[y]
 
-	def remove(self, x):
-		"""T.remove(x) -> None
+	def __delitem__(self, y):
+		"T.__delitem__(y) <==> del T[y]"
 
-		Remove the x'th timer in the list.
+		del self.timers[y]
+
+	def remove(self, timer):
+		"T.remove(timer) -- remove first occurrence of timer"
+
+		self.timers.remove(timer)
+
+	def add(self, s, e, c="timer", t=None, persist=False, start=False):
+		"""T.add(s, e, c="timer", t=None, persist=False, start=False) -> None
+
+		Add a new event (e) to be timed and triggered after (s)
+		seconds to the specified channel (c) and target (t).
+		Default channel is "timer" and target None. If persist
+		is True, the timer will be persistent and run indefinately.
+		If start is True, the timer will trigger before the next
+		cycle, but only if perist is also True (as this only makes
+		sense in persistent timers).
 		"""
 
-		del self._timers[x]
+		self.timers.append(Timer(s, e, c, t, persist))
+		if start and persist:
+			self.push(e, c, t)
 
-	def add(self, n, channel="timer", forever=False,
-			initial=False, **kwargs):
-		"""T.add(n, channel="timer", forever=False,
-		      initial=False, **kwargs) -> None
+	def poll(self):
+		"""T.poll() -> None
 
-		Add a new event to be timed and triggered of length
-		n seconds. By default this will add the event to
-		the "timer" channel and is a once-only timer unless
-		forever is True.
-
-		If initial=True and forever=True then this timer
-		will trigger once when it's created, then wait n
-		seconds before triggering again.
-
-		Any additional data can be provided by kwargs.
-		"""
-
-		self._timers.append(
-				Timer(n, channel, forever, initial, **kwargs))
-
-	def process(self):
-		"""T.process() -> None
-
-		Process all current timers. If any trigger push
-		a "TimerEvent" event onto the queue. Reset timers
+		Poll for the next timer event. If any trigger push
+		a "Timer" event onto the queue. Reset timers
 		that are marked with the forever flag.
 		"""
 
-		for timer in self._timers[:]:
-			done, event, channel = timer.process()
+		for timer in self.timers[:]:
+			done, (e, c, t) = timer.poll()
 			if done:
-				self.push(event, channel)
-				if not timer._forever:
-					self._timers.remove(timer)
+				self.push(e, c, t)
+				if not timer.persist:
+					self.timers.remove(timer)
 
-class Timer:
-	"""Timer(n, channel="timer", forever=False,
-	      initial=False, **kwargs) -> new timer object
+class Timer(object):
+	"""Timer(s, e, c, t, persist) -> new timer object
 
 	Creates a new timer object which when triggered
 	will return an event to be pushed onto the event
-	queue held by the Timers container.
+	queue held by the Timers component.
 	"""
 
-	def __init__(self, n, channel="timer", forever=False,
-			initial=False, **kwargs):
+	def __init__(self, s, e, c, t, persist):
 		"initializes x; see x.__class__.__doc__ for signature"
 
-		self._n = n
-		self._channel = channel
-		self._forever = forever
-		self._initial = initial
-		self._kwargs = kwargs
+		self.s = s
+		self.e = e
+		self.c = c
+		self.t = t
+		self.persist = persist
 
 		self.reset()
 
@@ -116,29 +99,21 @@ class Timer:
 		Reset the timer.
 		"""
 
-		self._etime = time() + self._n
+		self._eTime = time() + self.s
 
-	def process(self):
-		"""T.process() -> bool, TimerEvent, str
+	def poll(self):
+		"""T.poll() -> done, (e, c, t)
 
 		Check if this timer is ready to be triggered.
-		If so, return (True, TimerEvent, channel), otherwise
-		return (False, None, None).
+		If so, return True, (e, c, t), otherwise
+		return False, (None, None, None).
 
-		If this timer has the forever flag set to True,
-		reset the timer after triggering.
+		If timer is persistent, reset it after triggering.
 		"""
 
-		if time() > self._etime:
-			if self._forever:
+		if time() > self._eTime:
+			if self.persist:
 				self.reset()
-			return True, TimerEvent(self._n, **self._kwargs), \
-					self._channel
+			return True, (self.e, self.c, self.t)
 		else:
-			if self._initial and self._forever:
-				self._initial = False
-				return True, TimerEvent(
-						self._n,
-						**self._kwargs), \
-								self._channel
-			return False, None, None
+			return False, (None, None, None)
