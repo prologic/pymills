@@ -19,7 +19,9 @@ import hotshot.stats
 
 import pymills
 from pymills.misc import duration
-from pymills.event import listener, filter, Component, Manager, Bridge, Event
+from pymills.event import listener, filter
+from pymills.event import Bridge, DummyBridge
+from pymills.event import Component, Manager, Event
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + pymills.__version__
@@ -30,6 +32,10 @@ ERRORS = [
 		(2, "Invalid time spcified. Must be an integer."),
 		(3, "Invalid nthreads spcified. Must be an integer."),
 		]
+
+###
+### Functions
+###
 
 def parse_options():
 	"""parse_options() -> opts, args
@@ -84,42 +90,54 @@ def parse_options():
 
 	return opts, args
 
+###
+### Events
+###
+
+class Stop(Event): pass
+class Term(Event): pass
+class Hello(Event): pass
+class Received(Event): pass
+
+###
+### Components
+###
+
 class Sender(Component):
 
 	concurrency = 1
 
 	@listener("received")
 	def onRECEIVED(self, message=""):
-		self.push(Event(message="hello"), "hello", self.channel)
+		self.push(Hello("hello"), "hello", self.channel)
 
 class Receiver(Component):
 
 	@listener("helo")
 	def onHELO(self, address, port):
-		self.send(Event("hello"), "hello", self.channel)
+		self.send(Hello("hello"), "hello", self.channel)
 
 	@listener("hello")
 	def onHELLO(self, message=""):
-		self.push(Event(message="Got: %s" % message), "received", self.channel)
+		self.push(Received(message), "received", self.channel)
 
 class Test(Component):
 
 	@listener("hello")
-	def onHELLO(self, message=""):
-		self.push(Event(message=message), "hello", self.channel)
+	def onHELLO(self, message):
+		self.push(Hello(message), "hello", self.channel)
 
 class State(Component):
 
 	done = False
-	n = 0
 
 	@listener("stop")
 	def onSTOP(self):
-		if self.n < 1:
-			self.push(Event(), "stop")
-			self.n += 1
-		else:
-			self.done = True
+		self.push(Term(), "term")
+
+	@listener("term")
+	def onTERM(self):
+		self.done = True
 
 class Monitor(Component):
 
@@ -142,22 +160,22 @@ class Debugger(Component):
 	def onDEBUG(self, event, *args, **kwargs):
 		print >> sys.stderr, event
 
-class DummyBridge(object):
-
-	def poll(self):
-		pass
+###
+### Main
+###
 
 def main():
 
 	opts, args = parse_options()
 
 	e = Manager()
+	monitor = Monitor(e)
+	state = State(e)
 
 	if opts.debug:
 		Debugger(e)
 
 	if opts.listen or args:
-
 		nodes = []
 		if args:
 			for node in args:
@@ -179,9 +197,6 @@ def main():
 		bridge = Bridge(e, port=port, address=address, nodes=nodes)
 	else:
 		bridge = DummyBridge()
-
-	monitor = Monitor(e)
-	state = State(e)
 
 	if opts.mode.lower() == "tput":
 		print "Setting up Test..."
@@ -223,9 +238,9 @@ def main():
 
 	if opts.concurrency > 1:
 		for c in xrange(int(opts.concurrency)):
-			e.push(Event("hello"), "hello", c)
+			e.push(Hello("hello"), "hello", c)
 	else:
-		e.push(Event("hello"), "hello")
+		e.push(Hello("hello"), "hello")
 
 	while not state.done:
 		try:
@@ -233,12 +248,12 @@ def main():
 			bridge.poll()
 
 			if opts.events > 0 and monitor.events > opts.events:
-				e.send(Event(), "stop")
+				e.send(Stop(), "stop")
 			if opts.time > 0 and (time.time() - monitor.sTime) > opts.time:
-				e.send(Event(), "stop")
+				e.send(Stop(), "stop")
 
 		except KeyboardInterrupt:
-			e.send(Event(), "stop")
+			e.send(Stop(), "stop")
 
 	print
 
@@ -259,6 +274,10 @@ def main():
 		stats.strip_dirs()
 		stats.sort_stats("time", "calls")
 		stats.print_stats(20)
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()
