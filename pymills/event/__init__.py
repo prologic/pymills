@@ -148,27 +148,18 @@ def listener(channel="global"):
 def send(handlers, event, channel, target=None):
 	"""send(handlers event, channel, target=None) -> None
 
-	Given a list of handlers of the given channel (plus the
-	global channel), send the given event. if target is given
-	send this send this event to the given target component.
-
-	Filters are processed first.
-	Filters must return a tuple (halt, event)
-	A filter may:
-	 * Return a new event
-	 * Return the same event in tact
-	If halt is True, the event is discarded and no
-	further filters or listeners can recieve this event.
+	Send the given event to the list of handlers applying
+	channel and target to the event object. If no handlers
+	are given, raise an UnhandledEvent exception. If a handler
+	raised FilterEvent, return immediately and do not allow
+	any other handler to process this event.
 	"""
-
-	if channel == "global":
-		raise EventError("Events cannot be sent to the global channel")
-
-	event.channel = channel
-	event.target = target
 
 	if not handlers:
 		raise UnhandledEvent(event, channel)
+
+	event.channel = channel
+	event.target = target
 
 	for handler in handlers:
 		try:

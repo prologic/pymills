@@ -122,6 +122,10 @@ class Manager(object):
 		target.
 		"""
 
+		if channel:
+			if channel == "global":
+				raise EventError("Cannot push to global channel")
+
 		if self.manager == self:
 			self._queue.append((event, channel, target))
 		else:
@@ -158,6 +162,11 @@ class Manager(object):
 		event to filters/listeners of the given target
 		component.
 		"""
+
+		if channel:
+			if channel == "global":
+				raise EventError("Cannot send to global channel")
+
 
 		if self.manager == self:
 			if target:
