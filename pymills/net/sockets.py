@@ -336,6 +336,10 @@ class Server(Component):
 		"""
 
 		if sock:
+			if sock not in self._fds:
+				# Invalid/Closed socket
+				return
+
 			if not sock == self._sock:
 				if self.buffers[sock]:
 					self._closeFlags.append(sock)
