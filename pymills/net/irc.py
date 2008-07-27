@@ -17,7 +17,8 @@ implementations.
 import re
 import time
 
-from pymills.event import Component, Event, listener
+from pymills.event import listener, Event
+from pymills.event.core import Component
 
 ###
 ### Supporting Functions
@@ -89,95 +90,23 @@ def sourceSplit(source):
 ### Evenets
 ###
 
-class RawEvent(Event):
-
-	def __init__(self, line):
-		super(RawEvent, self).__init__(line)
-
-class NumericEvent(Event):
-
-	def __init__(self, source, target, numeric, arg, message):
-		super(NumericEvent, self).__init__(
-				source, target, numeric, arg, message)
-
-class NetInfoEvent(Event):
-
-	def __init__(self, gcount, ctime, protocol, key, x, y, z,
-			network):
-		super(NetInfoEvent, self).__init__(
-				gcount, ctime, protocol, key, x, y, z, network)
-
-class NewNickEvent(Event):
-
-	def __init__(self, nick, hops, signon, ident, host,
-			server, name):
-		Event.__init__(self, nick, hops, signon, ident, host,
-				server, name)
-
-class NickEvent(Event):
-
-	def __init__(self, nick, newNick, ctime):
-		Event.__init__(self, nick, newNick, ctime)
-
-class QuitEvent(Event):
-
-	def __init__(self, nick, message):
-		Event.__init__(self, nick, message)
-
-class MessageEvent(Event):
-
-	def __init__(self, source, target, message):
-		Event.__init__(self, source, target, message)
-
-class NoticeEvent(Event):
-
-	def __init__(self, source, target, message):
-		Event.__init__(self, source, target, message)
-
-class PingEvent(Event):
-
-	def __init__(self, server):
-		Event.__init__(self, server)
-
-class JoinEvent(Event):
-
-	def __init__(self, nick, channel):
-		Event.__init__(self, nick, channel)
-
-class PartEvent(Event):
-
-	def __init__(self, nick, channel, message):
-		Event.__init__(self, nick, channel, message)
-
-class CtcpEvent(Event):
-
-	def __init__(self, source, target, ctcpType, message):
-		Event.__init__(self, source, target, ctcpType, message)
-
-class ModeEvent(Event):
-
-	def __init__(self, nick, modes):
-		Event.__init__(self, nick, modes)
-
-class TopicEvent(Event):
-
-	def __init__(self, channel, whoset, whenset, topic):
-		Event.__init__(self, channel, whoset, whenset, topic)
-
-class InviteEvent(Event):
-
-	def __init__(self, source, target, channel):
-		Event.__init__(self, source, target, channel)
-
-class KickEvent(Event):
-
-	def __init__(self, source, channel, target, message):
-		Event.__init__(self, source, channel, target, message)
-
-class MotdEvent(Event):
-
-	def __init__(self, source, server):
-		Event.__init__(self, source, server)
+class Raw(Event): pass
+class Numeric(Event): pass
+class NetInfo(Event): pass
+class NewNick(Event): pass
+class Nick(Event): pass
+class Quit(Event): pass
+class Message(Event): pass
+class Notice(Event): pass
+class Ping(Event): pass
+class Join(Event): pass
+class Part(Event): pass
+class Ctcp(Event): pass
+class Mode(Event): pass
+class Topic(Event): pass
+class Invite(Event): pass
+class Kick(Event): pass
+class Motd(Event): pass
 
 ###
 ### Protocol Class
@@ -210,15 +139,9 @@ class IRC(Component):
 	The available events that are processed and generated
 	are pushed onto channels associated with that event.
 	They are:
-	 * numeric
-	 * ctcp
-	 * message
-	 * notice
-	 * join
-	 * part
-	 * nick
-	 * ping
-	 * newnick
+	 * Raw, 	Numeric, NetInfo, NewNick, Nick, Quit, Message,
+	 *	Notice, Ping, Join, Part, Ctcp, Mode, Topic, Invite,
+	 *	Kick, Motd
 	"""
 
 	def __init__(self, *args):
@@ -304,13 +227,9 @@ class IRC(Component):
 		"""I.ircRAW(data) -> None
 
 		Send a raw message
-
-		This must be overridden by sub-classes in order to
-		actually do anything usefull. By default it does
-		nothing. See: ircbot.py for an example.
 		"""
 
-		pass
+		self.write("%s\r\n" % data)
 
 	def ircPASS(self, password):
 		self.ircRAW("PASS %s" % password)
@@ -451,14 +370,14 @@ class IRC(Component):
 
 		Process any incoming data appending it to an internal
 		buffer. Split the buffer by the standard IRC delimiter
-		\r\n and create a RawEvent per line. Any unfinished
+		\r\n and create a Raw event per line. Any unfinished
 		lines of text, leave in the buffer.
 		"""
 
 		lines, buffer = splitLines(data, self._buffer)
 		self._buffer = buffer
 		for line in lines:
-			self.push(RawEvent(line), "raw", self)
+			self.push(Raw(line), "raw", self.channel)
 
 	@listener("raw")
 	def onRAW(self, line):
@@ -474,38 +393,33 @@ class IRC(Component):
 		tokens = line.split(" ")
 
 		if tokens[0] == "PING":
-			self.push(
-					PingEvent(strip(tokens[1]).lower()),
-					"ping", self)
+			self.push(Ping(strip(tokens[1]).lower()),	"ping", self.channel)
 
 		elif tokens[0] == "NICK":
-			self.push(
-					NewNickEvent(
-						tokens[1].lower(), int(tokens[2]),
-						int(tokens[3]), tokens[4].lower(),
-						tokens[5].lower(), tokens[6].lower(),
-						strip(" ".join(tokens[8:]))),
-					"newnick", self)
+			self.push(NewNick(
+					tokens[1].lower(), int(tokens[2]),
+					int(tokens[3]), tokens[4].lower(),
+					tokens[5].lower(), tokens[6].lower(),
+					strip(" ".join(tokens[8:]))),
+					"newnick", self.channel)
 
 		elif tokens[0] == "TOPIC":
-			self.push(
-					TopicEvent(
-						tokens[1], tokens[2], int(tokens[3]),
-						strip(" ".join(tokens[4:]))),
-					"topic", self)
+			self.push(Topic(
+					tokens[1], tokens[2], int(tokens[3]),
+					strip(" ".join(tokens[4:]))),
+					"topic", self.channel)
 
 		elif tokens[0] == "NETINFO":
-			self.push(
-					NetInfoEvent(
-						int(tokens[1]),
-						int(tokens[2]),
-						tokens[3],
-						tokens[4],
-						tokens[5],
-						tokens[6],
-						tokens[7],
-						strip(" ".join(tokens[8:]))),
-					"netinfo", self)
+			self.push(NetInfo(
+					int(tokens[1]),
+					int(tokens[2]),
+					tokens[3],
+					tokens[4],
+					tokens[5],
+					tokens[6],
+					tokens[7],
+					strip(" ".join(tokens[8:]))),
+					"netinfo", self.channel)
 
 		elif re.match("[0-9]+", tokens[1]):
 			source = sourceSplit(strip(tokens[0].lower()))[0]
@@ -562,10 +476,9 @@ class IRC(Component):
 				self._info["server"] = tokens[3].rstrip(",")
 				self._info["serverVersion"] = tokens[6]
 
-			self.push(
-					NumericEvent(source, target, numeric,
-						arg, message),
-					"numeric", self)
+			self.push(Numeric(
+					source, target, numeric, arg, message),
+					"numeric", self.channel)
 
 		elif tokens[1] == "PRIVMSG":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
@@ -577,48 +490,48 @@ class IRC(Component):
 					tokens = strip(message, color=True).split(" ")
 					type = tokens[0].lower()
 					message = " ".join(tokens[1:])
-					self.push(
-							CtcpEvent(source, target, type, message),
-							"ctcp", self)
+					self.push(Ctcp(
+							source, target, type, message),
+							"ctcp", self.channel)
 				else:
-					self.push(
-							MessageEvent(source, target, message),
-							"message", self)
+					self.push(Message(
+							source, target, message),
+							"message", self.channel)
 			else:
-				self.push(
-						MessageEvent(source, target, message),
-						"message", self)
+				self.push(Message(
+						source, target, message),
+						"message", self.channel)
 
 		elif tokens[1] == "NOTICE":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			target = tokens[2].lower()
 			message = strip(" ".join(tokens[3:]))
-			self.push(
-					NoticeEvent(source, target, message),
-					"notice", self)
+			self.push(Notice(
+					source, target, message),
+					"notice", self.channel)
 
 		elif tokens[1] == "JOIN":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			channels = strip(tokens[2]).lower()
 			for channel in channels.split(","):
-				self.push(
-						JoinEvent(source, channel),
-						"join", self)
+				self.push(Join(
+						source, channel),
+						"join", self.channel)
 
 		elif tokens[1] == "PART":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			channel = strip(tokens[2]).lower()
 			message = strip(" ".join(tokens[3:]))
-			self.push(
-					PartEvent(source, channel, message),
-					"part", self)
+			self.push(Part(
+					source, channel, message),
+					"part", self.channel)
 
 		elif tokens[1] == "QUIT":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			message = strip(" ".join(tokens[2:]))
-			self.push(
-					QuitEvent(source, message),
-					"quit", self)
+			self.push(Quit(
+					source, message),
+					"quit", self.channel)
 
 		elif tokens[1] == "NICK":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
@@ -633,16 +546,16 @@ class IRC(Component):
 			else:
 				ctime = time.time()
 
-			self.push(
-					NickEvent(source, newNick, ctime),
-					"nick", self)
+			self.push(Nick(
+					source, newNick, ctime),
+					"nick", self.channel)
 
 		elif tokens[1] == "MOTD":
 			source = sourceSplit(strip(tokens[0].lower()))[0]
 			server = strip(tokens[2]).lower()
-			self.push(
-					MotdEvent(source, server),
-					"motd", self)
+			self.push(Motd(
+					source, server),
+					"motd", self.channel)
 
 	###
 	### Default Events
