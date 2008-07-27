@@ -4,28 +4,19 @@
 
 import optparse
 from time import sleep
+from socket import gethostname
 
+from pymills.event import *
 from pymills.net.irc import IRC
 from pymills.net.sockets import TCPClient
 from pymills import __version__ as systemVersion
-from pymills.event import Manager, filter, listener
 
 USAGE = "%prog [options] <host> [<port>]>"
 VERSION = "%prog v" + systemVersion
 
-class Bot(TCPClient, IRC):
-
-	def __init__(self, event):
-		super(Bot, self).__init__(event)
-
-	@filter()
-	def onDEBUG(self, event):
-		print event
-		return False, event
-
-	@listener("raw")
-	def onRAW(self, data):
-		self.write(data + "\r\n")
+###
+### Functions
+###
 
 def parse_options():
 	"""parse_options() -> opts, args
@@ -39,6 +30,9 @@ def parse_options():
 	parser.add_option("-s", "--ssl",
 			action="store_true", default=False, dest="ssl",
 			help="Enable Secure Socket Layer (SSL)")
+	parser.add_option("-d", "--debug",
+			action="store_true", default=False, dest="debug",
+			help="Enable debug mode. (Default: False)")
 
 	opts, args = parser.parse_args()
 
@@ -48,31 +42,48 @@ def parse_options():
 
 	return opts, args
 
+###
+### Components
+###
+
+class Bot(TCPClient, IRC): pass
+
+###
+### Main
+###
+
 def main():
 	opts, args = parse_options()
 
-	host = args[0]
-	if len(args) > 1:
-		try:
-			port = int(args[1])
-		except:
-			port = 6667
+	if ":" in args[0]:
+		host, port = args[0].split(":")
+		port = int(port)
 	else:
+		host = args[0]
 		port = 6667
 
-	event = Manager()
-	bot = Bot(event)
+	debugger.set(opts.debug)
+	debugger.IgnoreEvents = ["Read", "Write", "Raw"]
+
+	bot = Bot(e)
 
 	bot.open(host, port, opts.ssl)
 
-	bot.ircUSER("test", "localhost", "localhost", "Test Bot")
+	bot.ircUSER("test", gethostname(), host, "Test Bot")
 	bot.ircNICK("test")
 
-	while True:
-		if bot.connected:
-			bot.process()
-		event.flush()
-		sleep(0.5)
+	while bot.connected:
+		try:
+			e.flush()
+			bot.poll()
+		except UnhandledEvent:
+			pass
+		except KeyboardInterrupt:
+			bot.ircQUIT()
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()

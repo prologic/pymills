@@ -3,7 +3,7 @@
 import optparse
 
 import pymills
-from pymills.event import Manager, Bridge, Debugger, Read, Write
+from pymills.event import *
 
 USAGE = "%prog [options] [host[:port]]"
 VERSION = "%prog v" + pymills.__version__

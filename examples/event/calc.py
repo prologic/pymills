@@ -6,8 +6,8 @@ import sys
 import optparse
 
 import pymills
+from pymills.event import *
 from pymills.io import Stdin
-from pymills.event import listener, Component, Event, Manager, Bridge, Debugger
 
 USAGE = "%prog [options] [host[:port]]"
 VERSION = "%prog v" + pymills.__version__

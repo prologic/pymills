@@ -2,31 +2,26 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-from pymills.event import listener, filter, Component, \
-		Event, Remote
+from pymills.event import *
 
 class HelloWorld(Component):
 
-	@filter()
-	def onDEBUG(self, event):
-		print "DEBUG: %s (From: %s)" % (event, event._source)
-
 	@listener("hello")
-	def onHELLO(self, event, message=""):
+	def onHELLO(self, message):
 		print message
-		self.push(Event(message), "received")
+		self.push(Event("Received", message), "received")
 
 def main():
-	e = Remote()
-	helloWorld = HelloWorld(e)
+	debugger.IgnoreEvents = ["Read", "Write"]
+	bridge = Bridge(e, port=8000)
+	HelloWorld(e)
 
 	while True:
 		try:
 			e.flush()
-			e.process()
+			bridge.poll()
 		except KeyboardInterrupt:
 			break
-	e.flush()
 
 if __name__ == "__main__":
 	main()

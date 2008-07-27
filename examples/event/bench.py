@@ -18,10 +18,8 @@ import optparse
 import hotshot.stats
 
 import pymills
+from pymills.event import *
 from pymills.misc import duration
-from pymills.event import listener, filter
-from pymills.event import Bridge, DummyBridge
-from pymills.event import Component, Manager, Event
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + pymills.__version__

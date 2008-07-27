@@ -2,27 +2,24 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-from pymills.net.sockets import TCPServer
 from pymills.event import filter, listener, Manager, UnhandledEvent
+from pymills.net.sockets import TCPServer
 
-class EchoServer(TCPServer):
-
-	@filter()
-	def onDEBUG(self, event, *args, **kwargs):
-		print event
+class Echo(TCPServer):
 
 	@listener("read")
 	def onREAD(self, sock, data):
+		print "Data: %s" % data
 		self.write(sock, data)
 	
 def main():
 	e = Manager()
-	server = EchoServer(e, 8000)
+	echo = Echo(e, 8000)
 
 	while True:
 		try:
 			e.flush()
-			server.poll()
+			echo.poll()
 		except UnhandledEvent:
 			pass
 		except KeyboardInterrupt:

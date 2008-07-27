@@ -3,7 +3,9 @@
 import optparse
 
 import pymills
-from pymills.event import listener, Component, Event, Manager, Bridge
+from pymills.event import listener, Event
+from pymills.event.core import Component, Manager
+from pymills.event.bridge import Bridge
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + pymills.__version__

@@ -2,43 +2,32 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-import time
+from time import time
 
-from pymills.event import listener, filter, Component, \
-		Event, Remote
+from pymills.event import *
 
 class Foo(Component):
 
-	@filter()
-	def onDEBUG(self, event):
-		print "DEBUG: %s" % event
-
 	@listener("received")
-	def onRECEIVED(self, event, message=""):
+	def onRECEIVED(self, message):
 		print "%s received" % message
 
 def main():
+	debugger.IgnoreEvents = ["Read", "Write"]
+	bridge = Bridge(e, port=8001, nodes=[("127.0.0.1", 8000)])
+	Foo(e)
 
-	nodes = (
-			"203.213.80.147",
-			)
-
-	e = Remote(nodes=nodes)
-	foo = Foo(e)
-
-	sTime = time.time()
+	sTime = time()
 
 	while True:
 		try:
 			e.flush()
-			e.process()
-			if (time.time() - sTime) > 5:
-				e.push(Event(message="hello"), "hello")
-				sTime = time.time()
+			bridge.poll()
+			if (time() - sTime) > 5:
+				e.push(Event("Hello", "hello"), "hello")
+				sTime = time()
 		except KeyboardInterrupt:
 			break
-
-	e.flush()
 
 if __name__ == "__main__":
 	main()

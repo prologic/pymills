@@ -14,9 +14,9 @@ import optparse
 from uuid import uuid4 as uuid
 
 import pymills
-from pymills.event import Event
-from pymills.event import listener, filter
-from pymills.event import Component, Manager, Bridge, Debugger
+from pymills.event import listener, filter, Event
+from pymills.event.core import Component, Manager
+from pymills.event.bridge import Bridge
 
 USAGE = "%prog [options] [host:[port]]"
 VERSION = "%prog v" + pymills.__version__
