@@ -141,8 +141,8 @@ def main():
 		try:
 			e.flush()
 			server.poll()
-			e.flush()
-			target.poll()
+			if target.connected:
+				target.poll()
 		except UnhandledEvent:
 			pass
 		except KeyboardInterrupt:
