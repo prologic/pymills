@@ -13,6 +13,8 @@ from pymills.event import filter, listener, Event, \
 		Component, Worker, Manager, FilterEvent, \
 		EventError
 
+class Test(Event): pass
+
 class FilterComponent(Component):
 
 	@filter("foo")
@@ -29,14 +31,12 @@ class ListenerComponent(Component):
 	@listener("foo")
 	def onFOO(self, test, msg=""):
 		if msg.lower() == "start":
-			self.push(Event("Test", msg="foo"), "foo")
+			self.push(Test(msg="foo"), "foo")
 
 	@listener("bar")
 	def onBAR(self, event, test, msg=""):
 		if msg.lower() == "test":
-			self.push(
-					Event("Test", msg="hello world"),
-					event._channel)
+			self.push(Test(msg="hello world"), event._channel)
 
 class Foo(Component):
 
@@ -47,7 +47,7 @@ class Foo(Component):
 
 	@listener("foo")
 	def onFOO(self):
-		self.send(Event("Test"), "bar")
+		self.send(Test(), "bar")
 
 	@listener("gotbar")
 	def onGOTBAR(self):
@@ -60,7 +60,7 @@ class Bar(Component):
 
 	@listener("bar")
 	def onBAR(self):
-		self.send(Event("Test"), "gotbar")
+		self.send(Test(), "gotbar")
 
 class FooWorker(Worker):
 
@@ -150,7 +150,7 @@ class EventTestCase(unittest.TestCase):
 		arguments and keyword arguments are stored correctly.
 		"""
 
-		e = Event("Test", 1, 2, 3, "foo", "bar", foo="1", bar="2")
+		e = Test(1, 2, 3, "foo", "bar", foo="1", bar="2")
 
 		self.assertEquals(e.name, "Test")
 		self.assertEquals(e.channel, None)
@@ -286,7 +286,7 @@ class EventTestCase(unittest.TestCase):
 		self.assertTrue(onBAR in self.manager.getHandlers("bar"))
 		self.assertEquals(len(self.manager.getHandlers()), 4)
 
-		self.manager.push(Event("Test", self, time.time()), "test")
+		self.manager.push(Test(self, time.time()), "test")
 		self.manager.flush()
 		self.assertTrue(self.flag == True)
 		self.flag = False
@@ -295,7 +295,7 @@ class EventTestCase(unittest.TestCase):
 
 		self.assertEquals(len(self.manager), 0)
 
-		self.manager.send(Event("Test", self, time.time()), "test")
+		self.manager.send(Test(self, time.time()), "test")
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
@@ -305,11 +305,11 @@ class EventTestCase(unittest.TestCase):
 		except EventError:
 			self.assertTrue(True)
 
-		self.manager.send(Event("Test", self, time.time()), "test")
+		self.manager.send(Test(self, time.time()), "test")
 		self.assertTrue(self.flag == True)
 		self.flag = False
 
-		self.manager.send(Event("Test", self, time.time(), stop=True), "test")
+		self.manager.send(Test(self, time.time(), stop=True), "test")
 		self.assertTrue(self.flag == False)
 
 		self.manager.remove(onSTOP)

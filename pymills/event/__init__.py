@@ -64,15 +64,7 @@ class Event(object):
 	def __new__(cls, *args, **kwargs):
 		self = object.__new__(Event)
 
-		if cls == Event:
-			if args:
-				self.name = args[0]
-				args = args[1:]
-			else:
-				self.name = "Event"
-		else:
-			self.name = cls.__name__
-
+		self.name = cls.__name__
 		self.args = args
 		self.kwargs = kwargs
 
