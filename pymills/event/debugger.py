@@ -21,11 +21,11 @@ class Debugger(Component):
 
 	def disable(self):
 		self.enabled = False
-		#self.unregister()
+		self.unregister()
 
 	def enable(self):
 		self.enabled = True
-		#self.register(self.manager)
+		self.register(self.manager)
 
 	def toggle(self):
 		if self.enabled:
@@ -41,11 +41,10 @@ class Debugger(Component):
 
 	@filter()
 	def onEVENTS(self, event, *args, **kwargs):
-		if self.enabled:
-			channel = event.channel
-			if True in [event.name == name for name in self.IgnoreEvents]:
-				return
-			elif channel in self.IgnoreChannels:
-				return
-			else:
-				print >> sys.stderr, event
+		channel = event.channel
+		if True in [event.name == name for name in self.IgnoreEvents]:
+			return
+		elif channel in self.IgnoreChannels:
+			return
+		else:
+			print >> sys.stderr, event
