@@ -125,6 +125,8 @@ class Manager(object):
 		if channel:
 			if channel == "global":
 				raise EventError("Cannot push to global channel")
+			elif target is not None:
+				channel = "%s:%s" % (target, channel)
 
 		if self.manager == self:
 			self._queue.append((event, channel, target))
@@ -142,15 +144,14 @@ class Manager(object):
 		if self.manager == self:
 			_queue = self._queue
 			queue = _queue[:]
-			for x in queue:
-				event, channel, target = x
-				if target is not None:
-					channel = "%s:%s" % (target, channel)
-				handlers = self.getHandlers("global") + self.getHandlers(channel)
+			getHandlers = self.getHandlers
+			globalHandlers = getHandlers("global")
+			for e, c, t in queue:
+				handlers = globalHandlers + getHandlers(c)
 				try:
-					send(handlers, event, channel, target)
+					send(handlers, e, c, t)
 				finally:
-					_queue.remove(x)
+					_queue.remove((e, c, t))
 		else:
 			self.manager.flush()
 
@@ -166,7 +167,8 @@ class Manager(object):
 		if channel:
 			if channel == "global":
 				raise EventError("Cannot send to global channel")
-
+			elif target is not None:
+				channel = "%s:%s" % (target, channel)
 
 		if self.manager == self:
 			if target:
