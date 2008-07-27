@@ -158,9 +158,6 @@ def send(handlers, event, channel, target=None):
 	if not handlers:
 		raise UnhandledEvent(event, channel)
 
-	event.channel = channel
-	event.target = target
-
 	for handler in handlers:
 		try:
 			args = handler.args

@@ -126,6 +126,9 @@ class Manager(object):
 			if channel == "global":
 				raise EventError("Cannot push to global channel")
 
+		event.channel = channel
+		event.target = target
+
 		if self.manager == self:
 			self._queue.append((event, channel, target))
 		else:
@@ -167,6 +170,8 @@ class Manager(object):
 			if channel == "global":
 				raise EventError("Cannot send to global channel")
 
+		event.channel = channel
+		event.target = target
 
 		if self.manager == self:
 			if target:
