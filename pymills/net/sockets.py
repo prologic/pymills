@@ -20,7 +20,7 @@ import socket
 import select
 from cStringIO import StringIO
 
-from pymills.event import Event, Component, filter
+from pymills.event import filter, Component, Event
 
 POLL_INTERVAL = 0.000001
 CONNECT_TIMEOUT = 5
