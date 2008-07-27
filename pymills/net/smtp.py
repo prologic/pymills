@@ -16,13 +16,14 @@ import socket
 from tempfile import TemporaryFile
 
 import pymills
-from pymills.event import Component, Event, listener
-
-__all__ = ["SMTP"]
+from pymills.event import listener, Event
+from pymills.event.core import Component
 
 ###
 ### Supporting Functions
 ###
+
+LINESEP = re.compile("\r?\n")
 
 def splitLines(s, buffer):
 	"""splitLines(s, buffer) -> lines, buffer
@@ -33,8 +34,7 @@ def splitLines(s, buffer):
 	buffer for further processing.
 	"""
 
-	x = buffer + s
-	lines = x.split("\r\n")
+	lines = LINESEP.split(buffer + s)
 	return lines[:-1], lines[-1]
 
 def stripAddress(address):
@@ -79,50 +79,15 @@ def getAddress(keyword, arg):
 ### Events
 ###
 
-class RawEvent(Event):
-
-	def __init__(self, sock, line):
-		super(RawEvent, self).__init__(sock, line)
-
-class HeloEvent(Event):
-
-	def __init__(self, sock, hostname):
-		super(HeloEvent, self).__init__(sock, hostname)
-
-class MailEvent(Event):
-
-	def __init__(self, sock, sender):
-		super(MailEvent, self).__init__(sock, sender)
-
-class RcptEvent(Event):
-
-	def __init__(self, sock, recipient):
-		super(RcptEvent, self).__init__(sock, recipient)
-
-class DataEvent(Event):
-
-	def __init__(self, sock):
-		super(DataEvent, self).__init__(sock)
-
-class RsetEvent(Event):
-
-	def __init__(self, sock):
-		super(RsetEvent, self).__init__(sock)
-
-class NoopEvent(Event):
-
-	def __init__(self, sock):
-		super(NoopEvent, self).__init__(sock)
-
-class QuitEvent(Event):
-
-	def __init__(self, sock):
-		super(QuitEvent, self).__init__(sock)
-
-class MessageEvent(Event):
-
-	def __init__(self, sock, mailfrom, rcpttos, data):
-		super(MessageEvent, self).__init__(sock, mailfrom, rcpttos, data)
+class Raw(Event): pass
+class Helo(Event): pass
+class Mail(Event): pass
+class Rcpt(Event): pass
+class Data(Event): pass
+class Rset(Event): pass
+class Noop(Event): pass
+class Quit(Event): pass
+class Message(Event): pass
 
 ###
 ### Protocol Class
@@ -171,7 +136,7 @@ class SMTP(Component):
 		self.__data = None
 
 	def processMessage(self, sock, mailfrom, rcpttos, data):
-		r =  self.send(MessageEvent(sock, mailfrom, rcpttos, data), "message")
+		r =  self.send(Message(sock, mailfrom, rcpttos, data), "message")
 		data.close()
 
 		if r:
@@ -204,7 +169,7 @@ class SMTP(Component):
 		this event and process custom SMTP events.
 		"""
 
-		if self.__state == self.COMMAND:
+		if self.__states[sock] == self.COMMAND:
 			if not line:
 				self.write(sock, "500 Syntax error, command unrecognized\r\n")
 				return
@@ -226,7 +191,7 @@ class SMTP(Component):
 			else:
 				method(sock, arg)
 		else:
-			if self.__state != self.DATA:
+			if self.__states[sock] != self.DATA:
 				self.write(sock, "451 Internal confusion\r\n")
 				return
 
@@ -262,19 +227,19 @@ class SMTP(Component):
 		else:
 			self.__greeting = arg
 			self.write(sock, "250 %s\r\n" % self.__fqdn)
-			self.push(HeloEvent(sock, arg), "helo", self)
+			self.push(Helo(sock, arg), "helo", self.channel)
 
 	def smtpNOOP(self, sock, arg):
 		if arg:
 			self.write(sock, "501 Syntax: NOOP\r\n")
 		else:
 			self.write(sock, "250 Ok\r\n")
-			self.push(NoopEvent(sock), "noop", self)
+			self.push(Noop(sock), "noop", self.channel)
 
 	def smtpQUIT(self, sock, arg):
 		self.write(sock, "221 Bye\r\n")
 		self.close(sock)
-		self.push(QuitEvent(sock), "quit", self)
+		self.push(Quit(sock), "quit", self.channel)
 
 	def smtpMAIL(self, sock, arg):
 		address = getAddress("FROM:", arg)
@@ -290,7 +255,7 @@ class SMTP(Component):
 		self.__mailfrom = address
 
 		self.write(sock, "250 Ok\r\n")
-		self.push(MailEvent(sock, address), "mail", self)
+		self.push(Mail(sock, address), "mail", self.channel)
 
 	def smtpRCPT(self, sock, arg):
 		if not self.__mailfrom:
@@ -305,7 +270,7 @@ class SMTP(Component):
 
 		self.__rcpttos.append(address)
 		self.write(sock, "250 Ok\r\n")
-		self.push(RcptEvent(sock, address), "rcpt", self)
+		self.push(Rcpt(sock, address), "rcpt", self.channel)
 
 	def smtpRSET(self, sock, arg):
 		if arg:
@@ -313,12 +278,12 @@ class SMTP(Component):
 			return
 
 		# Resets the sender, recipients, and data, but not the greeting
-		self.__mailfrom = None
+		self.__mailfrom[sock] = None
 		self.__rcpttos = []
 		self.__data = None
-		self.__state = self.COMMAND
+		self.__states = {}
 		self.write(sock, "250 Ok\r\n")
-		self.push(RsetEvent(sock), "rset", self)
+		self.push(Rset(sock), "rset", self.channel)
 
 	def smtpDATA(self, sock, arg):
 		if not self.__rcpttos:
@@ -333,7 +298,7 @@ class SMTP(Component):
 		self.__data = TemporaryFile()
 
 		self.write(sock, "354 End data with <CR><LF>.<CR><LF>\r\n")
-		self.push(DataEvent(sock), "data", self)
+		self.push(Data(sock), "data", self.channel)
 
 	###
 	### Default Socket Events
@@ -341,6 +306,8 @@ class SMTP(Component):
 
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
+		self.__states[sock] = COMMAND
+		self.__buffers[sock] = ""
 		self.write(sock, "220 %s %s\r\n" % (self.__fqdn, pymills.__version__))
 
 	@listener("disconnect")
@@ -353,11 +320,11 @@ class SMTP(Component):
 
 		Process any incoming data appending it to an internal
 		buffer. Split the buffer by the standard line delimiters
-		\r\n and create a RawEvent per line. Any unfinished
+		\r\n and create a Raw event per line. Any unfinished
 		lines of text, leave in the buffer.
 		"""
 
-		lines, buffer = splitLines(data, self.__buffes[sock])
+		lines, buffer = splitLines(data, self.__buffers[sock])
 		self.__buffers[sock] = buffer
 		for line in lines:
-			self.push(RawEvent(sock, line), "raw", self)
+			self.push(Raw(sock, line), "raw", self.channel)
