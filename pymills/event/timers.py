@@ -1,17 +1,15 @@
-# Filename: timers.py
 # Module:	timers
 # Date:		04th August 2004
 # Author:	James Mills <prologic@shortcircuit.net.au>
 
 """Timers
 
-This is a module that allows you to implement timed-events
-in your running application/process.
+Timers component to facilitate timed eventd.
 """
 
 from time import time
 
-from event import Component
+from pymills.event.core import Component
 
 class Timers(Component):
 	"""Timers(manager) -> new timers component
