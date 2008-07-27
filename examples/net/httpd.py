@@ -12,11 +12,10 @@ import hotshot.stats
 from traceback import format_exc
 
 import pymills
-from pymills.event import Event
+from pymills.event import *
 from pymills.net.sockets import TCPServer
+from pymills.net.http import HTTP, Response
 from pymills import __version__ as systemVersion
-from pymills.net.http import HTTP, ResponseEvent, Response
-from pymills.event import filter, listener, UnhandledEvent, Component, Manager
 
 USAGE = "%prog [options] [content]"
 VERSION = "%prog v" + systemVersion
@@ -25,6 +24,10 @@ ERRORS = [
 		(0, "Invalid requests spcified. Must be an integer."),
 		(1, "Invalid time spcified. Must be an integer."),
 		]
+
+###
+### Functions
+###
 
 def parse_options():
 	"""parse_options() -> opts, args
@@ -47,6 +50,9 @@ def parse_options():
 	parser.add_option("-p", "--profile",
 			action="store_true", default=False, dest="profile",
 			help="Enable execution profiling support")
+	parser.add_option("-d", "--debug",
+			action="store_true", default=False, dest="debug",
+			help="Enable debug mode. (Default: False)")
 
 	opts, args = parser.parse_args()
 
@@ -64,37 +70,41 @@ def parse_options():
 
 	return opts, args
 
+###
+### Components
+###
+
 class Test(Component):
 
 	content = "OK"
 
 	@listener("get")
 	def onGET(self, req):
-		res = Response(req)
+		res = req.res
 		if os.path.exists(self.content):
 			res.body = open(self.content, "rb")
 		else:
 			res.body = self.content
-		self.push(ResponseEvent(res), "response")
+		self.push(Response(res), "response")
 
-class WebServer(TCPServer, HTTP):
-	pass
+class WebServer(TCPServer, HTTP): pass
 
 class Stats(Component):
 
-	def __init__(self, *args, **kwargs):
-		super(Stats, self).__init__(*args, **kwargs)
-
-		self.reqs = 0
-		self.events = 0
+	reqs = 0
+	events = 0
 
 	@filter()
-	def onDEBUG(self, event, *args, **kwargs):
+	def onEVENTS(self, *args, **kwargs):
 		self.events += 1
 
 	@listener("get")
-	def onGET(self, req):
+	def onREQUESTS(self, *args, **kwargs):
 		self.reqs += 1
+
+###
+### Main
+###
 
 def main():
 	opts, args = parse_options()
@@ -111,7 +121,9 @@ def main():
 		profiler = hotshot.Profile("httpd.prof")
 		profiler.start()
 
-	e = Manager()
+	debugger.set(opts.debug)
+	debugger.IgnoreEvents = ["Read", "Write", "Close"]
+
 	server = WebServer(e, port, address)
 	test = Test(e)
 	stats = Stats(e)
@@ -125,21 +137,15 @@ def main():
 			server.poll()
 
 			if opts.reqs > 0 and stats.reqs > opts.reqs:
-				e.send(Event(), "stop")
 				break
 			if opts.time > 0 and (time.time() - sTime) > opts.time:
-				e.send(Event(), "stop")
 				break
-
 		except UnhandledEvent:
 			pass
 		except KeyboardInterrupt:
 			break
-	e.flush()
-	print
 
 	eTime = time.time()
-
 	tTime = eTime - sTime
 
 	print "Total Requests: %d (%d/s after %0.2fs)" % (
@@ -155,6 +161,10 @@ def main():
 		stats.strip_dirs()
 		stats.sort_stats("time", "calls")
 		stats.print_stats(20)
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()

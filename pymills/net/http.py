@@ -23,7 +23,8 @@ from mimetypes import guess_type
 from wsgiref.headers import Headers
 
 import pymills
-from pymills.event import listener, Component, Event, UnhandledEvent
+from pymills.event import listener, Event, UnhandledEvent
+from pymills.event.core import Component
 
 ###
 ### Defaults/Constants
@@ -56,29 +57,20 @@ def quoteHTML(html):
 ### Events
 ###
 
-class RequestEvent(Event):
-
-	def __init__(self, request):
-		super(RequestEvent, self).__init__(request)
-
-class ResponseEvent(Event):
-
-	def __init__(self, response):
-		super(ResponseEvent, self).__init__(response)
-
-class StreamEvent(Event):
-
-	def __init__(self, response):
-		super(StreamEvent, self).__init__(response)
+class Request(Event): pass
+class Response(Event): pass
+class Stream(Event): pass
 
 ###
 ### Supporting Classes
 ###
 
-class Request(object):
-	"""Request(method, uri, version, headers) -> new HTTP Request object
+class _Request(object):
+	"""_Request(method, uri, version, headers) -> new HTTP Request object
 
-	...
+	Request object that holds an incoming request. The URI, the version
+	of the request, the headers and body. This also holds a _Response
+	object ready to respond with.
 	"""
 
 	def __init__(self, method, uri, version, headers):
@@ -94,10 +86,12 @@ class Request(object):
 		self.sock = None
 		self.close = True
 
-class Response(object):
-	"""Response(req, body="") -> new Response object
+		self.res = _Response(self)
 
-	Create a HTTP Response object that holds the response to
+class _Response(object):
+	"""_Response(req) -> new Response object
+
+	A Response object that holds the response to
 	send back to the client. This ensure that the correct data
 	is sent in the correct order.
 	"""
@@ -112,7 +106,7 @@ class Response(object):
 			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z")),
 			("Content-Type", "text/html")])
 
-		self.body = body
+		self.body = ""
 		self.status = "%s 200 OK" % PROTOCOL_VERSION
 
 	def __repr__(self):
@@ -255,7 +249,7 @@ class HTTP(Component):
 
 		headers = mimetools.Message(StringIO(data), 0)
 
-		req = Request(command, path, version, headers)
+		req = _Request(command, path, version, headers)
 		req.sock = sock
 
 		conntype = headers.get('Connection', "")
@@ -264,7 +258,7 @@ class HTTP(Component):
 			req.close = False
 
 		try:
-			self.send(RequestEvent(req), command.lower())
+			self.send(Request(req), command.lower())
 		except UnhandledEvent:
 			self.sendError(sock, 501, "Unsupported method (%r)" % command)
 
@@ -301,7 +295,8 @@ class HTTP(Component):
 			"message": quoteHTML(message),
 			"explain": explain}
 
-		res = Response(content)
+		res = _Response(None)
+		res.body = content
 		res.status = "%s %s" % (code, message)
 		res.headers.add_header('Connection', 'close')
 
