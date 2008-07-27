@@ -143,8 +143,10 @@ class Manager(object):
 				if target is not None:
 					channel = "%s:%s" % (target, channel)
 				handlers = self.getHandlers("global") + self.getHandlers(channel)
-				send(handlers, event, channel, target)
-				_queue.remove(x)
+				try:
+					send(handlers, event, channel, target)
+				finally:
+					_queue.remove(x)
 		else:
 			self.manager.flush()
 
