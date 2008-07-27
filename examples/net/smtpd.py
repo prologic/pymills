@@ -16,14 +16,18 @@ import optparse
 from mailbox import Maildir
 from traceback import format_exc
 
+from pymills.event import *
 from pymills import __version__
 from pymills.net.smtp import SMTP
 from pymills.utils import daemonize
 from pymills.net.sockets import TCPServer
-from pymills.event import listener, Manager, Component
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + __version__
+
+###
+### Functions
+###
 
 def parse_options():
 	"""parse_options() -> opts, args
@@ -37,11 +41,9 @@ def parse_options():
 	parser.add_option("-d", "--daemon",
 			action="store_true", default=False, dest="daemon",
 			help="Enable daemon mode (Default: False)")
-
-	parser.add_option("-i", "--interface",
-			action="store", default="0.0.0.0:25", dest="interface",
-			help="Interface to listen on (Default: 0.0.0.0:25)")
-
+	parser.add_option("-b", "--bind",
+			action="store", type="str", default="0.0.0.0:25", dest="bind",
+			help="Bind to address:[port] (UDP) (test remote events)")
 	parser.add_option("-p", "--path",
 			action="store", default="/var/mail/", dest="path",
 			help="Path to store mailI (Default: /var/mail/)")
@@ -49,6 +51,10 @@ def parse_options():
 	opts, args = parser.parse_args()
 
 	return opts, args
+
+###
+### Components
+###
 
 class MDA(Component):
 
@@ -105,9 +111,11 @@ class MTA(TCPServer, SMTP):
 		print >> sys.stderr, "%s Disconnected" % sock
 
 	@listener("error")
-	def onQUIT(self, sock, error):
+	def onERROR(self, sock, error):
 		print >> sys.stderr, "%s Error: %s" % (sock, error)
 
+	@listener("message")
+	def onMESSAGE(self, sock, mailfrom, rcpttos, data):
 		print >> sys.stderr, "New Mail Message\n"
 		print >> sys.stderr, "From: %s" % mailfrom
 		print >> sys.stderr, "To: %s\n" % ",".join(rcpttos)
@@ -115,31 +123,44 @@ class MTA(TCPServer, SMTP):
 		for line in data:
 			print >> sys.stderr, line
 
+###
+### Main
+###
+
 def main():
 	opts, args = parse_options()
 
+	if ":" in opts.bind:
+		address, port = opts.bind.split(":")
+		port = int(port)
+	else:
+		address, port = opts.bind, 25
+
 	path = opts.path
 	daemon = opts.daemon
-	address, port = opts.interface.split(":")
-	port = int(port)
 
 	if not os.path.exists(path):
 		os.makedirs(path)
 
-	manager = Manager()
-	mta = MTA(manager, address=address, port=port)
-	mda = MDA(manager, path=opts.path)
+	mta = MTA(e, address=address, port=port)
+	MDA(e, path=opts.path)
 
 	while True:
 		try:
-			mta.process()
-			manager.flush()
-		except Exception, e:
-			print >> sys.stderr, "ERROR: %s" % e
+			e.flush()
+			mta.poll()
+		except UnhandledEvent:
+			pass
+		except Exception, error:
+			print >> sys.stderr, "ERROR: %s" % error
 			print >> sys.stderr, format_exc()
 		except KeyboardInterrupt:
+			mta.close()
 			break
-	manager.flush()
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()
