@@ -152,26 +152,17 @@ class Monitor(Component):
 	def onEVENTS(self, event, *args, **kwargs):
 		self.events += 1
 
-class Debugger(Component):
-
-	@filter()
-	def onDEBUG(self, event, *args, **kwargs):
-		print >> sys.stderr, event
-
 ###
 ### Main
 ###
 
 def main():
-
 	opts, args = parse_options()
 
-	e = Manager()
 	monitor = Monitor(e)
 	state = State(e)
 
-	if opts.debug:
-		Debugger(e)
+	debugger.set(opts.debug)
 
 	if opts.listen or args:
 		nodes = []
