@@ -13,9 +13,9 @@ print out some statistics about each run.
 import sys
 import math
 import time
-import hotshot
+#import hotshot
 import optparse
-import hotshot.stats
+#import hotshot.stats
 
 import pymills
 from pymills.event import *

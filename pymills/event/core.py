@@ -128,9 +128,12 @@ class Manager(object):
 
 		event.channel = channel
 		event.target = target
+		if (target is not None) and target not in channel:
+			channel = "%s:%s" % (target, channel)
+			event.channel = channel
 
 		if self.manager == self:
-			self._queue.append((event, channel, target))
+			self._queue.append(event)
 		else:
 			self.manager.push(event, channel, target)
 
@@ -145,15 +148,13 @@ class Manager(object):
 		if self.manager == self:
 			_queue = self._queue
 			queue = _queue[:]
-			for x in queue:
-				event, channel, target = x
-				if target is not None:
-					channel = "%s:%s" % (target, channel)
+			for event in queue:
+				channel = event.channel
 				handlers = self.getHandlers("global") + self.getHandlers(channel)
 				try:
-					send(handlers, event, channel, target)
+					send(handlers, event)
 				finally:
-					_queue.remove(x)
+					_queue.remove(event)
 		else:
 			self.manager.flush()
 
@@ -172,12 +173,13 @@ class Manager(object):
 
 		event.channel = channel
 		event.target = target
+		if (target is not None) and target not in channel:
+			channel = "%s:%s" % (target, channel)
+			event.channel = channel
 
 		if self.manager == self:
-			if target:
-				channel = "%s:%s" % (target, channel)
 			handlers = self.getHandlers("global") + self.getHandlers(channel)
-			send(handlers, event, channel, target)
+			send(handlers, event)
 		else:
 			self.manager.send(event, channel, target)
 

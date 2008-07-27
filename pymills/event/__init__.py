@@ -48,8 +48,8 @@ class EventError(Exception):
 class UnhandledEvent(EventError):
 	"Unhandled Event Error"
 
-	def __init__(self, event, channel):
-		super(UnhandledEvent, self).__init__(event, channel)
+	def __init__(self, event):
+		super(UnhandledEvent, self).__init__(event)
 
 class FilterEvent(Exception):
 	"Filter Event Exception"
@@ -145,18 +145,18 @@ def listener(channel="global"):
 		return f
 	return decorate
 
-def send(handlers, event, channel, target=None):
-	"""send(handlers event, channel, target=None) -> None
+def send(handlers, event):
+	"""send(handlers event) -> None
 
-	Send the given event to the list of handlers applying
-	channel and target to the event object. If no handlers
-	are given, raise an UnhandledEvent exception. If a handler
-	raised FilterEvent, return immediately and do not allow
-	any other handler to process this event.
+	Send the given event to the list of handlers.
+	If no handlers	are given, raise an UnhandledEvent
+	exception. If a handler	raised FilterEvent, return
+	immediately and do not allow any other handler to
+	process this event.
 	"""
 
 	if not handlers:
-		raise UnhandledEvent(event, channel)
+		raise UnhandledEvent(event)
 
 	for handler in handlers:
 		try:
