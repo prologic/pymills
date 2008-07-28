@@ -133,8 +133,6 @@ def main():
 
 	server = Server(e, address=bind[0], port=bind[1])
 	target = Target(e)
-
-	server.target = target
 	target.connect = connect
 
 	while True:
