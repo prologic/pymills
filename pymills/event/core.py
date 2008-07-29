@@ -14,6 +14,7 @@ from inspect import getmembers, ismethod
 
 from pymills.event import send, EventError
 
+
 def _sortHandlers(x, y):
 	if hasattr(x, "filter") and hasattr(y, "filter"):
 		return 0
@@ -21,6 +22,7 @@ def _sortHandlers(x, y):
 		return -1
 	else:
 		return 1
+
 
 class Manager(object):
 	"""Manager() -> new event manager
@@ -82,7 +84,7 @@ class Manager(object):
 		self._handlers.add(handler)
 
 		for channel in channels:
-			if self._channels.has_key(channel):
+			if channel in self._channels:
 				if handler not in self._channels[channel]:
 					self._channels[channel].append(handler)
 					self._channels[channel].sort(cmp=_sortHandlers)
@@ -183,6 +185,7 @@ class Manager(object):
 		else:
 			self.manager.send(event, channel, target)
 
+
 class Component(Manager):
 	"""Component(Manager) -> new component object
 
@@ -201,7 +204,7 @@ class Component(Manager):
 	@filter()
 	def onFOO(self, event):
 		return True, event
-	
+
 	@listener()
 	def onBAR(self, event):
 		print event
@@ -248,7 +251,7 @@ class Component(Manager):
 
 			self._handlers.add(handler)
 
-			if self._channels.has_key(channel):
+			if channel in self._channels:
 				self._channels[channel].append(handler)
 				self._channels[channel].sort(cmp=_sortHandlers)
 			else:
@@ -284,6 +287,7 @@ class Component(Manager):
 		if component in self._links:
 			self._links.remove(component)
 			component.unregister(self)
+
 
 class Worker(Component, Thread):
 

@@ -12,6 +12,7 @@ import sys
 from pymills.event import filter
 from pymills.event.core import Component
 
+
 class Debugger(Component):
 
 	IgnoreEvents = []

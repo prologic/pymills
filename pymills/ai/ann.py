@@ -12,10 +12,12 @@ from time import time, sleep
 
 from pymills.event import listener, Event, UnhandledEvent, Worker
 
+
 class SignalEvent(Event):
 
 	def __init__(self, source, level):
 		Event.__init__(self, source=source, level=level)
+
 
 class Node(Worker):
 
@@ -47,10 +49,13 @@ class Node(Worker):
 
 	inputs = property(_getInputs)
 
+
 def new_node(*args, **kwargs):
+
 	class NewNode(Node):
 		pass
 	return NewNode(*args, **kwargs)
+
 
 class Connection(Node):
 
@@ -76,10 +81,13 @@ class Connection(Node):
 
 	weight = property(_get_weight, _set_weight)
 
+
 def new_connection(*args, **kwargs):
+
 	class NewConnection(Connection):
 		pass
 	return NewConnection(*args, **kwargs)
+
 
 class _StepNeuron(object):
 
@@ -89,10 +97,12 @@ class _StepNeuron(object):
 		else:
 			self.fire(0.0)
 
+
 class _LinearNeuron(object):
 
 	def compute(self):
 		self.fire(self._level + self._threshold)
+
 
 class _SigmoidNeuron(object):
 
@@ -104,6 +114,7 @@ class _SigmoidNeuron(object):
 						)
 					)
 				)
+
 
 class Neuron(Node):
 
@@ -164,6 +175,7 @@ def new_neuron(*args, **kwargs):
 	class NewNeuron(Neuron):
 		pass
 	return NewNeuron(*args, **kwargs)
+
 
 class Output(Node):
 

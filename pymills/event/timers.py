@@ -11,6 +11,7 @@ from time import time
 
 from pymills.event.core import Component
 
+
 class Timers(Component):
 	"""Timers(manager) -> new timers component
 
@@ -25,7 +26,7 @@ class Timers(Component):
 		"T.__len__() <==> len(T)"
 
 		return len(self.timers)
-	
+
 	def __getitem__(self, y):
 		"T.__getitem__(y) <==> T[y]"
 
@@ -71,6 +72,7 @@ class Timers(Component):
 				self.push(e, c, t)
 				if not timer.persist:
 					self.timers.remove(timer)
+
 
 class Timer(object):
 	"""Timer(s, e, c, t, persist) -> new timer object

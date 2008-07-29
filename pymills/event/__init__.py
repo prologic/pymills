@@ -42,8 +42,10 @@ instantiated once.
 from inspect import getargspec
 from threading import enumerate as threads
 
+
 class EventError(Exception):
 	"Event Error"
+
 
 class UnhandledEvent(EventError):
 	"Unhandled Event Error"
@@ -51,8 +53,10 @@ class UnhandledEvent(EventError):
 	def __init__(self, event):
 		super(UnhandledEvent, self).__init__(event)
 
+
 class FilterEvent(Exception):
 	"Filter Event Exception"
+
 
 class Event(object):
 	"""Event(*args, **kwargs) -> new event object
@@ -90,7 +94,7 @@ class Event(object):
 		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
 		channel = self.channel or ""
 		return "<%s/%s %s {%s}>" % (
-				self.name,channel,
+				self.name, channel,
 				self.args, ", ".join(attrStrings))
 
 	def __getitem__(self, x):
@@ -103,6 +107,7 @@ class Event(object):
 		else:
 			raise KeyError(x)
 
+
 def workers():
 	"""workers() -> list of workers
 
@@ -110,6 +115,7 @@ def workers():
 	"""
 
 	return [thread for thread in threads() if isinstance(thread, Worker)]
+
 
 def filter(channel="global"):
 	"Decorator function for a filter"
@@ -124,6 +130,7 @@ def filter(channel="global"):
 		return f
 	return decorate
 
+
 def listener(channel="global"):
 	"Decorator function for a listener"
 
@@ -136,6 +143,7 @@ def listener(channel="global"):
 				del f.args[0]
 		return f
 	return decorate
+
 
 def send(handlers, event):
 	"""send(handlers event) -> None
@@ -154,7 +162,7 @@ def send(handlers, event):
 		try:
 			args = handler.args
 			if args:
-				if args[0] in ("event", "evt", "e",):
+				if args[0] in ("event", "evt", "e"):
 					handler(event, *event.args, **event.kwargs)
 				else:
 					handler(*event.args, **event.kwargs)

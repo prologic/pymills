@@ -23,12 +23,16 @@ from socket import gethostname, gethostbyname, gethostbyaddr
 from pymills.net.sockets import UDPServer
 from pymills.event import filter, Event, FilterEvent
 
-class Helo(Event): pass
+
+class Helo(Event):
+	pass
+
 
 class DummyBridge(object):
 
 	def poll(self, *args, **kwargs):
 		pass
+
 
 class Bridge(UDPServer):
 

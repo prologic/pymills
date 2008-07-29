@@ -17,8 +17,10 @@ from ConfigParser import ConfigParser
 
 from pymills.datatypes import CaselessDict
 
+
 class Error(Exception):
 	"Error Exception"
+
 
 def getProgName():
 	"""getProgName() -> str
@@ -28,6 +30,7 @@ def getProgName():
 	"""
 
 	return os.path.basename(sys.argv[0])
+
 
 def writePID(file):
 	"""writePID(file) -> None
@@ -43,6 +46,7 @@ def writePID(file):
 		fd.close()
 	except Exception, e:
 		raise Error("Error writing pid to %s: %s" % (file, e))
+
 
 def loadConfig(filename, *paths):
 	"""loadConfig(filename, *paths) -> ConfigParser object
@@ -66,6 +70,7 @@ def loadConfig(filename, *paths):
 				"Tried: %s" % files)
 	else:
 		return conf
+
 
 def daemonize(stdin="/dev/null", stdout="/dev/null",
 		stderr="/dev/null", path="/"):
@@ -137,6 +142,7 @@ def daemonize(stdin="/dev/null", stdout="/dev/null",
 	os.dup2(so.fileno(), sys.stdout.fileno())
 	os.dup2(se.fileno(), sys.stderr.fileno())
 
+
 class State(object):
 	"""State() -> new state object
 
@@ -199,6 +205,7 @@ class State(object):
 
 		self._state = s
 
+
 class CaselessOptionParser(optparse.OptionParser):
 	"""CaselessOptionParser() -> new Caseless OptionParser object
 
@@ -218,6 +225,7 @@ class CaselessOptionParser(optparse.OptionParser):
 
 	def _match_long_opt(self, opt):
 		return _match_abbrev(opt.lower(), self._long_opt.keys())
+
 
 class Option(optparse.Option):
 	"""Option(...) -> new Option object
@@ -252,6 +260,7 @@ class Option(optparse.Option):
 		optparse.Option.process(self, opt, value, values, parser)
 		parser.option_seen[self] = 1
 
+
 class OptionParser(optparse.OptionParser):
 	"""OptionParser() -> new OptionParser object
 
@@ -278,9 +287,10 @@ class OptionParser(optparse.OptionParser):
 		for option in self.option_list:
 			if (isinstance(option, Option) and
 					option.required and
-					not self.option_seen.has_key(option)):
+					not option in self.option_seen):
 				self.error("%s not supplied" % option)
 		return (values, args)
+
 
 def getFiles(path, find=".*", tests=[isfile], fullPath=False):
 	"""getFiles(path, find=".*", tests=[isfile], fullPath=False) -> list of files
@@ -309,6 +319,7 @@ def getFiles(path, find=".*", tests=[isfile], fullPath=False):
 				list.append(file)
 	return list
 
+
 def isReadable(file):
 	"""isReadable(file) -> bool
 
@@ -317,6 +328,7 @@ def isReadable(file):
 	"""
 
 	return os.access(file, os.R_OK)
+
 
 def mkpasswd(n):
 	"""mkpasswd(n) -> str
@@ -333,6 +345,7 @@ def mkpasswd(n):
 			[random.choice(validCharacters)
 				for x in range(n)], "")
 
+
 def caller(n=1):
 	"""caller(n=1) -> str
 
@@ -344,6 +357,7 @@ def caller(n=1):
 	from traceback import extract_stack
 	stack = extract_stack()
 	return stack[-n-2][2]
+
 
 def validateEmail(email):
 	"""validateEmail(email) -> bool
@@ -357,6 +371,7 @@ def validateEmail(email):
 					"^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\."
 					"([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$",
 					email) is not None
+
 
 def safe__import__(moduleName, globals=globals(),
 		locals=locals(), fromlist=[]):
@@ -374,8 +389,9 @@ def safe__import__(moduleName, globals=globals(),
 	except Exception, e:
 		raise
 		for name in sys.modules.copy():
-			if not alreadyImported.has_key(name):
+			if not name in alreadyImported:
 				del (sys.modules[name])
+
 
 class Config(ConfigParser, object):
 
@@ -393,6 +409,7 @@ class Config(ConfigParser, object):
 
 	def getboolean(self, section, option, default=False):
 		return bool(self.get(section, option, default))
+
 
 def notags(str):
 	"Removes HTML tags from str and returns the new string"
@@ -423,6 +440,7 @@ def notags(str):
 _proc_status = "/proc/%d/status" % os.getpid()
 _scale = {"KB": 1024.0, "MB": 1024.0 * 1024.0}
 
+
 def _VmB(VmKey):
 	try:
 		t = open(_proc_status)
@@ -436,20 +454,24 @@ def _VmB(VmKey):
 		return 0.0
 	return float(v[1]) * _scale[v[2].upper()]
 
+
 def memory(since=0.0):
 	"Return memory usage in bytes."
 
 	return _VmB("VmSize:") - since
+
 
 def resident(since=0.0):
 	"Return resident memory usage in bytes."
 
 	return _VmB("VmRSS:") - since
 
+
 def stacksize(since=0.0):
 	"Return stack size in bytes."
 
 	return _VmB("VmStk:") - since
+
 
 def decodeHTML(s=""):
 	"""decodeHTML(s) -> str
@@ -463,6 +485,7 @@ def decodeHTML(s=""):
 			.replace("&quot;", "\"") \
 			.replace("&#039;", "'") \
 			.replace("&mdash", "--")
+
 
 def encodeHTML(s=""):
 	"""encodeHTML(s) -> str
@@ -478,9 +501,10 @@ def encodeHTML(s=""):
 			.replace("'", "&#039;") \
 			.replace("--", "&mdash")
 
+
 def MixIn(cls, mixin, last=False):
 	if mixin not in cls.__bases__:
 		if last:
-			cls.__bases__ += (mixin,)
-		else: 
-			cls.__bases__ = (mixin,) + cls.__bases__
+			cls.__bases__ += tuple([mixin])
+		else:
+			cls.__bases__ = tuple([mixin]) + cls.__bases__

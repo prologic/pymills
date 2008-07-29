@@ -20,6 +20,10 @@ ERRORS = [
 		(1, "Invalid time spcified. Must be an integer."),
 		]
 
+###
+### Functions
+###
+
 def parse_options():
 	"""parse_options() -> opts, args
 
@@ -62,66 +66,128 @@ def parse_options():
 	
 	return opts, args
 
+###
+### Events
+###
+
+class Query(Event): pass
+class Busy(Event): pass
+class Ready(Event): pass
+class ClientOpen(Event): pass
+class ClientData(Event): pass
+class ClientClosed(Event): pass
+class TargetData(Event): pass
+class TargetClosed(Event): pass
+
+###
+### Components
+###
+
+class Balancer(Component):
+
+	targets = []
+
 class Server(TCPServer):
 
 	channel = "server"
-
-	def __init__(self, *args, **kwargs):
-		super(Server, self).__init__(*args, **kwargs)
-
-		self.targets = [x.split(":") for x in kwargs.get("targets", [])]
-		self.clients = []
-		self.sockMap = {}
-		self.n = 0
+	client = None
 
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
-		host, port = self.targets[self.n]
-		port = int(port)
-
-		hash = md5.new("%s:%s" % (host, port)).hexdigest()
-
-		client = Client(self.manager, server=self, sock=sock, channel=id(sock))
-		client.open(host, port)
-
-		self.clients.append(client)
-		self.sockMap[sock] = client
-
-		self.n += 1
-		if self.n == len(self.targets):
-			self.n = 0
+		self.push(ClientOpen(), "target:open")
 
 	@listener("disconnect")
 	def onDISCONNECT(self, sock):
-		client = self.sockMap[sock]
-		client.close()
-		client.unregister()
-		self.clients.remove(client)
-		del self.sockMap[sock]
-		del client
+		self.client = None
+		self.push(ClientClosed(), "target:closed")
 
 	@listener("read")
 	def onREAD(self, sock, data):
-		client = self.sockMap[sock]
-		client.write(data)
+		self.push(ClientData(data), "target:data")
+
+	@listener("closed")
+	def onCLOSED(self):
+		if self.client:
+			self.close(self.client)
+
+	@listener("data")
+	def onDATA(self, data):
+		self.write(self.client, data)
+
+class Target(TCPClient):
+
+	channel = "target"
+
+	connect = None
+
+	@listener("open")
+	def onOPEN(self):
+		self.open(*self.connect)
 	
-class Client(TCPClient):
+	@listener("data")
+	def onDATA(self, data):
+		self.write(data)
 
-	def __init__(self, *args, **kwargs):
-		super(Client, self).__init__(*args, **kwargs)
-
-		self.server = kwargs["server"]
-		self.sock = kwargs["sock"]
-
-	@listener("disconnect")
-	def onDISCONNECT(self):
-		if self in self.server.clients:
-			self.server.close(self.sock)
+	@listener("closed")
+	def onCLOSED(self):
+		self.close()
 
 	@listener("read")
 	def onREAD(self, data):
-		self.server.write(self.sock, data)
+		self.push(TargetData(data), "server:data")
 
+	@listener("disconnect")
+	def onDISCONNECT(self):
+		self.push(TargetClosed(), "server:closed")
+
+###
+### Main
+###
+
+def main():
+	opts, args = parse_options()
+
+	if ":" in opts.bind:
+		address, port = opts.bind.split(":")
+		port = int(port)
+		bind = (address, port)
+	else:
+		bind = (opts.bind, 8000)
+
+	if ":" in args[0]:
+		address, port = args[0].split(":")
+		port = int(port)
+		connect = (address, port)
+	else:
+		connect = (args[0], 8000)
+
+	debugger.set(opts.debug)
+
+	server = Server(e, address=bind[0], port=bind[1])
+	target = Target(e)
+
+	server.target = target
+	target.connect = connect
+
+	while True:
+		try:
+			e.flush()
+			server.poll()
+			if target.connected:
+				target.poll()
+		except UnhandledEvent:
+			pass
+		except KeyboardInterrupt:
+			target.close()
+			server.close()
+			break
+
+###
+### Entry Point
+###
+
+if __name__ == "__main__":
+	main()
 class State(Component):
 
 	done = False
@@ -146,6 +212,10 @@ class Stats(Component):
 	def onGET(self, *args, **kwargs):
 		self.reqs += 1
 
+###
+### Main
+###
+
 def main():
 	opts, args = parse_options()
 
@@ -153,7 +223,17 @@ def main():
 		address, port = opts.bind.split(":")
 		port = int(port)
 	else:
-		address, port = opts.bind, 80
+		address, port = opts.bind, 8000
+
+	connections = []
+	for arg in args:
+		if ":" in args[0]:
+			address, port = arg.split(":")
+			port = int(port)
+		else:
+			address = arg
+			port = 8000
+		connections.append((address, port))
 
 	sTime = time.time()
 
@@ -161,15 +241,22 @@ def main():
 		profiler = hotshot.Profile(".tcpbalancer.prof")
 		profiler.start()
 
-	e = Manager()
-	server = Server(e, port, address, targets=args)
+	debugger.set(opts.debug)
+
 	stats = Stats(e)
+
+	server = Server(e, address=bind[0], port=bind[1])
+
+	targets = []
+	for i, connect in enumerate(connections):
+		target = Target(e, channel="target:%d" % i)
+		target.connect = connect
 
 	while True:
 		try:
 			e.flush()
 			server.poll()
-			[(e.flush(), client.poll()) for client in server.clients]
+			[target.poll() for target in targets if target.connected]
 
 			if opts.reqs > 0 and stats.reqs > opts.reqs:
 				e.send(Event(), "stop")
@@ -181,9 +268,9 @@ def main():
 		except UnhandledEvent, event:
 			pass
 		except KeyboardInterrupt:
+			server.close()
+			[target.close() for target in targets if target.connected]
 			break
-	e.flush()
-	print
 
 	eTime = time.time()
 
@@ -202,6 +289,10 @@ def main():
 		stats.strip_dirs()
 		stats.sort_stats("time", "calls")
 		stats.print_stats(20)
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()
