@@ -3,12 +3,16 @@
 import optparse
 
 import pymills
-from pymills.event import listener, Event
+from pymills.event import *
 from pymills.event.core import Component, Manager
 from pymills.event.bridge import Bridge
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + pymills.__version__
+
+###
+### Functions
+###
 
 def parse_options():
 	"""parse_options() -> opts, args
@@ -22,24 +26,35 @@ def parse_options():
 	parser.add_option("-b", "--bind",
 			action="store", default="0.0.0.0:8000", dest="bind",
 			help="Bind to address:port")
+	parser.add_option("-d", "--debug",
+			action="store_true", default=False, dest="debug",
+			help="Enable debug mode. (Default: False)")
 
 	opts, args = parser.parse_args()
 
 	return opts, args
 
+###
+### Events
+###
+
+class Result(Event): pass
+
+###
+### Components
+###
+
 class Adder(Component):
 
-	@listener("add")
-	def onADD(self, x, y):
-		print "Adding %s + %s" % (x, y)
-		r = x + y
-		self.push(Event("Result", r), "result")
-
-	@listener("input")
-	def onINPUT(self, s):
+	@listener("newinput")
+	def onNEWINPUT(self, s):
 		print "Evaluating: %s" % s
 		r = eval(s)
-		self.push(Event("Result", r), "result")
+		self.push(Result(r), "result")
+
+###
+### Main
+###
 
 def main():
 	opts, args = parse_options()
@@ -50,7 +65,9 @@ def main():
 	else:
 		address, port = opts.bind, 8000
 
-	e = Manager()
+	debugger.set(opts.debug)
+	debugger.IgnoreEvents.extend(["Read", "Write"])
+	
 	bridge = Bridge(e, port=port, address=address)
 	Adder(e)
 
@@ -60,6 +77,10 @@ def main():
 			bridge.poll()
 		except KeyboardInterrupt:
 			break
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()

@@ -240,13 +240,11 @@ def main():
 
 	opts, args = parse_options()
 
-	e = Manager()
 	stats = Stats(e)
 	state = State(e)
 
-	if opts.debug:
-		debugger = Debugger(e)
-		debugger.IgnoreEvents.extend(["Read", "Write"])
+	debugger.set(opts.debug)
+	debugger.IgnoreEvents.extend(["Read", "Write"])
 
 	nodes = []
 	if args:

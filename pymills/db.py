@@ -342,7 +342,7 @@ class Record(OrderedDict):
 	fasion or using attribute names of the record object.
 	"""
 
-	def __init__(self, row, session=None, cursor=None):
+	def __init__(self, data, session=None, cursor=None):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		super(Record, self).__init__()
@@ -350,7 +350,7 @@ class Record(OrderedDict):
 		self.__session = session
 		self.__cursor = cursor
 
-		for k, v in row:
+		for k, v in data:
 			self.add(k, v)
 	
 	def add(self, k, v):
@@ -364,7 +364,7 @@ class Record(OrderedDict):
 			k = k[0]
 
 		if type(v) == str:
-			v = unicode(v, "utf-8")
+			v = unicode(v, "utf-8", errors="ignore")
 		else:
 			if self.__cursor is not None:
 				if isinstance(v, self.__cursor.__class__):

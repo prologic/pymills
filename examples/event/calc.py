@@ -12,6 +12,10 @@ from pymills.io import Stdin
 USAGE = "%prog [options] [host[:port]]"
 VERSION = "%prog v" + pymills.__version__
 
+###
+### Functions
+###
+
 def parse_options():
 	"""parse_options() -> opts, args
 
@@ -32,11 +36,21 @@ def parse_options():
 
 	return opts, args
 
+###
+### Events
+###
+
+class NewInput(Event): pass
+
+###
+### Components
+###
+
 class Input(Stdin):
 
 	@listener("read")
 	def onREAD(self, data):
-		self.push(Event("Input", data.strip()), "input")
+		self.push(NewInput(data.strip()), "newinput")
 
 class Calc(Component):
 
@@ -45,6 +59,10 @@ class Calc(Component):
 		sys.stdout.write("%s\n" % r)
 		sys.stdout.write(">>> ")
 		sys.stdout.flush()
+
+###
+### Main
+###
 
 def main():
 	opts, args = parse_options()
@@ -64,13 +82,11 @@ def main():
 	else:
 		nodes = []
 
-	e = Manager()
 	input = Input(e)
 	Calc(e)
 
-	if opts.debug:
-		debugger = Debugger(e)
-		debugger.IgnoreEvents.extend(["Read", "Write"])
+	debugger.set(opts.debug)
+	debugger.IgnoreEvents.extend(["Read", "Write"])
 
 	bridge = Bridge(e, port=port, address=address, nodes=nodes)
 
@@ -84,6 +100,10 @@ def main():
 			bridge.poll()
 		except KeyboardInterrupt:
 			break
+
+###
+### Entry Point
+###
 
 if __name__ == "__main__":
 	main()
