@@ -17,8 +17,12 @@ import re
 import time
 import errno
 import socket
-import select
 from cStringIO import StringIO
+
+try:
+	import select26 as select
+except ImportError:
+	import select
 
 from pymills.event import filter, Component, Event
 
