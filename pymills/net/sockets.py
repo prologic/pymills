@@ -27,9 +27,9 @@ except ImportError:
 from pymills.event import filter, Component, Event
 
 POLL_INTERVAL = 0.000001
-CONNECT_TIMEOUT = 5
-BUFFER_SIZE = 65536
-BACKLOG = 500
+CONNECT_TIMEOUT = 4
+BUFFER_SIZE = 131072
+BACKLOG = 512
 
 ###
 ### Events
