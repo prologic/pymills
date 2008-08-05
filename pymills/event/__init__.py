@@ -39,7 +39,6 @@ components are singletons, that is they can only be
 instantiated once.
 """
 
-from inspect import getargspec
 from threading import enumerate as threads
 
 
@@ -52,10 +51,6 @@ class UnhandledEvent(EventError):
 
 	def __init__(self, event):
 		super(UnhandledEvent, self).__init__(event)
-
-
-class FilterEvent(Exception):
-	"Filter Event Exception"
 
 
 class Event(object):
@@ -123,10 +118,6 @@ def filter(channel="global"):
 	def decorate(f):
 		f.filter = True
 		f.channel = channel
-		f.args = getargspec(f)[0]
-		if len(f.args) > 0:
-			if f.args[0] == "self":
-				del f.args[0]
 		return f
 	return decorate
 
@@ -137,10 +128,6 @@ def listener(channel="global"):
 	def decorate(f):
 		f.listener = True
 		f.channel = channel
-		f.args = getargspec(f)[0]
-		if len(f.args) > 0:
-			if f.args[0] == "self":
-				del f.args[0]
 		return f
 	return decorate
 
@@ -150,7 +137,7 @@ def send(handlers, event):
 
 	Send the given event to the list of handlers.
 	If no handlers	are given, raise an UnhandledEvent
-	exception. If a handler	raised FilterEvent, return
+	exception. If a handler	return True, return
 	immediately and do not allow any other handler to
 	process this event.
 	"""
@@ -159,16 +146,7 @@ def send(handlers, event):
 		raise UnhandledEvent(event)
 
 	for handler in handlers:
-		try:
-			args = handler.args
-			if args:
-				if args[0] in ("event", "evt", "e"):
-					handler(event, *event.args, **event.kwargs)
-				else:
-					handler(*event.args, **event.kwargs)
-			else:
-				handler()
-		except FilterEvent:
+		if handler(event, *event.args, **event.kwargs):
 			return
 
 from pymills.event.core import Manager, Component, Worker
@@ -186,10 +164,11 @@ __all__ = (
 	"filter",
 	"listener",
 	"Event",
-	"FilterEvent",
+	"EventError",
 	"UnhandledEvent",
 	"Manager",
 	"Component",
+	"Worker",
 	"DummyBridge",
 	"Bridge",
 	"Debugger")

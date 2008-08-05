@@ -9,27 +9,25 @@ Test all functionality of the event library.
 
 import unittest
 
-from pymills.event import filter, listener, Event, \
-		Component, Worker, Manager, FilterEvent, \
-		EventError
+from pymills.event import *
 
 class Test(Event): pass
 
 class FilterComponent(Component):
 
 	@filter("foo")
-	def onFOO(self, msg=""):
-		raise FilterEvent
+	def onFOO(self, event, msg=""):
+		return True
 
 	@filter("bar")
-	def onBAR(self, msg=""):
+	def onBAR(self, event, msg=""):
 		if msg.lower() == "hello world":
-			raise FilterEvent
+			return True
 
 class ListenerComponent(Component):
 
 	@listener("foo")
-	def onFOO(self, test, msg=""):
+	def onFOO(self, event, test, msg=""):
 		if msg.lower() == "start":
 			self.push(Test(msg="foo"), "foo")
 
@@ -46,11 +44,11 @@ class Foo(Component):
 		self.gotbar = False
 
 	@listener("foo")
-	def onFOO(self):
+	def onFOO(self, event):
 		self.send(Test(), "bar")
 
 	@listener("gotbar")
-	def onGOTBAR(self):
+	def onGOTBAR(self, event):
 		self.gotbar = True
 
 class SubFoo(Foo):
@@ -59,13 +57,13 @@ class SubFoo(Foo):
 class Bar(Component):
 
 	@listener("bar")
-	def onBAR(self):
+	def onBAR(self, event):
 		self.send(Test(), "gotbar")
 
 class FooWorker(Worker):
 
 	@listener("foo")
-	def onFOO(self):
+	def onFOO(self, event):
 		return "foo"
 
 class EventTestCase(unittest.TestCase):
@@ -192,14 +190,14 @@ class EventTestCase(unittest.TestCase):
 		"""
 
 		@filter("foo")
-		def onFOO():
+		def onFOO(event):
 			pass
 
 		@listener("bar")
-		def onBAR():
+		def onBAR(event):
 			pass
 
-		def onTEST():
+		def onTEST(event):
 			pass
 
 		self.manager.add(onFOO)
@@ -259,21 +257,20 @@ class EventTestCase(unittest.TestCase):
 		self.foo = False
 
 		@listener("test")
-		def onTEST(test, time, stop=False):
+		def onTEST(event, test, time, stop=False):
 			test.flag = True
 
 		@listener("test")
-		def onFOO(test, time, stop=False):
+		def onFOO(event, test, time, stop=False):
 			test.foo = True
 
 		@listener("bar")
-		def onBAR(test, time):
+		def onBAR(event, test, time):
 			pass
 
 		@filter()
-		def onSTOP(test, time, stop=False):
-			if stop:
-				raise FilterEvent
+		def onSTOP(event, test, time, stop=False):
+			return stop
 
 		self.manager.add(onSTOP)
 		self.manager.add(onTEST, "test")

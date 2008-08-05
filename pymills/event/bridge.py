@@ -20,8 +20,8 @@ from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from socket import gethostname, gethostbyname, gethostbyaddr
 
+from pymills.event import filter, Event
 from pymills.net.sockets import UDPServer
-from pymills.event import filter, Event, FilterEvent
 
 
 class Helo(Event):
@@ -76,10 +76,8 @@ class Bridge(UDPServer):
 	def onHELO(self, event, address, port):
 		source = event.source
 
-		if (address, port) == self.ourself:
-			raise FilterEvent
-		elif source in self.nodes:
-			raise FilterEvent
+		if (address, port) == self.ourself or source in self.nodes:
+			return True
 
 		if not (address, port) in self.nodes:
 			self.nodes.add((address, port))

@@ -106,23 +106,23 @@ class Sender(Component):
 	concurrency = 1
 
 	@listener("received")
-	def onRECEIVED(self, message=""):
+	def onRECEIVED(self, event, message=""):
 		self.push(Hello("hello"), "hello", self.channel)
 
 class Receiver(Component):
 
 	@listener("helo")
-	def onHELO(self, address, port):
+	def onHELO(self, event, address, port):
 		self.send(Hello("hello"), "hello", self.channel)
 
 	@listener("hello")
-	def onHELLO(self, message=""):
+	def onHELLO(self, event, message=""):
 		self.push(Received(message), "received", self.channel)
 
 class Test(Component):
 
 	@listener("hello")
-	def onHELLO(self, message):
+	def onHELLO(self, event, message):
 		self.push(Hello(message), "hello", self.channel)
 
 class State(Component):
@@ -130,11 +130,11 @@ class State(Component):
 	done = False
 
 	@listener("stop")
-	def onSTOP(self):
+	def onSTOP(self, event):
 		self.push(Term(), "term")
 
 	@listener("term")
-	def onTERM(self):
+	def onTERM(self, event):
 		self.done = True
 
 class Monitor(Component):
@@ -144,7 +144,7 @@ class Monitor(Component):
 	state = 0
 
 	@listener("helo")
-	def onHELO(self, *args, **kwargs):
+	def onHELO(self, event, *args, **kwargs):
 		print "Resetting sTime"
 		self.sTime = time.time()
 
