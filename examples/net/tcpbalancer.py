@@ -205,7 +205,7 @@ class Stats(Component):
 		self.events = 0
 
 	@filter()
-	def onDEBUG(self, event, *args, **kwargs):
+	def onDEBUG(self, *args, **kwargs):
 		self.events += 1
 
 	@listener("server:connect")

@@ -19,7 +19,7 @@ class Test(Component):
 				DOUBLEBUF | HWSURFACE)
 
 	@filter()
-	def onDEBUG(self, event):
+	def onDEBUG(self):
 		print event
 		return False, event
 

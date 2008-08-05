@@ -54,7 +54,7 @@ class Bridge(UDPServer):
 		self.push(Helo(*self.ourself), "helo")
 
 	@filter()
-	def onEVENTS(self, event, *args, **kwargs):
+	def onEVENTS(self, *args, **kwargs):
 		channel = event.channel
 		if True in [event.name == name for name in self.IgnoreEvents]:
 			return
@@ -73,7 +73,7 @@ class Bridge(UDPServer):
 			self.write(("<broadcast>", self.port), s)
 
 	@filter("helo")
-	def onHELO(self, event, address, port):
+	def onHELO(self, address, port):
 		source = event.source
 
 		if (address, port) == self.ourself or source in self.nodes:

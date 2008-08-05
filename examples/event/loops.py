@@ -12,7 +12,7 @@ class Loop(Component):
 	events = 0
 
 	@listener("foo")
-	def onFOO(self, event):
+	def onFOO(self):
 		self.events += 1
 		self.push(Event("Loop"), "foo")
 

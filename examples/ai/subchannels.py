@@ -10,7 +10,7 @@ class Foo(Component):
 	__channelPrefix__ = "foo"
 
 	@listener("test")
-	def onTEST(self, event, s):
+	def onTEST(self, s):
 		print "Hello %s" % s
 
 class Bar(Component):
@@ -18,7 +18,7 @@ class Bar(Component):
 	__channelPrefix__ = "bar"
 
 	@listener("test")
-	def onTEST(self, event, s):
+	def onTEST(self, s):
 		print "Hello %s" % s
 
 def main():

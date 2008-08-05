@@ -157,7 +157,7 @@ class Manager(object):
 					raise UnhandledEvent, event
 				try:
 					for handler in handlers:
-						if handler(event, *event.args, **event.kwargs):
+						if handler(*event.args, **event.kwargs):
 							break
 				except:
 					raise
@@ -191,7 +191,7 @@ class Manager(object):
 				raise UnhandledEvent, event
 			try:
 				for handler in handlers:
-					if handler(event, *event.args, **event.kwargs):
+					if handler(*event.args, **event.kwargs):
 						break
 			except:
 				raise
@@ -215,11 +215,11 @@ class Component(Manager):
 
 	C{
 	@filter()
-	def onFOO(self, event):
-		return True, event
+	def onFOO(self):
+		return True
 
 	@listener()
-	def onBAR(self, event):
+	def onBAR(self):
 		print event
 	}
 	"""

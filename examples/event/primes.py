@@ -211,7 +211,7 @@ class Stats(Component):
 	distribution = {}
 
 	@filter()
-	def onEVENTS(self, event, *args, **kwargs):
+	def onEVENTS(self, *args, **kwargs):
 		self.events += 1
 
 	@listener("helo")

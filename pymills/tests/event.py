@@ -16,23 +16,23 @@ class Test(Event): pass
 class FilterComponent(Component):
 
 	@filter("foo")
-	def onFOO(self, event, msg=""):
+	def onFOO(self, msg=""):
 		return True
 
 	@filter("bar")
-	def onBAR(self, event, msg=""):
+	def onBAR(self, msg=""):
 		if msg.lower() == "hello world":
 			return True
 
 class ListenerComponent(Component):
 
 	@listener("foo")
-	def onFOO(self, event, test, msg=""):
+	def onFOO(self, test, msg=""):
 		if msg.lower() == "start":
 			self.push(Test(msg="foo"), "foo")
 
 	@listener("bar")
-	def onBAR(self, event, test, msg=""):
+	def onBAR(self, test, msg=""):
 		if msg.lower() == "test":
 			self.push(Test(msg="hello world"), event._channel)
 
@@ -44,11 +44,11 @@ class Foo(Component):
 		self.gotbar = False
 
 	@listener("foo")
-	def onFOO(self, event):
+	def onFOO(self):
 		self.send(Test(), "bar")
 
 	@listener("gotbar")
-	def onGOTBAR(self, event):
+	def onGOTBAR(self):
 		self.gotbar = True
 
 class SubFoo(Foo):
@@ -57,13 +57,13 @@ class SubFoo(Foo):
 class Bar(Component):
 
 	@listener("bar")
-	def onBAR(self, event):
+	def onBAR(self):
 		self.send(Test(), "gotbar")
 
 class FooWorker(Worker):
 
 	@listener("foo")
-	def onFOO(self, event):
+	def onFOO(self):
 		return "foo"
 
 class EventTestCase(unittest.TestCase):
@@ -190,14 +190,14 @@ class EventTestCase(unittest.TestCase):
 		"""
 
 		@filter("foo")
-		def onFOO(event):
+		def onFOO():
 			pass
 
 		@listener("bar")
-		def onBAR(event):
+		def onBAR():
 			pass
 
-		def onTEST(event):
+		def onTEST():
 			pass
 
 		self.manager.add(onFOO)
@@ -257,19 +257,19 @@ class EventTestCase(unittest.TestCase):
 		self.foo = False
 
 		@listener("test")
-		def onTEST(event, test, time, stop=False):
+		def onTEST(test, time, stop=False):
 			test.flag = True
 
 		@listener("test")
-		def onFOO(event, test, time, stop=False):
+		def onFOO(test, time, stop=False):
 			test.foo = True
 
 		@listener("bar")
-		def onBAR(event, test, time):
+		def onBAR(test, time):
 			pass
 
 		@filter()
-		def onSTOP(event, test, time, stop=False):
+		def onSTOP(test, time, stop=False):
 			return stop
 
 		self.manager.add(onSTOP)
