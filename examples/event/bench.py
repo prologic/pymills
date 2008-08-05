@@ -134,7 +134,7 @@ class State(Component):
 		self.push(Term(), "term")
 
 	@listener("term")
-	def onTERM(self:
+	def onTERM(self):
 		self.done = True
 
 class Monitor(Component):
