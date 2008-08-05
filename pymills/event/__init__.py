@@ -132,23 +132,6 @@ def listener(channel="global"):
 	return decorate
 
 
-def send(handlers, event):
-	"""send(handlers event) -> None
-
-	Send the given event to the list of handlers.
-	If no handlers	are given, raise an UnhandledEvent
-	exception. If a handler	return True, return
-	immediately and do not allow any other handler to
-	process this event.
-	"""
-
-	if not handlers:
-		raise UnhandledEvent(event)
-
-	for handler in handlers:
-		if handler(event, *event.args, **event.kwargs):
-			return
-
 from pymills.event.core import Manager, Component, Worker
 from pymills.event.bridge import Bridge, DummyBridge
 from pymills.event.timers import Timers

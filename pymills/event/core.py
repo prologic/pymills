@@ -12,7 +12,7 @@ from threading import Thread
 from collections import defaultdict
 from inspect import getmembers, ismethod
 
-from pymills.event import send, EventError
+from pymills.event import EventError, UnhandledEvent
 
 
 def _sortHandlers(x, y):
@@ -153,8 +153,14 @@ class Manager(object):
 			for event in queue:
 				channel = event.channel
 				handlers = self.getHandlers("global") + self.getHandlers(channel)
+				if handlers == []:
+					raise UnhandledEvent, event
 				try:
-					send(handlers, event)
+					for handler in handlers:
+						if handler(event, *event.args, **event.kwargs):
+							break
+				except:
+					raise
 				finally:
 					_queue.remove(event)
 		else:
@@ -181,7 +187,14 @@ class Manager(object):
 
 		if self.manager == self:
 			handlers = self.getHandlers("global") + self.getHandlers(channel)
-			send(handlers, event)
+			if handlers == []:
+				raise UnhandledEvent, event
+			try:
+				for handler in handlers:
+					if handler(event, *event.args, **event.kwargs):
+						break
+			except:
+				raise
 		else:
 			self.manager.send(event, channel, target)
 
