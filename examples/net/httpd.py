@@ -3,7 +3,6 @@
 # vim: set sw=3 sts=3 ts=3
 
 import os
-import sys
 import time
 import math
 import hotshot
@@ -11,7 +10,6 @@ import optparse
 import hotshot.stats
 from traceback import format_exc
 
-import pymills
 from pymills.event import *
 from pymills.net.sockets import TCPServer
 from pymills.net.http import HTTP, Response
