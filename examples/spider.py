@@ -10,21 +10,15 @@ traversed pages.
 import re
 import sys
 import time
+import math
 import urllib2
 import urlparse
 import optparse
 from BeautifulSoup import BeautifulSoup
 
-try:
-	import psyco
-	psyco.full()
-except ImportError:
-	pass
-
 import spider
 import pymills
 from pymills.web import escape
-from pymills.misc import duration
 from pymills.datatypes import Queue
 from pymills import __version__ as systemVersion
 
@@ -35,70 +29,62 @@ AGENT = "%s-%s/%s" % (pymills.__name__, spider.__name__, pymills.__version__)
 
 class Crawler(object):
 
-	def __init__(self, root, depth, lock=True):
-		self._root = root
-		self._depth = depth
-		self._lock = lock
-		self._host = urlparse.urlparse(root)[1]
-		self._startTime = 0
-		self._countLinks = 0
-		self._countFollowed = 0
-
-	def getStats(self):
-		return (self._startTime, self._countLinks, self._countFollowed)
+	def __init__(self, root, depth, locked=True):
+		self.root = root
+		self.depth = depth
+		self.locked = locked
+		self.host = urlparse.urlparse(root)[1]
+		self.links = 0
+		self.followed = 0
 
 	def crawl(self):
-
-		self._startTime = time.time()
-
-		page = Fetcher(self._root)
+		page = Fetcher(self.root)
 		page.fetch()
 		urls = Queue()
-		for url in page.getURLS():
+		for url in page.urls:
 			urls.push(url)
-		followed = [self._root]
+		followed = [self.root]
 
 		n = 0
-		done = False
 
-		while not done:
+		while not urls.empty():
 			n += 1
 			url = urls.pop()
 			if url not in followed:
-				host = urlparse.urlparse(url)[1]
-				if self._lock and re.match(".*%s" % self._host, host):
-					followed.append(url)
-					self._countFollowed += 1
-					print "Following: %s" % url
-					page = Fetcher(url)
-					page.fetch()
-					for i, url in enumerate(page):
-						if url not in urls:
-							self._countLinks += 1
-							urls.push(url)
-							print "New: %s" % url
-					if n > self._depth and self._depth > 0:
-						done = True
+				try:
+					host = urlparse.urlparse(url)[1]
+					if self.locked and re.match(".*%s" % self.host, host):
+						followed.append(url)
+						self.followed += 1
+						page = Fetcher(url)
+						page.fetch()
+						for i, url in enumerate(page):
+							if url not in urls:
+								self.links += 1
+								urls.push(url)
+						if n > self.depth and self.depth > 0:
+							break
+				except Exception, error:
+					print "Warning: Can't process url '%s'" % url
 
 class Fetcher(object):
 
 	def __init__(self, url):
-		self._url = url
-		self._root = self._url
-		self._tags = []
-		self._urls = []
+		self.url = url
+		self.urls = []
 
-	def __getitem__(self, y):
-		return self._urls[y]
+	def __contains__(self, x):
+		return x in self.urls
 
-	def _add_headers(self, request):
+	def __getitem__(self, x):
+		return self.urls[x]
+
+	def _addHeaders(self, request):
 		request.add_header("User-Agent", AGENT)
 
-	def getURLS(self):
-		return self._urls
-
 	def open(self):
-		url = self._url
+		url = self.url
+		print "Following %s" % url
 		try:
 			request = urllib2.Request(url)
 			handle = urllib2.build_opener()
@@ -108,32 +94,32 @@ class Fetcher(object):
 
 	def fetch(self):
 		request, handle = self.open()
-		self._add_headers(request)
+		self._addHeaders(request)
 		if handle:
 			soup = BeautifulSoup()
 			try:
 				content = unicode(handle.open(request).read(), errors="ignore")
 				soup.feed(content)
-				if soup.html and soup.html.head:
-					title = soup.html.head.title.string
-				else:
-					title = ""
 				tags = soup('a')
 			except urllib2.HTTPError, error:
 				if error.code == 404:
-					print "%s -> %s" % (error, error.url)
+					print >> sys.stderr, "ERROR: %s -> %s" % (error, error.url)
 				else:
-					print error
+					print >> sys.stderr, "ERROR: %s" % error
 				tags = []
 			except urllib2.URLError, error:
-				print error
+				print >> sys.stderr, "ERROR: %s" % error
 				tags = []
 			for tag in tags:
 				try:
-					url = urlparse.urljoin(self._url, escape(tag['href']))
+					href = tag["href"]
+					if href is not None:
+						url = urlparse.urljoin(self.url, escape(href))
+						if url not in self:
+							print " Found: %s" % url
+							self.urls.append(url)
 				except KeyError:
-					continue
-				self._urls.append(url)
+					pass
 
 def getLinks(url):
 	page = Fetcher(url)
@@ -179,15 +165,21 @@ def main():
 		getLinks(url)
 		raise SystemExit, 0
 
-	depth = int(opts.depth)
-	print >> sys.stderr, "Crawling %s (Max Depth: %d)" % (
-			url, depth)
+	depth = opts.depth
+
+	sTime = time.time()
+
+	print "Crawling %s (Max Depth: %d)" % (url, depth)
 	crawler = Crawler(url, depth)
 	crawler.crawl()
-	print >> sys.stderr, "DONE"
-	startTime, countLinks, countFollowed = crawler.getStats()
-	print >> sys.stderr, "Found %d links, following %d urls in %s+%s:%s:%s" % (
-			(countLinks, countFollowed,) + duration(time.time() - startTime))
+
+	eTime = time.time()
+	tTime = eTime - sTime
+
+	print "Found:    %d" % crawler.links
+	print "Followed: %d" % crawler.followed
+	print "Stats:    (%d/s after %0.2fs)" % (
+			int(math.ceil(float(crawler.links) / tTime)), tTime)
 
 if __name__ == "__main__":
 	main()
