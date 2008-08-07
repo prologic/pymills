@@ -92,20 +92,18 @@ class _Request(object):
 		self.sock = None
 		self.close = True
 
-		self.res = _Response(self)
-
 class _Response(object):
-	"""_Response(req) -> new Response object
+	"""_Response(request) -> new Response object
 
 	A Response object that holds the response to
 	send back to the client. This ensure that the correct data
 	is sent in the correct order.
 	"""
 
-	def __init__(self, req, body=""):
+	def __init__(self, request, body=""):
 		"initializes x; see x.__class__.__doc__ for signature"
 		
-		self.req = req
+		self.request = request
 
 		self.headers = Headers([
 			("Server", SERVER_VERSION),
@@ -184,25 +182,25 @@ class HTTP(Component):
 	###
 
 	@listener("stream")
-	def onSTREAM(self, res):
-		data = res.body.read(BUFFER_SIZE)
+	def onSTREAM(self, request, response):
+		data = response.body.read(BUFFER_SIZE)
 		if data:
-			self.write(res.req.sock, data)
-			self.push(StreamEvent(res), "stream")
+			self.write(request.sock, data)
+			self.push(StreamEvent(request, reponse), "stream")
 		else:
-			res.body.close()
-			if res.req.close:
-				self.close(res.req.sock)
+			response.body.close()
+			if request.close:
+				self.close(request.sock)
 		
 	@listener("response")
-	def onRESPONSE(self, res):
-		if type(res.body) == file:
-			self.write(res.req.sock, str(res))
-			self.push(StreamEvent(res), "stream")
+	def onRESPONSE(self, request, response):
+		if type(response.body) == file:
+			self.write(request.sock, str(response))
+			self.push(StreamEvent(request, response), "stream")
 		else:
-			self.write(res.req.sock, str(res))
-			if res.req.close:
-				self.close(res.req.sock)
+			self.write(request.sock, str(response))
+			if request.close:
+				self.close(request.sock)
 
 	@listener("read")
 	def onREAD(self, sock, data):
@@ -259,30 +257,32 @@ class HTTP(Component):
 
 		headers = mimetools.Message(StringIO(data), 0)
 
-		req = _Request(command, path, version, headers)
-		req.sock = sock
+		request = _Request(command, path, version, headers)
+		request.sock = sock
+		response = _Response(request)
+
 		if cherrypy:
-			cherrypy.request = req
-			cherrypy.response = req.res
+			cherrypy.request = request
+			cherrypy.response = response
 
 		conntype = headers.get('Connection', "")
 		if (conntype.lower() == 'keep-alive' and
 			  PROTOCOL_VERSION >= "HTTP/1.1"):
-			req.close = False
+			request.close = False
 
 		try:
-			self.send(Request(req), command.lower())
+			self.send(Request(request, response), command.upper())
 		except HTTPError, error:
-			self.sendError(sock, error[0], error[1], req)
+			self.sendError(sock, error[0], error[1], request)
 		except UnhandledEvent:
-			self.sendError(sock, 501, "Unsupported method (%r)" % command, req)
+			self.sendError(sock, 501, "Unsupported method (%r)" % command, request)
 
 	###
 	### Supporting Functions
 	###
 
-	def sendError(self, sock, code, message=None, req=None):
-		"""H.sendError(sock, code, message=None, req=None) -> None
+	def sendError(self, sock, code, message=None, request=None):
+		"""H.sendError(sock, code, message=None, request=None) -> None
 		
 		Send an error reply.
 
@@ -310,16 +310,14 @@ class HTTP(Component):
 			"message": quoteHTML(message),
 			"explain": explain}
 
-		if req is not None:
-			res = req.res
-		else:
-			res = _Response(None)
-		res.body = content
-		res.status = "%s %s" % (code, message)
-		res.headers.add_header('Connection', 'close')
+		if response is None:
+			response = _Response(request)
+		response.body = content
+		response.status = "%s %s" % (code, message)
+		response.headers.add_header('Connection', 'close')
 
 		if self.__commands[sock] != "HEAD" and code >= 200 and code not in (204, 304):
-			self.write(sock, str(res))
+			self.write(sock, str(response))
 
 		self.close(sock)
 
