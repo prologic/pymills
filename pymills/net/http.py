@@ -72,18 +72,18 @@ class Stream(Event): pass
 ###
 
 class _Request(object):
-	"""_Request(method, uri, version, headers) -> new HTTP Request object
+	"""_Request(method, path, version, headers) -> new HTTP Request object
 
 	Request object that holds an incoming request. The URI, the version
 	of the request, the headers and body. This also holds a _Response
 	object ready to respond with.
 	"""
 
-	def __init__(self, method, uri, version, headers):
+	def __init__(self, method, path, version, headers):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self.method = method
-		self.uri = uri
+		self.path = path
 		self.version = version
 		self.headers = headers
 
