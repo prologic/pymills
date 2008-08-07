@@ -22,6 +22,12 @@ from cStringIO import StringIO
 from mimetypes import guess_type
 from wsgiref.headers import Headers
 
+try:
+	import cherrypy
+	from cherrypy import HTTPError, NotFound, HTTPRedirect
+except ImportError:
+	cherrypy = None
+
 import pymills
 from pymills.event import listener, Event, UnhandledEvent
 from pymills.event.core import Component
@@ -107,7 +113,7 @@ class _Response(object):
 			("Content-Type", "text/html")])
 
 		self.body = ""
-		self.status = "%s 200 OK" % PROTOCOL_VERSION
+		self.status = "200 OK"
 
 	def __repr__(self):
 		return "<Response %s %s>" % (
@@ -127,7 +133,11 @@ class _Response(object):
 		if contentLength:
 			self.headers["Content-Length"] = contentLength
 
-		return "%s\r\n%s%s" % (self.status, str(self.headers), body)
+		return "%s %s\r\n%s%s" % (
+				PROTOCOL_VERSION,
+				self.status,
+				str(self.headers),
+				body)
 
 ###
 ### Protocol Class
@@ -251,6 +261,9 @@ class HTTP(Component):
 
 		req = _Request(command, path, version, headers)
 		req.sock = sock
+		if cherrypy:
+			cherrypy.request = req
+			cherrypy.response = req.res
 
 		conntype = headers.get('Connection', "")
 		if (conntype.lower() == 'keep-alive' and
@@ -259,15 +272,17 @@ class HTTP(Component):
 
 		try:
 			self.send(Request(req), command.lower())
+		except HTTPError, error:
+			self.sendError(sock, error[0], error[1], req)
 		except UnhandledEvent:
-			self.sendError(sock, 501, "Unsupported method (%r)" % command)
+			self.sendError(sock, 501, "Unsupported method (%r)" % command, req)
 
 	###
 	### Supporting Functions
 	###
 
-	def sendError(self, sock, code, message=None):
-		"""H.sendError(sock, code, message=None) -> None
+	def sendError(self, sock, code, message=None, req=None):
+		"""H.sendError(sock, code, message=None, req=None) -> None
 		
 		Send an error reply.
 
@@ -295,13 +310,16 @@ class HTTP(Component):
 			"message": quoteHTML(message),
 			"explain": explain}
 
-		res = _Response(None)
+		if req is not None:
+			res = req.res
+		else:
+			res = _Response(None)
 		res.body = content
 		res.status = "%s %s" % (code, message)
 		res.headers.add_header('Connection', 'close')
 
 		if self.__commands[sock] != "HEAD" and code >= 200 and code not in (204, 304):
-			self.write(sock, str(res), False)
+			self.write(sock, str(res))
 
 		self.close(sock)
 
