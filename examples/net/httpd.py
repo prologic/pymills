@@ -10,6 +10,8 @@ import optparse
 import hotshot.stats
 from traceback import format_exc
 
+from cherrypy.lib.static import serve_file
+
 from pymills.event import *
 from pymills.net.sockets import TCPServer
 from pymills.net.http import HTTP, Response
@@ -42,8 +44,8 @@ def parse_options():
 	parser.add_option("-t", "--time",
 			action="store", default=0, dest="time",
 			help="Stop after specified elapsed seconds")
-	parser.add_option("-r", "--reqs",
-			action="store", default=0, dest="reqs",
+	parser.add_option("-r", "--requests",
+			action="store", default=0, dest="requests",
 			help="Stop after specified number of requests")
 	parser.add_option("-p", "--profile",
 			action="store_true", default=False, dest="profile",
@@ -55,7 +57,7 @@ def parse_options():
 	opts, args = parser.parse_args()
 
 	try:
-		opts.reqs = int(opts.reqs)
+		opts.requests = int(opts.requests)
 	except Exception, e:
 		print str(e)
 		parser.exit(ERRORS[0][0], ERRORS[0][1])
@@ -74,22 +76,20 @@ def parse_options():
 
 class Test(Component):
 
-	content = "OK"
+	docroot = os.getcwd()
 
-	@listener("get")
-	def onGET(self, req):
-		res = req.res
-		if os.path.exists(self.content):
-			res.body = open(self.content, "rb")
-		else:
-			res.body = self.content
-		self.push(Response(res), "response")
+	@listener("GET")
+	def onGET(self, request, response):
+		path = request.path.lstrip(os.sep)
+		path = os.path.abspath(os.path.join(self.docroot, path))
+		serve_file(path)
+		self.send(Response(response), "response")
 
 class WebServer(TCPServer, HTTP): pass
 
 class Stats(Component):
 
-	reqs = 0
+	requests = 0
 	events = 0
 
 	@filter()
@@ -98,7 +98,7 @@ class Stats(Component):
 
 	@listener("get")
 	def onREQUESTS(self, *args, **kwargs):
-		self.reqs += 1
+		self.requests += 1
 
 ###
 ### Main
@@ -134,7 +134,7 @@ def main():
 			e.flush()
 			server.poll()
 
-			if opts.reqs > 0 and stats.reqs > opts.reqs:
+			if opts.requests > 0 and stats.requests > opts.requests:
 				break
 			if opts.time > 0 and (time.time() - sTime) > opts.time:
 				break
@@ -147,7 +147,7 @@ def main():
 	tTime = eTime - sTime
 
 	print "Total Requests: %d (%d/s after %0.2fs)" % (
-			stats.reqs, int(math.ceil(float(stats.reqs) / tTime)), tTime)
+			stats.requests, int(math.ceil(float(stats.requests) / tTime)), tTime)
 	print "Total Events:   %d (%d/s after %0.2fs)" % (
 			stats.events, int(math.ceil(float(stats.events) / tTime)), tTime)
 
