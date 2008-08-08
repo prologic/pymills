@@ -41,7 +41,8 @@ class Debugger(Component):
 			self.disable()
 
 	@filter()
-	def onEVENTS(self, *args, **kwargs):
+	def onEVENTS(self, event, *args, **kwargs):
+		print event
 		channel = event.channel
 		if True in [event.name == name for name in self.IgnoreEvents]:
 			return

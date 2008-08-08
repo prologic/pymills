@@ -120,6 +120,8 @@ def filter(channel="global"):
 		f.filter = True
 		f.channel = channel
 		f.args = getargspec(f)[0]
+		if f.args and f.args[0] == "self":
+			del f.args[0]
 		return f
 	return decorate
 
@@ -131,6 +133,8 @@ def listener(channel="global"):
 		f.listener = True
 		f.channel = channel
 		f.args = getargspec(f)[0]
+		if f.args and f.args[0] == "self":
+			del f.args[0]
 		return f
 	return decorate
 
