@@ -81,7 +81,7 @@ class Test(Component):
 
 	@listener("GET")
 	def onGET(self, request, response):
-		digtest_auth(realm="pymills", users={"prologic": "semaj2891"})
+		digest_auth(realm="pymills", users={"prologic": "semaj2891"})
 		path_info = request.path_info.lstrip(os.sep)
 		filename = os.path.abspath(os.path.join(self.docroot, path_info))
 		serve_file(filename)
