@@ -10,6 +10,7 @@ import optparse
 import hotshot.stats
 from traceback import format_exc
 
+from cherrypy.lib.auth import digest_auth
 from cherrypy.lib.static import serve_file
 
 from pymills.event import *
@@ -80,6 +81,7 @@ class Test(Component):
 
 	@listener("GET")
 	def onGET(self, request, response):
+		digtest_auth(realm="pymills", users={"prologic": "semaj2891"})
 		path_info = request.path_info.lstrip(os.sep)
 		filename = os.path.abspath(os.path.join(self.docroot, path_info))
 		serve_file(filename)
