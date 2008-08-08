@@ -39,6 +39,7 @@ components are singletons, that is they can only be
 instantiated once.
 """
 
+from inspect import getargspec
 from threading import enumerate as threads
 
 
@@ -118,6 +119,7 @@ def filter(channel="global"):
 	def decorate(f):
 		f.filter = True
 		f.channel = channel
+		f.args = getargspec(f)[0]
 		return f
 	return decorate
 
@@ -128,6 +130,7 @@ def listener(channel="global"):
 	def decorate(f):
 		f.listener = True
 		f.channel = channel
+		f.args = getargspec(f)[0]
 		return f
 	return decorate
 

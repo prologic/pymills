@@ -157,8 +157,12 @@ class Manager(object):
 					raise UnhandledEvent, event
 				try:
 					for handler in handlers:
-						if handler(*event.args, **event.kwargs):
-							break
+						if handler.args and handler.args[0] in ["e", "evt", "event"]:
+							if handler(event, *event.args, **event.kwargs):
+								break
+						else:
+							if handler(*event.args, **event.kwargs):
+								break
 				except:
 					raise
 				finally:
@@ -191,8 +195,12 @@ class Manager(object):
 				raise UnhandledEvent, event
 			try:
 				for handler in handlers:
-					if handler(*event.args, **event.kwargs):
-						break
+						if handler.args and handler.args[0] in ["e", "evt", "event"]:
+							if handler(event, *event.args, **event.kwargs):
+								break
+						else:
+							if handler(*event.args, **event.kwargs):
+								break
 			except:
 				raise
 		else:
