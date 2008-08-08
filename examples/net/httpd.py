@@ -80,10 +80,10 @@ class Test(Component):
 
 	@listener("GET")
 	def onGET(self, request, response):
-		path = request.path.lstrip(os.sep)
-		path = os.path.abspath(os.path.join(self.docroot, path))
-		serve_file(path)
-		self.send(Response(response), "response")
+		path_info = request.path_info.lstrip(os.sep)
+		filename = os.path.abspath(os.path.join(self.docroot, path_info))
+		serve_file(filename)
+		self.send(Response(request, response), "response")
 
 class WebServer(TCPServer, HTTP): pass
 

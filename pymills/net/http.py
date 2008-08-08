@@ -72,18 +72,21 @@ class Stream(Event): pass
 ###
 
 class _Request(object):
-	"""_Request(method, path, version, headers) -> new HTTP Request object
+	"""_Request(method, path_info, version, headers) -> new HTTP Request object
 
 	Request object that holds an incoming request. The URI, the version
 	of the request, the headers and body. This also holds a _Response
 	object ready to respond with.
 	"""
 
-	def __init__(self, method, path, version, headers):
+	script_name = "/"
+	protocol = (1, 1)
+
+	def __init__(self, method, path_info, version, headers):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self.method = method
-		self.path = path
+		self.path_info = path_info
 		self.version = version
 		self.headers = headers
 
@@ -186,7 +189,7 @@ class HTTP(Component):
 		data = response.body.read(BUFFER_SIZE)
 		if data:
 			self.write(request.sock, data)
-			self.push(StreamEvent(request, reponse), "stream")
+			self.push(Stream(request, response), "stream")
 		else:
 			response.body.close()
 			if request.close:
@@ -196,7 +199,7 @@ class HTTP(Component):
 	def onRESPONSE(self, request, response):
 		if type(response.body) == file:
 			self.write(request.sock, str(response))
-			self.push(StreamEvent(request, response), "stream")
+			self.push(Stream(request, response), "stream")
 		else:
 			self.write(request.sock, str(response))
 			if request.close:
@@ -220,7 +223,7 @@ class HTTP(Component):
 		words = requestline.split()
 
 		if len(words) == 3:
-			command, path, version = words
+			command, path_info, version = words
 			self.__commands[sock] = command
 			if version[:5] != "HTTP/":
 				return self.sendError(sock, 400, "Bad request version (%r)" % version)
@@ -244,7 +247,7 @@ class HTTP(Component):
 				return self.sendError(sock, 505,
 						  "Invalid HTTP Version (%s)" % base_version_number)
 		elif len(words) == 2:
-			command, path = words
+			command, path_info = words
 			self.__commands[sock] = command
 			closeConnection = True
 			if command != "GET":
@@ -257,7 +260,7 @@ class HTTP(Component):
 
 		headers = mimetools.Message(StringIO(data), 0)
 
-		request = _Request(command, path, version, headers)
+		request = _Request(command, path_info, version, headers)
 		request.sock = sock
 		response = _Response(request)
 
@@ -273,16 +276,17 @@ class HTTP(Component):
 		try:
 			self.send(Request(request, response), command.upper())
 		except HTTPError, error:
-			self.sendError(sock, error[0], error[1], request)
+			self.sendError(sock, error[0], error[1], request, response)
 		except UnhandledEvent:
-			self.sendError(sock, 501, "Unsupported method (%r)" % command, request)
+			self.sendError(sock, 501, "Unsupported method (%r)" % command,
+					request, response)
 
 	###
 	### Supporting Functions
 	###
 
-	def sendError(self, sock, code, message=None, request=None):
-		"""H.sendError(sock, code, message=None, request=None) -> None
+	def sendError(self, sock, code, message=None, request=None, response=None):
+		"""H.sendError(sock, code, message=None, request=None, response=None) -> None
 		
 		Send an error reply.
 
