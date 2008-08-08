@@ -10,6 +10,7 @@ import optparse
 import hotshot.stats
 from traceback import format_exc
 
+from cherrypy import NotFound
 from cherrypy.lib.auth import digest_auth
 from cherrypy.lib.static import serve_file
 
@@ -77,15 +78,30 @@ def parse_options():
 
 class Test(Component):
 
-	docroot = os.getcwd()
+	docroot = os.path.join(os.getcwd(), "htdocs")
+	defaults = ["index.html"]
 
 	@listener("GET")
 	def onGET(self, request, response):
 		digest_auth(realm="pymills", users={"prologic": "semaj2891"})
+
 		path_info = request.path_info.lstrip(os.sep)
-		filename = os.path.abspath(os.path.join(self.docroot, path_info))
-		serve_file(filename)
-		self.send(Response(request, response), "response")
+
+		if path_info:
+			filename = os.path.abspath(os.path.join(self.docroot, path_info))
+		else:
+			for default in self.defaults:
+				filename = os.path.abspath(os.path.join(self.docroot, default))
+				if os.path.exists(filename):
+					break
+				else:
+					filename = None
+
+		if filename:
+			serve_file(filename)
+			self.send(Response(request, response), "response")
+		else:
+			raise NotFound()
 
 class WebServer(TCPServer, HTTP): pass
 
