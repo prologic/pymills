@@ -163,8 +163,8 @@ def main():
 	monitor = Monitor()
 	event.manager += monitor
 
-	state = State(e)
-	event.manager += stats
+	state = State()
+	event.manager += state
 
 	debugger.set(opts.debug)
 	event.manager += debugger
@@ -212,19 +212,19 @@ def main():
 		print "Setting up Sender..."
 		if opts.concurrency > 1:
 			for c in xrange(int(opts.concurrency)):
-				event.manager += Sender(e, channel=c)
+				event.manager += Sender(channel=c)
 		else:
-			event.manager += Sender(e)
+			event.manager += Sender()
 	else:
 		print "Setting up Sender..."
 		print "Setting up Receiver..."
 		if opts.concurrency > 1:
 			for c in xrange(int(opts.concurrency)):
-				event.manager += Sender(e, channel=c)
-				event.manager += Receiver(e, channel=c)
+				event.manager += Sender(channel=c)
+				event.manager += Receiver(channel=c)
 		else:
-			event.manager += Sender(e)
-			event.manager += Receiver(e)
+			event.manager += Sender()
+			event.manager += Receiver()
 		monitor.sTime = time.time()
 
 	if opts.profile:
