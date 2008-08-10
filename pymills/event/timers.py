@@ -79,7 +79,7 @@ class Timer(Component):
 	queue held by the Timers component.
 	"""
 
-	def __init__(self, manager, s, e, c, t, persist):
+	def __init__(self, manager, s, e, c="timer", t=None, persist=False):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		super(Timer, self).__init__(manager)
