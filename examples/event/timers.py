@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-from pymills.timers import Timers
-from pymills.event import listener, filter, Component, Event, Manager, Debugger
+from pymills.event import *
+from pymills.event.timers import Timers
 
 class HelloWorld(Component):
 
@@ -20,8 +20,6 @@ class HelloWorld(Component):
 		print "Bar"
 
 def main():
-	e = Manager()
-	Debugger(e)
 	HelloWorld(e)
 	timers = Timers(e)
 

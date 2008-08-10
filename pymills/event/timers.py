@@ -54,7 +54,7 @@ class Timers(Component):
 		sense in persistent timers).
 		"""
 
-		self.timers.append(Timer(s, e, c, t, persist))
+		self.timers.append(Timer(self.manager, s, e, c, t, persist))
 		if start and persist:
 			self.push(e, c, t)
 
@@ -67,14 +67,11 @@ class Timers(Component):
 		"""
 
 		for timer in self.timers[:]:
-			done, (e, c, t) = timer.poll()
-			if done:
-				self.push(e, c, t)
-				if not timer.persist:
-					self.timers.remove(timer)
+			if timer.poll():
+				self.timers.remove(timer)
 
 
-class Timer(object):
+class Timer(Component):
 	"""Timer(s, e, c, t, persist) -> new timer object
 
 	Creates a new timer object which when triggered
@@ -82,8 +79,10 @@ class Timer(object):
 	queue held by the Timers component.
 	"""
 
-	def __init__(self, s, e, c, t, persist):
+	def __init__(self, manager, s, e, c, t, persist):
 		"initializes x; see x.__class__.__doc__ for signature"
+
+		super(Timer, self).__init__(manager)
 
 		self.s = s
 		self.e = e
@@ -112,8 +111,10 @@ class Timer(object):
 		"""
 
 		if time() > self._eTime:
+			self.push(self.e, self.c, self.t)
+
 			if self.persist:
 				self.reset()
-			return True, (self.e, self.c, self.t)
-		else:
-			return False, (None, None, None)
+			else:
+				self.unregister()
+				return True
