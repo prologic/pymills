@@ -154,6 +154,7 @@ class Manager(object):
 				channel = event.channel
 				handlers = self.getHandlers("global") + self.getHandlers(channel)
 				if handlers == []:
+					_queue.remove(event)
 					raise UnhandledEvent, event
 				try:
 					for handler in handlers:
