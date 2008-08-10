@@ -94,8 +94,10 @@ class SocketsTestCase(unittest.TestCase):
 		"""
 
 		manager = Manager()
-		server = Server(manager, 9999)
-		client = Client(manager)
+		server = Server(9999)
+		manager += server
+		client = Client()
+		manager += client
 		manager.server = server
 		manager.client = client
 

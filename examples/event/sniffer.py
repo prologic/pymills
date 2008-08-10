@@ -3,6 +3,7 @@
 import optparse
 
 import pymills
+from pymills import event
 from pymills.event import *
 
 USAGE = "%prog [options] [host[:port]]"
@@ -43,14 +44,16 @@ def main():
 	else:
 		nodes = []
 
-	e = Manager()
-	bridge = Bridge(e, port=port, address=address, nodes=nodes)
-	debugger = Debugger(e)
+	bridge = Bridge(port, address=address, nodes=nodes)
+	event.manager += bridge
+
+	debugger.enable()
 	debugger.IgnoreEvents.extend(["Read", "Write"])
+	event.manager += debugger
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			bridge.poll()
 		except KeyboardInterrupt:
 			break

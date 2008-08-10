@@ -173,12 +173,7 @@ class HTTP(Component):
 	 * ...
 	"""
 
-	def __init__(self, *args, **kwargs):
-		"initializes x; see x.__class__.__doc__ for signature"
-
-		super(HTTP, self).__init__(*args, **kwargs)
-
-		self.__commands = {}
+	__commands = {}
 
 	###
 	### Event Processing

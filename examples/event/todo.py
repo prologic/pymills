@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim: set sw=3 sts=3 ts=3
+# -*- coding: utf-8 -*- # vim: set sw=3 sts=3 ts=3
 
-from pymills.event import listener, Component, Manager, Event
+from pymills import event
+from pymills.event import *
 
 class TodoList(Component):
 
@@ -21,14 +21,14 @@ class TodoPrinter(Component):
 		print "      %s" % description
 
 def main():
-	e = Manager()
-	TodoPrinter(e)
-	todo = TodoList(e)
+	event.manager += TodoPrinter()
+	todo = TodoList()
+	event.manager ++ todo
 
 	todo.add("Make coffee", "Really need to make some coffee")
 	todo.add("Bug triage", "Double-check that all known issues were addressed")
 
-	e.flush()
+	manager.flush()
 
 if __name__ == "__main__":
 	main()

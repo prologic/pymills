@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+from pymills import event
 from pymills.event import *
 
 class HelloWorld(Component):
@@ -13,12 +14,13 @@ class HelloWorld(Component):
 
 def main():
 	debugger.IgnoreEvents = ["Read", "Write"]
-	bridge = Bridge(e, port=8000)
-	HelloWorld(e)
+	bridge = Bridge(8000)
+
+	event.manager += bridge + HelloWorld() + debugger
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			bridge.poll()
 		except KeyboardInterrupt:
 			break

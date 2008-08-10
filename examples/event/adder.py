@@ -3,9 +3,8 @@
 import optparse
 
 import pymills
+from pymills import event
 from pymills.event import *
-from pymills.event.core import Component, Manager
-from pymills.event.bridge import Bridge
 
 USAGE = "%prog [options]"
 VERSION = "%prog v" + pymills.__version__
@@ -68,12 +67,13 @@ def main():
 	debugger.set(opts.debug)
 	debugger.IgnoreEvents.extend(["Read", "Write"])
 	
-	bridge = Bridge(e, port=port, address=address)
-	Adder(e)
+	bridge = Bridge(port, address=address)
+	event.manager += bridge
+	event.manager += Adder()
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			bridge.poll()
 		except KeyboardInterrupt:
 			break

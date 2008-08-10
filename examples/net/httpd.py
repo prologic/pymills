@@ -14,6 +14,7 @@ from cherrypy import NotFound
 from cherrypy.lib.auth import digest_auth
 from cherrypy.lib.static import serve_file
 
+from pymills import event
 from pymills.event import *
 from pymills.net.sockets import TCPServer
 from pymills.net.http import HTTP, Response
@@ -140,16 +141,20 @@ def main():
 	debugger.set(opts.debug)
 	debugger.IgnoreEvents = ["Read", "Write", "Close"]
 
-	server = WebServer(e, port, address)
-	test = Test(e)
-	stats = Stats(e)
+	server = WebServer(port, address)
+	test = Test()
+	stats = Stats()
+
+	event.manager += server
+	event.manager += test
+	event.manager += stats
 
 	if args:
 		test.content = args[0]
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			server.poll()
 
 			if opts.requests > 0 and stats.requests > opts.requests:

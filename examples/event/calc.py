@@ -6,6 +6,7 @@ import sys
 import optparse
 
 import pymills
+from pymills import event
 from pymills.event import *
 from pymills.io import Stdin
 
@@ -82,20 +83,24 @@ def main():
 	else:
 		nodes = []
 
-	input = Input(e)
-	Calc(e)
+	input = Input()
+	event.manager += input
+
+	event.manager += Calc()
 
 	debugger.set(opts.debug)
 	debugger.IgnoreEvents.extend(["Read", "Write"])
+	event.manager += debugger
 
-	bridge = Bridge(e, port=port, address=address, nodes=nodes)
+	bridge = Bridge(port, address=address, nodes=nodes)
+	event.manager += bridge0
 
 	sys.stdout.write(">>> ")
 	sys.stdout.flush()
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			input.poll()
 			bridge.poll()
 		except KeyboardInterrupt:

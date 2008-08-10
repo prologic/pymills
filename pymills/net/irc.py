@@ -144,13 +144,8 @@ class IRC(Component):
 	 *	Kick, Motd
 	"""
 
-	def __init__(self, *args):
-		"initializes x; see x.__class__.__doc__ for signature"
-
-		super(IRC, self).__init__(*args)
-
-		self._buffer = ""
-		self._info = {}
+	_buffer = ""
+	_info = {}
 
 	###
 	### Properties

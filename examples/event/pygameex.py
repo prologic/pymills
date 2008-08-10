@@ -2,26 +2,20 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+from time import sleep
+
 import pygame
 from pygame import *
 
-from pymills.event import filter, listener, Component, \
-		PyGameManager
+from pymills.event import *
 
-class Test(Component):
+class Pygame(Component):
 
-	def __init__(self, event):
-		Component.__init__(self, event)
+	def __init__(self, *args, **kwargs):
+		super(Pygame, self).__init__(*args, **kwargs)
 
 		pygame.init()
-		screen = pygame.display.set_mode(
-				(640, 480),
-				DOUBLEBUF | HWSURFACE)
-
-	@filter()
-	def onDEBUG(self):
-		print event
-		return False, event
+		screen = pygame.display.set_mode((640, 480),	DOUBLEBUF | HWSURFACE)
 
 	@listener("keyup")
 	def onKEYUP(self, key, mod):
@@ -37,7 +31,6 @@ def main():
 	event = PyGameManager()
 	test = Test(event)
 
-	from time import sleep
 	sleep(1)
 
 	while True:

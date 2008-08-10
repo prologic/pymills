@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
+from pymills import event
 from pymills.event import *
 from pymills.event.timers import Timers
 
@@ -20,8 +21,11 @@ class HelloWorld(Component):
 		print "Bar"
 
 def main():
-	HelloWorld(e)
-	timers = Timers(e)
+	event.manager += HelloWorld()
+
+	timers = Timers()
+	event.manager += timers
+
 
 	timers.add(5, Event("Hello"), "hello")
 	timers.add(1, Event("Foo"), "foo", persist=True)
@@ -29,7 +33,7 @@ def main():
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			timers.poll()
 		except KeyboardInterrupt:
 			break

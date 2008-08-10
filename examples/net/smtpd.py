@@ -16,6 +16,7 @@ import optparse
 from mailbox import Maildir
 from traceback import format_exc
 
+from pymills import event
 from pymills.event import *
 from pymills import __version__
 from pymills.net.smtp import SMTP
@@ -43,7 +44,7 @@ def parse_options():
 			help="Enable daemon mode (Default: False)")
 	parser.add_option("-b", "--bind",
 			action="store", type="str", default="0.0.0.0:25", dest="bind",
-			help="Bind to address:[port] (UDP) (test remote events)")
+			help="Bind to address:[port]")
 	parser.add_option("-p", "--path",
 			action="store", default="/var/mail/", dest="path",
 			help="Path to store mailI (Default: /var/mail/)")
@@ -142,12 +143,13 @@ def main():
 	if not os.path.exists(path):
 		os.makedirs(path)
 
-	mta = MTA(e, address=address, port=port)
-	MDA(e, path=opts.path)
+	mta = MTA(port, address)
+	event.manager += mta
+	event.manager += MDA(path=opts.path)
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			mta.poll()
 		except UnhandledEvent:
 			pass

@@ -4,10 +4,11 @@
 
 import optparse
 
+from pymills import event
+from pymills.event import *
 from pymills.io import Stdin
 from pymills.net.sockets import TCPClient
 from pymills import __version__ as systemVersion
-from pymills.event import listener, Manager, Debugger, UnhandledEvent
 
 USAGE = "%prog [options] <host> [<port>]>"
 VERSION = "%prog v" + systemVersion
@@ -71,21 +72,23 @@ def main():
 	else:
 		port = 23
 
-	e = Manager()
-	stdin = Stdin(e)
+	stdin = Stdin()
 
-	if opts.debug:
-		debugger = Debugger(e)
-		debugger.IgnoreEvents.extend(["Read", "Write"])
+	debugger.set(opts.debug)
+	debugger.IgnoreEvents.extend(["Read", "Write"])
 
-	telnet = Telnet(e)
+	telnet = Telnet()
+
+	event.manager += stdin
+	event.manager += telnet
+	event.manager += debugger
 
 	print "Trying %s..." % host
 	telnet.open(host, port, ssl=opts.ssl)
 
 	while telnet.connected:
 		try:
-			e.flush()
+			manager.flush()
 			stdin.poll()
 			telnet.poll()
 		except KeyboardInterrupt:

@@ -6,6 +6,7 @@ import hotshot
 import optparse
 import hotshot.stats
 
+from pymills import event
 from pymills.event import *
 from pymills.net.sockets import TCPServer
 from pymills.net.http import HTTP, Response
@@ -52,10 +53,6 @@ class Test(Component):
 		response.body = "OK"
 		self.send(Response(request, response), "response")
 
-#	@filter()
-#	def onALL(self, event, *args, **kwargs):
-#		pass
-
 class WebServer(TCPServer, HTTP): pass
 
 ###
@@ -78,12 +75,14 @@ def main():
 	debugger.set(opts.debug)
 	debugger.IgnoreEvents = ["Read", "Write", "Close"]
 
-	server = WebServer(e, port, address)
-	Test(e)
+	server = WebServer(port, address)
+	#event.manager += debugger
+	event.manager += server
+	event.manager += Test()
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			server.poll()
 		except UnhandledEvent:
 			pass

@@ -4,7 +4,8 @@
 
 from time import sleep
 
-from pymills.event import listener, Component, Event, Manager
+from pymills import event
+from pymills.event import *
 
 class Foo(Component):
 
@@ -20,13 +21,12 @@ class Bar(Component):
 		print "Bar!"
 
 def main():
-	e = Manager()
-	Foo(e).link(Bar(e))
+	event.manager += (Foo() + Bar())
 
 	while True:
 		try:
-			e.flush()
-			e.push(Event("Foo"), "foo")
+			manager.flush()
+			manager.push(Event("Foo"), "foo")
 			sleep(1)
 		except KeyboardInterrupt:
 			break

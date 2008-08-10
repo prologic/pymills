@@ -18,6 +18,7 @@ import optparse
 import hotshot.stats
 
 import pymills
+from pymills import event
 from pymills.event import *
 from pymills.misc import duration
 
@@ -159,10 +160,14 @@ class Monitor(Component):
 def main():
 	opts, args = parse_options()
 
-	monitor = Monitor(e)
+	monitor = Monitor()
+	event.manager += monitor
+
 	state = State(e)
+	event.manager += stats
 
 	debugger.set(opts.debug)
+	event.manager += debugger
 
 	if opts.listen or args:
 		nodes = []
@@ -183,7 +188,8 @@ def main():
 			else:
 				address, port = opts.bind, 8000
 
-		bridge = Bridge(e, port=port, address=address, nodes=nodes)
+		bridge = Bridge(port, address=address, nodes=nodes)
+		event.manager += bridge
 	else:
 		bridge = DummyBridge()
 
@@ -191,34 +197,34 @@ def main():
 		print "Setting up Test..."
 		if opts.concurrency > 1:
 			for c in xrange(int(opts.concurrency)):
-				Test(e, channel=c)
+				event.manager ++ Test(channel=c)
 		else:
-			Test(e)
+			event.manager += Test()
 		monitor.sTime = time.time()
 	elif opts.listen:
 		print "Setting up Receiver..."
 		if opts.concurrency > 1:
 			for c in xrange(int(opts.concurrency)):
-				Receiver(e, channel=c)
+				event.manager += Receiver(channel=c)
 		else:
-			Receiver(e)
+			event.manager += Receiver()
 	elif args:
 		print "Setting up Sender..."
 		if opts.concurrency > 1:
 			for c in xrange(int(opts.concurrency)):
-				Sender(e, channel=c)
+				event.manager += Sender(e, channel=c)
 		else:
-			Sender(e)
+			event.manager += Sender(e)
 	else:
 		print "Setting up Sender..."
 		print "Setting up Receiver..."
 		if opts.concurrency > 1:
 			for c in xrange(int(opts.concurrency)):
-				Sender(e, channel=c)
-				Receiver(e, channel=c)
+				event.manager += Sender(e, channel=c)
+				event.manager += Receiver(e, channel=c)
 		else:
-			Sender(e)
-			Receiver(e)
+			event.manager += Sender(e)
+			event.manager += Receiver(e)
 		monitor.sTime = time.time()
 
 	if opts.profile:
@@ -227,22 +233,22 @@ def main():
 
 	if opts.concurrency > 1:
 		for c in xrange(int(opts.concurrency)):
-			e.push(Hello("hello"), "hello", c)
+			manager.push(Hello("hello"), "hello", c)
 	else:
-		e.push(Hello("hello"), "hello")
+		manager.push(Hello("hello"), "hello")
 
 	while not state.done:
 		try:
-			e.flush()
+			manager.flush()
 			bridge.poll()
 
 			if opts.events > 0 and monitor.events > opts.events:
-				e.send(Stop(), "stop")
+				manager.send(Stop(), "stop")
 			if opts.time > 0 and (time.time() - monitor.sTime) > opts.time:
-				e.send(Stop(), "stop")
+				manager.send(Stop(), "stop")
 
 		except KeyboardInterrupt:
-			e.send(Stop(), "stop")
+			manager.send(Stop(), "stop")
 
 	print
 

@@ -4,8 +4,8 @@
 
 from time import sleep
 
-from pymills.event import listener, filter, workers
-from pymills.event import Component, Worker, Event, Manager
+from pymills import event
+from pymills.event import *
 
 class WorkerOne(Worker):
 
@@ -46,15 +46,14 @@ class Master(Component):
 		print message
 
 def main():
-	e = Manager()
-	Master(e)
-	WorkerOne(e, start=True)
-	WorkerTwo(e, start=True)
+	event.manager += Master()
+	event.manager += WorkerOne(start=True)
+	event.manager += WorkerTwo(start=True)
 
 	while True:
 		try:
-			e.flush()
-			e.push(Event("Hello", "Hello!"), "hello")
+			manager.flush()
+			manager.push(Event("Hello", "Hello!"), "hello")
 			sleep(1)
 		except KeyboardInterrupt:
 			break

@@ -4,6 +4,7 @@
 
 from time import time
 
+from pymills import event
 from pymills.event import *
 
 class Foo(Component):
@@ -14,17 +15,18 @@ class Foo(Component):
 
 def main():
 	debugger.IgnoreEvents = ["Read", "Write"]
-	bridge = Bridge(e, port=8001, nodes=[("127.0.0.1", 8000)])
-	Foo(e)
+	bridge = Bridge(8001, nodes=[("127.0.0.1", 8000)])
+
+	event.manager += bridge + debugger + Foo()
 
 	sTime = time()
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			bridge.poll()
 			if (time() - sTime) > 5:
-				e.push(Event("Hello", "hello"), "hello")
+				manager.push(Event("Hello", "hello"), "hello")
 				sTime = time()
 		except KeyboardInterrupt:
 			break

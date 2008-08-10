@@ -45,6 +45,23 @@ class Manager(object):
 	def __len__(self):
 		return len(self._queue)
 
+	def __add__(self, y):
+		y.register(self.manager)
+		return self
+	
+	def __iadd__(self, y):
+		if isinstance(self, Manager):
+			y.register(self.manager)
+			return self
+		else:
+			raise TypeError(
+					"unsupported operand type(s) for +: '%s' and '%s'" % (
+						self, y))
+
+	def __sub__(self, y):
+		y.unregister()
+		return self
+
 	def getChannels(self):
 		"""E.getChannels() -> list
 
@@ -217,7 +234,7 @@ class Manager(object):
 
 
 class Component(Manager):
-	"""Component(Manager) -> new component object
+	"""Component() -> new component object
 
 	This should be sub-classed with methods defined for filters
 	and listeners. Only one instance of any component can be
@@ -241,31 +258,20 @@ class Component(Manager):
 	}
 	"""
 
+	channel = None
+
 	def __init__(self, *args, **kwargs):
 		super(Component, self).__init__(*args, **kwargs)
 
-		manager = kwargs.get("manager", None)
-
-		if manager is not None:
-			self.manager = manager
-		else:
-			self.manager = self
-			if len(args) > 0:
-				if isinstance(args[0], Component) or isinstance(args[0], Manager):
-					self.manager = args[0]
-
-		self._links = []
-
-		self.channel = kwargs.get(
-				"channel",
-				getattr(self.__class__, "channel", None))
-
-		self.register(self.manager)
+		self.channel = kwargs.get("channel", self.channel)
+		self.register(self)
 
 	def __del__(self):
 		self.unregister()
 
 	def register(self, manager):
+		self.manager = manager
+
 		handlers = [x[1] for x in getmembers(
 			self, lambda x: ismethod(x) and
 			callable(x) and x.__name__.startswith("on") and
@@ -277,15 +283,7 @@ class Component(Manager):
 			else:
 				channel = handler.channel
 
-			manager.add(handler, channel)
-
-			self._handlers.add(handler)
-
-			if channel in self._channels:
-				self._channels[channel].append(handler)
-				self._channels[channel].sort(cmp=_sortHandlers)
-			else:
-				self._channels[channel] = [handler]
+			self.manager.add(handler, channel)
 
 	def unregister(self):
 		"""C.unregister() -> None
@@ -296,27 +294,8 @@ class Component(Manager):
 
 		for handler in self.getHandlers().copy():
 			self.manager.remove(handler)
-			self.remove(handler)
 
-	def link(self, component):
-		"""C.link(component) -> None
-
-		Link the given component to the current component.
-		"""
-
-		if component not in self._links:
-			self._links.append(component)
-			component.register(self)
-
-	def unlink(self, component):
-		"""C.unlink(component) -> None
-
-		Un-Link the given component from the current component.
-		"""
-
-		if component in self._links:
-			self._links.remove(component)
-			component.unregister(self)
+		self.manager = self
 
 
 class Worker(Component, Thread):

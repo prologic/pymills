@@ -144,13 +144,14 @@ from pymills.event.bridge import Bridge, DummyBridge
 from pymills.event.timers import Timers
 from pymills.event.debugger import Debugger
 
-e = Manager()
-debugger = Debugger(e)
-timers = Timers(e)
+manager = Manager()
+debugger = Debugger()
+timers = Timers()
 
 __all__ = (
-	"e",
+	"manager",
 	"debugger",
+	"timers",
 	"filter",
 	"listener",
 	"Event",

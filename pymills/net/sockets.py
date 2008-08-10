@@ -44,19 +44,16 @@ class Close(Event): pass
 
 class Client(Component):
 
-	def __init__(self, *args, **kwargs):
-		super(Client, self).__init__(*args, **kwargs)
+	host = ""
+	port = 0
+	ssl = False
+	server = {}
+	issuer = {}
+	connected = False
+	buffer = []
 
-		self.host = ""
-		self.port = 0
-		self.ssl = False
-		self.server = {}
-		self.issuer = {}
-		self.connected = False
-		self.buffer = []
-
-		self._fds = []
-		self._closeFlag = False
+	_fds = []
+	_closeFlag = False
 
 	def poll(self, wait=POLL_INTERVAL):
 		try:
@@ -154,9 +151,6 @@ class Client(Component):
 
 class TCPClient(Client):
 
-	def __init__(self, *args, **kwargs):
-		super(TCPClient, self).__init__(*args, **kwargs)
-
 	def open(self, host, port, ssl=False, bind=None):
 		self._sock = socket.socket(
 				socket.AF_INET,
@@ -198,9 +192,6 @@ class TCPClient(Client):
 
 class UDPClient(Client):
 
-	def __init__(self, event):
-		super(UDPClient, self).__init__(event)
-
 	def open(self, host, port):
 		self._sock = socket.socket(
 				socket.AF_INET,
@@ -239,15 +230,12 @@ class UDPClient(Client):
 
 class Server(Component):
 
-	def __init__(self, *args, **kwargs):
-		super(Server, self).__init__(*args, **kwargs)
+	address = ""
+	port = 0
+	buffers = {}
 
-		self.address = ""
-		self.port = 0
-		self.buffers = {}
-
-		self._fds = []
-		self._closeFlags = []
+	_fds = []
+	_closeFlags = []
 
 	def __getitem__(self, y):
 		"x.__getitem__(y) <==> x[y]"
@@ -367,8 +355,8 @@ class Server(Component):
 
 class TCPServer(Server):
 
-	def __init__(self, event=None, port=1234, address="", **kwargs):
-		super(TCPServer, self).__init__(event, **kwargs)
+	def __init__(self, port, address="", **kwargs):
+		super(TCPServer, self).__init__(**kwargs)
 
 		self._sock = socket.socket(
 				socket.AF_INET, socket.SOCK_STREAM)
@@ -387,8 +375,8 @@ class TCPServer(Server):
 
 class UDPServer(Server):
 
-	def __init__(self, event=None, port=1234, address="", **kwargs):
-		super(UDPServer, self).__init__(event, **kwargs)
+	def __init__(self, port, address="", **kwargs):
+		super(UDPServer, self).__init__(**kwargs)
 
 		self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

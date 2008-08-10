@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-from pymills.event import listener, Manager
+from pymills import event
+from pymills.event import *
 from pymills.net.sockets import UDPServer
 
 class EchoServer(UDPServer):
@@ -25,16 +26,15 @@ class EchoServer(UDPServer):
 		print "ERROR (%s): %s" % (sock, msg)
 
 def main():
-	e = Manager()
-	server = EchoServer(e, 1234)
+	server = EchoServer(1234)
+	event.manager += server
 
 	while True:
 		try:
-			server.process()
-			e.flush()
+			manager.flush()
+			server.poll()
 		except KeyboardInterrupt:
 			break
-	e.flush()
 
 if __name__ == "__main__":
 	main()

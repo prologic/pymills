@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: set sw=3 sts=3 ts=3
 
-from pymills.event import filter, listener, Manager, UnhandledEvent
+from pymills import event
+from pymills.event import *
 from pymills.net.sockets import TCPServer
 
 class Echo(TCPServer):
@@ -13,12 +14,12 @@ class Echo(TCPServer):
 		self.write(sock, data)
 	
 def main():
-	e = Manager()
-	echo = Echo(e, 8000)
+	echo = Echo(8000)
+	event.manager += echo
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			echo.poll()
 		except UnhandledEvent:
 			pass

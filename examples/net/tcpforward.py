@@ -2,6 +2,7 @@
 
 import optparse
 
+from pymills import event
 from pymills.event import *
 from pymills import __version__ as systemVersion
 from pymills.net.sockets import TCPServer, TCPClient
@@ -130,14 +131,18 @@ def main():
 		connect = (args[0], 8000)
 
 	debugger.set(opts.debug)
+	event.manager ++ debugger
 
-	server = Server(e, address=bind[0], port=bind[1])
-	target = Target(e)
+	server = Server(bind[1], bind[0])
+	event.manager += server
+
+	target = Target()
+	event.manager += target
 	target.connect = connect
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			server.poll()
 			if target.connected:
 				target.poll()

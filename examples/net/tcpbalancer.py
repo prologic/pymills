@@ -7,10 +7,10 @@ import hotshot
 import optparse
 import hotshot.stats
 
-from pymills.event import UnhandledEvent, Event
+from pymills import event
+from pymills.event import *
 from pymills import __version__ as systemVersion
 from pymills.net.sockets import TCPServer, TCPClient
-from pymills.event import filter, listener, Manager, Component
 
 USAGE = "%prog [options] <host1:port1> <host2:port2> [<hostN:portN>]"
 VERSION = "%prog v" + systemVersion
@@ -171,7 +171,7 @@ def main():
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			server.poll()
 			if target.connected:
 				target.poll()
@@ -242,19 +242,23 @@ def main():
 		profiler.start()
 
 	debugger.set(opts.debug)
+	event.manager += debugger
 
-	stats = Stats(e)
+	stats = Stats()
+	event.manager += stats
 
-	server = Server(e, address=bind[0], port=bind[1])
+	server = Server(bind[1], bind[0])
+	event.manager += server
 
 	targets = []
 	for i, connect in enumerate(connections):
-		target = Target(e, channel="target:%d" % i)
+		target = Target(channel="target:%d" % i)
 		target.connect = connect
+		event.manager += target
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 			server.poll()
 			[target.poll() for target in targets if target.connected]
 

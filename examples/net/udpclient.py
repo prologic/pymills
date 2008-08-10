@@ -4,8 +4,9 @@
 
 import readline
 
+from pymills import event
+from pymills.event import *
 from pymills.net.sockets import UDPClient
-from pymills.event import listener, Manager
 
 class UDPClient(UDPClient):
 
@@ -20,18 +21,17 @@ class UDPClient(UDPClient):
 
 def main(host, port):
 
-	event = Manager()
-	client = UDPClient(event)
+	client = UDPClient()
+	event.manager += client
 
 	print "Trying %s..." % host
 	client.open(host, int(port))
 
 	while client.connected:
-		client.process()
-		event.flush()
+		manager.flush()
+		client.poll()
 		line = raw_input().strip()
 		client.write("%s\n" % line)
-	event.flush()
 
 if __name__ == "__main__":
 	import sys

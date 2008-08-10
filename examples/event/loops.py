@@ -5,7 +5,8 @@
 import math
 from time import time
 
-from pymills.event import listener, Component, Manager, Event
+from pymills import event
+from pymills.event import *
 
 class Loop(Component):
 
@@ -17,16 +18,15 @@ class Loop(Component):
 		self.push(Event("Loop"), "foo")
 
 def main():
-	e = Manager()
-	loop = Loop(e)
+	event.manager += Loop()
 
-	e.push(Event("Test"), "foo")
+	manager.push(Event("Test"), "foo")
 
 	sTime = time()
 
 	while True:
 		try:
-			e.flush()
+			manager.flush()
 		except KeyboardInterrupt:
 			break
 

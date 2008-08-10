@@ -107,21 +107,16 @@ class SMTP(Component):
 	COMMAND = 0
 	DATA = 1
 
-	def __init__(self, *args, **kwargs):
-		"initializes x; see x.__class__.__doc__ for signature"
+	__buffers = {}
 
-		super(SMTP, self).__init__(*args, **kwargs)
+	__states = {}
 
-		self.__buffers = {}
+	__greeting = None
+	__mailfrom = None
+	__rcpttos = []
+	__data = None
 
-		self.__states = {}
-
-		self.__greeting = None
-		self.__mailfrom = None
-		self.__rcpttos = []
-		self.__data = None
-
-		self.__fqdn = socket.getfqdn()
+	__fqdn = socket.getfqdn()
 
 	###
 	### Methods

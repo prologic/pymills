@@ -6,6 +6,7 @@ import optparse
 from time import sleep
 from socket import gethostname
 
+from pymills import event
 from pymills.event import *
 from pymills.net.irc import IRC
 from pymills.net.sockets import TCPClient
@@ -65,7 +66,9 @@ def main():
 	debugger.set(opts.debug)
 	debugger.IgnoreEvents = ["Read", "Write", "Raw"]
 
-	bot = Bot(e)
+	bot = Bot()
+	event.manager += bot
+	event.manager += debugger
 
 	bot.open(host, port, opts.ssl)
 
@@ -74,7 +77,7 @@ def main():
 
 	while bot.connected:
 		try:
-			e.flush()
+			manager.flush()
 			bot.poll()
 		except UnhandledEvent:
 			pass

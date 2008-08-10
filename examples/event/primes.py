@@ -14,9 +14,8 @@ import optparse
 from uuid import uuid4 as uuid
 
 import pymills
-from pymills.event import listener, filter, Event
-from pymills.event.core import Component, Manager
-from pymills.event.bridge import Bridge
+from pymills import event
+from pymills.event import *
 
 USAGE = "%prog [options] [host:[port]]"
 VERSION = "%prog v" + pymills.__version__
@@ -240,11 +239,15 @@ def main():
 
 	opts, args = parse_options()
 
-	stats = Stats(e)
-	state = State(e)
+	stats = Stats()
+	event.manager += stats
+
+	state = State()
+	event.manager += state
 
 	debugger.set(opts.debug)
 	debugger.IgnoreEvents.extend(["Read", "Write"])
+	event.manager += debugger
 
 	nodes = []
 	if args:
@@ -264,30 +267,31 @@ def main():
 		else:
 			address, port = opts.bind, 8000
 
-	bridge = Bridge(e, port=port, address=address, nodes=nodes)
+	bridge = Bridge(port, address=address, nodes=nodes)
 	bridge.IgnoreEvents.extend(["Run", "Prime"])
 	if not opts.slave:
 		bridge.IgnoreEvents.extend(["Ready", "Busy", "Done"])
+	event.manager += bridge
 
-	PrimeFinder(e)
+	event.manager += PrimeFinder()
 
 	if not opts.slave:
 		taskman = TaskManager(e)
 		if not opts.wait:
-			e.push(Start(), "start")
+			manager.push(Start(), "start")
 
 	while not state.done:
 		try:
-			e.flush()
+			manager.flush()
 			bridge.poll()
 
 			if opts.primes > 0 and stats.primes > opts.primes:
-				e.send(Stop(), "stop")
+				manager.send(Stop(), "stop")
 			if opts.time > 0 and (time.time() - stats.sTime) > opts.time:
-				e.send(Stop(), "stop")
+				manager.send(Stop(), "stop")
 
 		except KeyboardInterrupt:
-			e.send(Stop(), "stop")
+			manager.send(Stop(), "stop")
 
 	print
 
