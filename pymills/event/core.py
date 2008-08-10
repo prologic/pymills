@@ -153,8 +153,6 @@ class Manager(object):
 			for event in queue:
 				channel = event.channel
 				handlers = self.getHandlers("global") + self.getHandlers(channel)
-				if handlers == []:
-					raise UnhandledEvent, event
 				try:
 					for handler in handlers:
 						if handler.args:
@@ -167,6 +165,8 @@ class Manager(object):
 						else:
 							if handler():
 								break
+					else:
+						raise UnhandledEvent, event
 				except:
 					raise
 				finally:
@@ -195,8 +195,6 @@ class Manager(object):
 
 		if self.manager == self:
 			handlers = self.getHandlers("global") + self.getHandlers(channel)
-			if handlers == []:
-				raise UnhandledEvent, event
 			try:
 				for handler in handlers:
 						if handler.args:
@@ -209,6 +207,8 @@ class Manager(object):
 						else:
 							if handler():
 								break
+				else:
+					raise UnhandledEvent, event
 			except:
 				raise
 		else:
