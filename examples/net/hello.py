@@ -76,7 +76,7 @@ def main():
 	debugger.IgnoreEvents = ["Read", "Write", "Close"]
 
 	server = WebServer(port, address)
-	#event.manager += debugger
+	event.manager += debugger
 	event.manager += server
 	event.manager += Test()
 
