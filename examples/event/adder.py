@@ -69,6 +69,7 @@ def main():
 	
 	bridge = Bridge(port, address=address)
 	event.manager += bridge
+	event.manager += debugger
 	event.manager += Adder()
 
 	while True:
