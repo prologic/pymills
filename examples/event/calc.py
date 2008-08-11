@@ -93,7 +93,7 @@ def main():
 	event.manager += debugger
 
 	bridge = Bridge(port, address=address, nodes=nodes)
-	event.manager += bridge0
+	event.manager += bridge
 
 	sys.stdout.write(">>> ")
 	sys.stdout.flush()
