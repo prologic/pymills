@@ -25,12 +25,12 @@ VERSION = 1
 
 CONFIG = {
 		"general": {
-			"pidfile": os.path.join("log", "%{name}s.pid"),
+			"pidfile": os.path.join("log", "%(name)s.pid"),
 			"debug": False
 			},
 		"logging": {
 			"type": "file",
-			"file": os.path.join("log", "%{name}s.log"),
+			"file": os.path.join("log", "%(name)s.log"),
 			"level": "INFO"
 			}
 		}
@@ -124,9 +124,7 @@ class Environment(Component):
 		os.mkdir(os.path.join(self.path, "conf"))
 
 		# Create a few files
-		createFile(
-				os.path.join(self.path, "VERSION"),
-				"%s Environment Version %d" % (self.name, self.version))
+		createFile(os.path.join(self.path, "VERSION"), "%d" % self.version)
 		createFile(
 				os.path.join(self.path, "README"),
 				"This directory contains a %s Environment." % self.name)
@@ -143,7 +141,7 @@ class Environment(Component):
 				config.set(section, option, value)
 		config.write(open(configfile, "w"))
 
-		self.send(EnvCreated(), "created", self.channel)
+		self.push(EnvCreated(), "created", self.channel)
 
 	@listener("verify")
 	def onVERIFY(self, load=False):
@@ -162,24 +160,24 @@ class Environment(Component):
 			version = f.read().strip()
 			if not version:
 				msg = "No Environment version information"
-				self.send(EnvInvalid(self.env.path, msg), "invalid", self.channel)
+				self.push(EnvInvalid(self.env.path, msg), "invalid", self.channel)
 			else:
 				try:
 					verion = int(version)
 					if self.version > version:
-						self.send(
+						self.push(
 								EnvNeedsUpgrade(self.env.path),
 								"needsupgrade",
 								self.channel)
 				except ValueError:
 					msg = "Environment version information invalid"
-					self.send(
+					self.push(
 							EnvInvalid(self.env.path, msg),
 							"invalid",
 							self.channel)
 
 		if load:
-			self.send(LoadEnv90, "load", self.channel)
+			self.push(LoadEnv90, "load", self.channel)
 
 	@listener("load")
 	def onLOAD(self, verify=False):
@@ -190,14 +188,14 @@ class Environment(Component):
 		"""
 
 		if verify:
-			self.send(VerifyEnv(load=True), "verify", self.channel)
+			self.push(VerifyEnv(load=True), "verify", self.channel)
 		else:
 
 			# Create Config Component
 			configfile = os.path.join(self.path, "conf", "%s.ini" % self.name)
 			self.config = Config(configfile)
 			self.manager += self.config
-			self.send(LoadConfig(), "load", "config")
+			self.push(LoadConfig(), "load", "config")
 
 			# Create Logger Component
 			logname = self.name
@@ -209,4 +207,4 @@ class Environment(Component):
 			self.log = Logger(logname, logtype, loglevel, logfile)
 			self.manager += self.log
 
-			self.send(EnvLoaded(), "loaded", self.channel)
+			self.push(EnvLoaded(), "loaded", self.channel)
