@@ -13,7 +13,6 @@ import sys
 import optparse
 from os.path import isfile
 from optparse import _match_abbrev
-from ConfigParser import ConfigParser
 
 from pymills.datatypes import CaselessDict
 
@@ -46,30 +45,6 @@ def writePID(file):
 		fd.close()
 	except Exception, e:
 		raise Error("Error writing pid to %s: %s" % (file, e))
-
-
-def loadConfig(filename, *paths):
-	"""loadConfig(filename, *paths) -> ConfigParser object
-
-	Load the configuration file specified by filename
-	searching all the paths given by paths.
-	If no configuration file could be loaded, an IOError
-	exception is raised.
-	"""
-
-	from ConfigParser import ConfigParser
-
-	conf = ConfigParser()
-	files = [ \
-			"/etc/%s" % filename,
-			"%s/%s" % (os.getcwd(), filename),
-			os.path.expanduser("~/.%s" % filename)]
-	files += ["%s/%s" % (path, filename) for path in paths]
-	if conf.read(files) == []:
-		raise IOError("Could not read any config files. " \
-				"Tried: %s" % files)
-	else:
-		return conf
 
 
 def daemonize(stdin="/dev/null", stdout="/dev/null",
@@ -391,24 +366,6 @@ def safe__import__(moduleName, globals=globals(),
 		for name in sys.modules.copy():
 			if not name in alreadyImported:
 				del (sys.modules[name])
-
-
-class Config(ConfigParser, object):
-
-	def get(self, section, option, default=None, raw=False, vars=None):
-		if self.has_option(section, option):
-			return super(Config, self).get(section, option, raw, vars)
-		else:
-			return default
-
-	def getint(self, section, option, default=0):
-		return int(self.get(section, option, default))
-
-	def getfloat(self, section, option, default=0.0):
-		return float(self.get(section, option, default))
-
-	def getboolean(self, section, option, default=False):
-		return bool(self.get(section, option, default))
 
 
 def notags(str):
