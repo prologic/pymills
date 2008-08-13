@@ -2,87 +2,121 @@
 # Date:		10th June 2006
 # Author:	James Mills, prologic at shortcircuit dot net dot au
 
-"""Environment Container
+"""Environment Component
 
-This module contains a base environment that normally should be sub-classed to
-implement an application/system specific environment. An environment is
-designed to act as a container for things like:
- * config file
- * logging
- * database connections
- * event managers
- * etc...
-
-Instead of passing multiple objects around a system, you can pass a single
-instance of an environment which holds all the objects needed by a system.
+An Environment Component that by default sets up a COnfig and Logger
+component and is used to create, load and manage system/application
+environments.
 """
+
+from __future__ import with_statement
 
 import os
 
-from utils import Config
-from log import newLogger
+from event import *
+from log import Logger
+from config import Config, LoadConfig, SaveConfig
+
+###
+### Constants
+###
 
 VERSION = 1
 
-CONFIG = []
+CONFIG = {
+		"general": {
+			"pidfile": os.path.join("log", "%{name}s.pid"),
+			"debug": False
+			},
+		"logging": {
+			"type": "file",
+			"file": os.path.join("log", "%{name}s.log"),
+			"level": "INFO"
+			}
+		}
 
-class BaseEnvironment(object):
-	"""BaseEnvironment(path, name="pymills", version=VERSION, config=CONFIG,
-			create=False) -> new environment object
+###
+### Functions
+###
 
-	Creates a new environment object that by default only
-	holds configfile and log instances.
+def createFile(filename, data=None):
+	fd = open(filename, "w")
+	if data:
+		fd.write(data)
+	fd.close()
 
-	This should be sub-classed to provide an application
-	specific environment.
+###
+### Events
+###
+
+class CreateEnv(Event):
+	"""CreateEnv(Event) -> CreateEnv Event"""
+
+class LoadEnv(Event):
+	"""LoadEnv(Event) -> LoadEnv Event"""
+
+class EnvCreated(Event):
+	"""EnvCreated(Event) -> EnvCreated Event"""
+
+class EnvLoaded(Event):
+	"""EnvLoaded(Event) -> Loaded Event"""
+
+class EnvInvalid(Event):
+	"""EnvInvalid(Event) -> EnvInvalid Event
+
+	args: path, msg
 	"""
 
-	def __init__(self, path, name="pymills", version=VERSION, config=CONFIG,
-		create=False):
-		"initializes x; see x.__class__.__doc__ for signature"
+class EnvNeedsUpgrade(Event):
+	"""EnvNeedsUpgrade(Event) -> EnvNeedsUpgrade Event
+
+	args: path, msg
+	"""
+
+class EnvUpgraded(Event):
+	"""EnvUpgraded(Event) -> Upgraded Event"""
+
+###
+### Components
+###
+
+class Environment(Component):
+	"""Environment(path, name, version=VERSION, config=CONFIG) -> Environment
+
+	Creates a new environment component that by default only
+	holds configuration and logger components.
+
+	This component can be extended to provide more complex
+	system and application environments. This component will
+	expose the following events:
+	 * EnvCreated
+	 * EnvLoaded
+	 * EnvInvalid
+	 * EnvNeedsUpgrade
+	 * EnvUpgraded
+	"""
+
+	channel = "env"
+
+	version = VERSION
+	config = CONFIG
+
+	def __init__(self, path, name, config=None):
+		super(Environment, self).__init__()
 
 		self.path = os.path.abspath(os.path.expanduser(path))
 		self.name = name
-		self.version = version
-		self.config = config
 
-		if create:
-			self.create()
-		else:
-			self.verify()
+		if config:
+			self.config.update(config)
 
-		self.loadConfig()
-		self.setupLog()
+	@listener("create")
+	def onCREATE(self):
+		"""E.onCREATE()
 
-	def reload(self):
-		"""E.reload() -> None
-
-		Reloads the environment.
-		By default this only reloads the config file.
-
-		Sub-classes may override this to create their
-		own custom reload method and may also call this to
-		reload the default items.
-		"""
-
-		self.loadConfig()
-
-	def create(self):
-		"""E.create() -> None
-
-		Creates the environment. The environment given
+		Create a new Environment. The Environment path given
 		by self.path must not already exist.
-
-		Sub-classes may override this to create their own
-		custom environment and may also call this to
-		create the default structure.
 		"""
-
-		def createFile(filename, data=None):
-			fd = open(filename, 'w')
-			if data is not None:
-				fd.write(data)
-			fd.close()
 
 		# Create the directory structure
 		os.mkdir(self.path)
@@ -90,103 +124,89 @@ class BaseEnvironment(object):
 		os.mkdir(os.path.join(self.path, "conf"))
 
 		# Create a few files
-		createFile(os.path.join(self.path, "VERSION"),
-				"%s Environment Version %d\n" % (
-					self.name, self.version))
-		createFile(os.path.join(self.path, "README"),
-				"This directory contains a %s environment." % self.name)
+		createFile(
+				os.path.join(self.path, "VERSION"),
+				"%s Environment Version %d" % (self.name, self.version))
+		createFile(
+				os.path.join(self.path, "README"),
+				"This directory contains a %s Environment." % self.name)
 
 		# Setup the default configuration
-		configfile = os.path.join(
-				self.path, "conf", "%s.ini") % self.name
+		configfile = os.path.join(self.path, "conf", "%s.ini" % self.name)
 		createFile(configfile)
-		config = Config()
+		config = Config(configfile)
 		config.read(configfile)
-		for section, name, value in self.config:
+		for section in self.config:
 			if not config.has_section(section):
 				config.add_section(section)
-			config.set(section, name, value)
-		fp = open(configfile, "w")
-		config.write(fp)
-		fp.close()
-		self.loadConfig()
+			for option, value in self.config[section].iteritems():
+				config.set(section, option, value)
+		config.write(open(configfile, "w"))
 
-	def verify(self):
-		"""E.verify() -> None
+		self.send(EnvCreated(), "created", self.channel)
 
-		Verify that the environment is valid.
-		Sub-classes should not override this.
+	@listener("verify")
+	def onVERIFY(self, load=False):
+		"""E.onVERIFY(load=False) -> None
+
+		Verify the Environment by checking it's version against
+		the expected version.
+
+		If the Environment's version does not match, send
+		an EnvNeedsUpgrade event. If the Environment is
+		invalid and cannot be read, send an EnvInvalid
+		event. If load=True, send a LoadEnv event.
 		"""
 
-		fd = open(os.path.join(self.path, "VERSION"), "r")
-		try:
-			version = fd.readlines()[0]
-		except:
-			version = ""
-		fd.close()
-		assert version.startswith("%s Environment" % self.name)
-		self.version = int(
-				version.split(
-					"%s Environment Version" % self.name)[1].strip())
+		with open(os.path.join(self.path, "VERSION"), "r") as f:
+			version = f.read().strip()
+			if not version:
+				msg = "No Environment version information"
+				self.send(EnvInvalid(self.env.path, msg), "invalid", self.channel)
+			else:
+				try:
+					verion = int(version)
+					if self.version > version:
+						self.send(
+								EnvNeedsUpgrade(self.env.path),
+								"needsupgrade",
+								self.channel)
+				except ValueError:
+					msg = "Environment version information invalid"
+					self.send(
+							EnvInvalid(self.env.path, msg),
+							"invalid",
+							self.channel)
 
-	def needsUpgrade(self):
-		"""E.needsUpgrade() -> bool
+		if load:
+			self.send(LoadEnv90, "load", self.channel)
 
-		Return True if the environment needs upgrading,
-		otherwise return False.
-		Sub-classes should not override this.
+	@listener("load")
+	def onLOAD(self, verify=False):
+		"""E.onLOAD(verify=False) -> None
+
+		Load the Environment. Load the configuration and logging
+		components. If verify=True, verify the Environment first.
 		"""
 
-		return VERSION > self.version
+		if verify:
+			self.send(VerifyEnv(load=True), "verify", self.channel)
+		else:
 
-	def loadConfig(self):
-		"""E.loadConfig() -> None
+			# Create Config Component
+			configfile = os.path.join(self.path, "conf", "%s.ini" % self.name)
+			self.config = Config(configfile)
+			self.manager += self.config
+			self.send(LoadConfig(), "load", "config")
 
-		Load the configuration file from the environment.
-		Sub-classes should not override this unless they
-		want to load a different type of config file.
-		By default INI-style config files are loaded
-		using Python's Standard ConfigParser Library
-		"""
+			# Create Logger Component
+			logname = self.name
+			logtype = self.config.get("logging", "type")
+			loglevel = self.config.get("logging", "level")
+			logfile = config.get("logging", "file") % {"name": self.name}
+			if not os.path.isabs(logfile):
+				logfile = os.path.join(self.path, logfile)
+			self.log = Logger(logname, logtype, loglevel, logfile)
+			self.manager += self.log
 
-		configfile = os.path.join(
-				self.path, "conf", "%s.ini") % self.name
-		self.config = Config()
-		self.config.read(configfile)
-		self.config.path = configfile
-
-	def saveConfig(self):
-		"""E.saveConfig() -> None
-
-		Save the configuration file in the environment.
-		Sub-classes need not override this.
-		By default INI-style config files are saved
-		using Python's Standard ConfigParser Library
-		"""
-
-		configfile = os.path.join(
-				self.path, "conf", "%s.ini") % self.name
-		fp = open(configfile, "w")
-		self.config.write(fp)
-		fp.close()
-
-	def setupLog(self):
-		"""E.setupLog() -> None
-
-		Setup the log file, logging to the environment.
-		Sub-classes should not override this unless they
-		want to use their own logging mechanism.
-		By default the Python's Standard log module
-		is used.
-		"""
-
-		name = self.name
-		logType = self.config.get("logging", "type")
-		logLevel = self.config.get("logging", "level")
-		logFile = self.config.get("logging", "file")
-		if not os.path.isabs(logFile):
-			logFile = os.path.join(self.path, logFile)
-		logID = self.path
-
-		self.log = newLogger(name, logType,
-				logFile, logLevel, logID)
+			self.send(EnvLoaded(), "loaded", self.channel)
