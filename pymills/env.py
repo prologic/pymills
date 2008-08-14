@@ -102,16 +102,12 @@ class Environment(Component):
 	channel = "env"
 
 	version = VERSION
-	defaultConfig = CONFIG
 
-	def __init__(self, path, name, defaultConfig=None):
+	def __init__(self, path, name):
 		super(Environment, self).__init__()
 
 		self.path = os.path.abspath(os.path.expanduser(path))
 		self.name = name
-
-		if defaultConfig:
-			self.defaultConfig.update(defaultConfig)
 
 	@listener("create")
 	def onCREATE(self):
@@ -135,18 +131,21 @@ class Environment(Component):
 		# Setup the default configuration
 		configfile = os.path.join(self.path, "conf", "%s.ini" % self.name)
 		createFile(configfile)
-		config = Config(configfile)
-		config.read(configfile)
-		for section in self.defaultConfig:
-			if not config.has_section(section):
-				config.add_section(section)
-			for option, value in self.defaultConfig[section].iteritems():
+		self.config = Config(configfile)
+		self.manager += self.config
+		self.send(LoadConfig(), "load", "config")
+		for section in CONFIG:
+			if not self.config.has_section(section):
+				self.config.add_section(section)
+			for option, value in CONFIG[section].iteritems():
 				if type(value) == str:
 					value = value % {"name": self.name}
-				config.set(section, option, value)
-		config.write(open(configfile, "w"))
+				self.config.set(section, option, value)
+		self.send(SaveConfig(), "save", "config")
 
-		self.push(EnvCreated(), "created", self.channel)
+		print self.channel
+
+		self.send(EnvCreated(), "created", self.channel)
 
 	@listener("verify")
 	def onVERIFY(self, load=False):
