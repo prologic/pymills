@@ -143,8 +143,6 @@ class Environment(Component):
 				self.config.set(section, option, value)
 		self.send(SaveConfig(), "save", "config")
 
-		print self.channel
-
 		self.send(EnvCreated(), "created", self.channel)
 
 	@listener("verify")
@@ -209,7 +207,7 @@ class Environment(Component):
 			logfile = logfile % {"name": self.name}
 			if not os.path.isabs(logfile):
 				logfile = os.path.join(self.path, logfile)
-			self.log = Logger(logname, logtype, loglevel, logfile)
+			self.log = Logger(logfile, logname, logtype, loglevel)
 			self.manager += self.log
 
 			self.push(EnvLoaded(), "loaded", self.channel)
