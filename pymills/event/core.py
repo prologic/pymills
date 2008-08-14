@@ -141,20 +141,15 @@ class Manager(object):
 		target.
 		"""
 
-		if channel:
-			if channel == "global":
-				raise EventError("Cannot push to global channel")
-
-		event.channel = channel
-		event.target = target
-		if (target is not None) and target not in channel:
-			channel = "%s:%s" % (target, channel)
-			event.channel = channel
-
-		if self.manager == self:
-			self._queue.append(event)
+		if channel == "global":
+			raise EventError("Cannot push to global channel")
 		else:
-			self.manager.push(event, channel, target)
+			if self.manager == self:
+				event.channel = channel
+				event.target = target
+				self._queue.append(event)
+			else:
+				self.manager.push(event, channel, target)
 
 	def flush(self):
 		"""E.flushEvents() -> None
@@ -169,6 +164,9 @@ class Manager(object):
 			queue = _queue[:]
 			for event in queue:
 				channel = event.channel
+				target = event.target
+				if target is not None:
+					channel = "%s:%s" % (target, channel)
 				handlers = self.getHandlers("global") + self.getHandlers(channel)
 				if handlers == []:
 					_queue.remove(event)
@@ -201,36 +199,33 @@ class Manager(object):
 		component.
 		"""
 
-		if channel:
-			if channel == "global":
-				raise EventError("Cannot send to global channel")
-
-		event.channel = channel
-		event.target = target
-		if (target is not None) and target not in channel:
-			channel = "%s:%s" % (target, channel)
-			event.channel = channel
-
-		if self.manager == self:
-			handlers = self.getHandlers("global") + self.getHandlers(channel)
-			if handlers == []:
-				raise UnhandledEvent, event
-			try:
-				for handler in handlers:
-						if handler.args:
-							if handler.args[0] in ["e", "evt", "event"]:
-								if handler(event, *event.args, **event.kwargs):
-									break
-							else:
-								if handler(*event.args, **event.kwargs):
-									break
-						else:
-							if handler():
-								break
-			except:
-				raise
+		if channel == "global":
+			raise EventError("Cannot send to global channel")
 		else:
-			self.manager.send(event, channel, target)
+			if self.manager == self:
+				event.channel = channel
+				event.target = target
+				if target is not None:
+					channel = "%s:%s" % (target, channel)
+				handlers = self.getHandlers("global") + self.getHandlers(channel)
+				if handlers == []:
+					raise UnhandledEvent, event
+				try:
+					for handler in handlers:
+							if handler.args:
+								if handler.args[0] in ["e", "evt", "event"]:
+									if handler(event, *event.args, **event.kwargs):
+										break
+								else:
+									if handler(*event.args, **event.kwargs):
+										break
+							else:
+								if handler():
+									break
+				except:
+					raise
+			else:
+				self.manager.send(event, channel, target)
 
 
 class Component(Manager):
