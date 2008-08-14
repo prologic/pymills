@@ -17,12 +17,6 @@ from event import *
 ### Events
 ###
 
-class Log(Event):
-	"""Log(Event) -> Log Event
-
-	args: level, msg
-	"""
-
 class Debug(Log):
 	"""Debug(Log) -> Debug Log Event
 
@@ -114,12 +108,9 @@ class Logger(Component):
 	def onINFO(self, msg, *args, **kwargs):
 		self.logger.info(msg, *args, **kwargs)
 
-	@listener("warn")
+	@listener("warning")
 	def onWARNING(self, msg, *args, **kwargs):
 		self.logger.warning(msg, *args, **kwargs)
-
-	onWARN = onWARNING
-	onWARN.channel = "warn"
 
 	@listener("error")
 	def onERROR(self, msg, *args, **kwargs):
@@ -132,10 +123,3 @@ class Logger(Component):
 	@listener("critical")
 	def onCRITICAL(self, msg, *args, **kwargs):
 		self.logger.critical(msg, *args, **kwargs)
-
-	onFATAL = onCRITICAL
-	onFATAL.channel = "fatal"
-
-	@listener("log")
-	def onLOG(self, level, msg, *args, **kwargs):
-		self.logger.log(level, msg, *args, **kwargs)
