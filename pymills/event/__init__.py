@@ -16,10 +16,9 @@ of the component that are marked with a filter or listener
 decorator are added to the appropiate channel of the
 event manager given to it.
 
-Events cannot be sent to or pushed onto the global channel.
-Instead, any filters/listeners that are on this channel
-will receive '''all''' events. Any filter/listener on this
-channel has first priority.
+Event handlers that do not specify a channel, will receive
+'''all''' events. Global Event handlers are always processed
+before any channels.
 
 WHen an event is sent to either a filter or listener's
 handler, the event manager will '''try''' to apply the
@@ -113,11 +112,11 @@ def workers():
 	return [thread for thread in threads() if isinstance(thread, Worker)]
 
 
-def filter(channel="global"):
+def filter(channel=None):
 	"Decorator function for a filter"
 
 	def decorate(f):
-		f.filter = True
+		f.type = "filter"
 		f.channel = channel
 		f.args = getargspec(f)[0]
 		if f.args and f.args[0] == "self":
@@ -126,11 +125,11 @@ def filter(channel="global"):
 	return decorate
 
 
-def listener(channel="global"):
+def listener(channel=None):
 	"Decorator function for a listener"
 
 	def decorate(f):
-		f.listener = True
+		f.type = "listener"
 		f.channel = channel
 		f.args = getargspec(f)[0]
 		if f.args and f.args[0] == "self":

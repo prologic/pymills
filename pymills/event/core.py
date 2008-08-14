@@ -16,9 +16,9 @@ from pymills.event import EventError, UnhandledEvent
 
 
 def _sortHandlers(x, y):
-	if hasattr(x, "filter") and hasattr(y, "filter"):
+	if x.type == "filter" and y.type == "filter":
 		return 0
-	elif hasattr(x, "filter"):
+	elif x.type == "filter":
 		return -1
 	else:
 		return 1
@@ -36,9 +36,9 @@ class Manager(object):
 	def __init__(self, *args, **kwargs):
 		super(Manager, self).__init__()
 
+		self._global = set()
 		self._handlers = set()
 		self._channels = defaultdict(lambda: [])
-		self._channels["global"] = []
 		self._queue = []
 		self.manager = self
 
@@ -82,25 +82,22 @@ class Manager(object):
 		else:
 			return self._handlers
 
-	def add(self, handler, *channels):
-		"""E.add(handler, *channels) -> None
+	def add(self, handler, channel=None):
+		"""E.add(handler, channel) -> None
 
 		Add a new filter or listener to the event manager
-		adding it to all channels specified. if no channels
-		are given, add it to the global channel.
+		adding it to the given channel. If no channel is
+		given, add it to the global channel.
 		"""
 
-		if len(channels) == 0:
-			channels = ["global"]
-
-		if not hasattr(handler, "filter") and \
-				not hasattr(handler, "listener"):
-			raise EventError(
-					"%s is not a filter or listener" % handler)
+		if getattr(handler, "type", None) not in ["filter", "listener"]:
+			raise EventError("%s is not a filter or listener" % handler)
 
 		self._handlers.add(handler)
 
-		for channel in channels:
+		if channel is None:
+			self._global.add(handler)
+		else:
 			if channel in self._channels:
 				if handler not in self._channels[channel]:
 					self._channels[channel].append(handler)
@@ -108,21 +105,22 @@ class Manager(object):
 			else:
 				self._channels[channel] = [handler]
 
-	def remove(self, handler, *channels):
-		"""E.remove(handler, *channels) -> None
+	def remove(self, handler, channel=None):
+		"""E.remove(handler, channel=None) -> None
 
 		Remove the given filter or listener from the
-		event manager removing it from all channels
-		specified. If no channels are given, '''all'''
-		instnaces are removed. This will succeed even
-		if the specified handler has already been
-		removed.
+		event manager removing it from the given channel.
+		if channel is None, remove it from the global
+		channel. This will succeed even if the specified
+		handler has already been removed.
 		"""
 
-		if len(channels) == 0:
+		if channel is None:
+			if handler in self._global:
+				self._global.remove(handler)
 			keys = self._channels.keys()
 		else:
-			keys = channels
+			keys = [channel]
 
 		if handler in self._handlers:
 			self._handlers.remove(handler)
@@ -130,6 +128,7 @@ class Manager(object):
 		for channel in keys:
 			if handler in self._channels[channel]:
 				self._channels[channel].remove(handler)
+
 
 	def push(self, event, channel, target=None):
 		"""E.push(event, channel, target=None) -> None
@@ -141,15 +140,12 @@ class Manager(object):
 		target.
 		"""
 
-		if channel == "global":
-			raise EventError("Cannot push to global channel")
+		if self.manager == self:
+			event.channel = channel
+			event.target = target
+			self._queue.append(event)
 		else:
-			if self.manager == self:
-				event.channel = channel
-				event.target = target
-				self._queue.append(event)
-			else:
-				self.manager.push(event, channel, target)
+			self.manager.push(event, channel, target)
 
 	def flush(self):
 		"""E.flushEvents() -> None
@@ -167,7 +163,7 @@ class Manager(object):
 				target = event.target
 				if target is not None:
 					channel = "%s:%s" % (target, channel)
-				handlers = self.getHandlers("global") + self.getHandlers(channel)
+				handlers = list(self._global) + self.getHandlers(channel)
 				if handlers == []:
 					_queue.remove(event)
 					raise UnhandledEvent, event
@@ -199,33 +195,30 @@ class Manager(object):
 		component.
 		"""
 
-		if channel == "global":
-			raise EventError("Cannot send to global channel")
+		if self.manager == self:
+			event.channel = channel
+			event.target = target
+			if target is not None:
+				channel = "%s:%s" % (target, channel)
+			handlers = list(self._global) + self.getHandlers(channel)
+			if handlers == []:
+				raise UnhandledEvent, event
+			try:
+				for handler in handlers:
+					if handler.args:
+						if handler.args[0] in ["e", "evt", "event"]:
+							if handler(event, *event.args, **event.kwargs):
+								break
+						else:
+							if handler(*event.args, **event.kwargs):
+								break
+					else:
+						if handler():
+							break
+			except:
+				raise
 		else:
-			if self.manager == self:
-				event.channel = channel
-				event.target = target
-				if target is not None:
-					channel = "%s:%s" % (target, channel)
-				handlers = self.getHandlers("global") + self.getHandlers(channel)
-				if handlers == []:
-					raise UnhandledEvent, event
-				try:
-					for handler in handlers:
-							if handler.args:
-								if handler.args[0] in ["e", "evt", "event"]:
-									if handler(event, *event.args, **event.kwargs):
-										break
-								else:
-									if handler(*event.args, **event.kwargs):
-										break
-							else:
-								if handler():
-									break
-				except:
-					raise
-			else:
-				self.manager.send(event, channel, target)
+			self.manager.send(event, channel, target)
 
 
 class Component(Manager):
@@ -270,7 +263,7 @@ class Component(Manager):
 		handlers = [x[1] for x in getmembers(
 			self, lambda x: ismethod(x) and
 			callable(x) and x.__name__.startswith("on") and
-			(hasattr(x, "filter") or hasattr(x, "listener")))]
+			(getattr(x, "type", None) in ["filter", "listener"]))]
 
 		for handler in handlers:
 			if self.channel is not None:

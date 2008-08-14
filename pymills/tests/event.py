@@ -157,13 +157,9 @@ class EventTestCase(unittest.TestCase):
 	def testManager(self):
 		"""Test Manager
 
-		Test Manager construction and that a global
-		channel is created. Test that the event queue is
+		Test Manager construction. Test that the event queue is
 		empty.
 		"""
-
-		self.assertTrue(
-				event.manager._channels.has_key("global"))
 
 		self.assertEquals(len(event.manager), 0)
 
@@ -193,10 +189,8 @@ class EventTestCase(unittest.TestCase):
 
 		event.manager.add(onFOO)
 		event.manager.add(onBAR)
-		self.assertTrue(
-				onFOO in event.manager.getHandlers("global"))
-		self.assertTrue(
-				onBAR in event.manager.getHandlers("global"))
+		self.assertTrue(onFOO in event.manager._global)
+		self.assertTrue(onBAR in event.manager._global)
 
 		event.manager.add(onFOO, "foo")
 		event.manager.add(onBAR, "bar")
@@ -219,8 +213,7 @@ class EventTestCase(unittest.TestCase):
 		event.manager.remove(onBAR, "bar")
 		self.assertTrue(
 				onBAR not in event.manager.getHandlers("bar"))
-		self.assertTrue(
-				onBAR in event.manager.getHandlers("global"))
+		self.assertTrue(onBAR in event.manager._global)
 		event.manager.remove(onBAR)
 		self.assertTrue(
 				onBAR not in event.manager.getHandlers())
@@ -232,8 +225,7 @@ class EventTestCase(unittest.TestCase):
 
 		Test that events can be pushed, fluahsed and that
 		the event queue is empty after flushing. Test that
-		events can be sent directly without queuing and that
-		events cannot be sent to the global channel.
+		events can be sent directly without queuing.
 
 		Test that Event._channel, Event._time and
 		Event._source are set appropiately.
@@ -268,7 +260,7 @@ class EventTestCase(unittest.TestCase):
 		event.manager.add(onFOO, "test")
 		event.manager.add(onBAR, "bar")
 
-		self.assertTrue(onSTOP in event.manager.getHandlers("global"))
+		self.assertTrue(onSTOP in event.manager._global)
 		self.assertTrue(onTEST in event.manager.getHandlers("test"))
 		self.assertTrue(onFOO in event.manager.getHandlers("test"))
 		self.assertTrue(onBAR in event.manager.getHandlers("bar"))
@@ -286,12 +278,6 @@ class EventTestCase(unittest.TestCase):
 		event.manager.send(Test(self, time.time()), "test")
 		self.assertTrue(self.flag == True)
 		self.flag = False
-
-		try:
-			event.manager.send(Event(), "global")
-			self.assertTrue(False)
-		except EventError:
-			self.assertTrue(True)
 
 		event.manager.send(Test(self, time.time()), "test")
 		self.assertTrue(self.flag == True)
