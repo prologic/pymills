@@ -55,6 +55,9 @@ class CreateEnv(Event):
 class LoadEnv(Event):
 	"""LoadEnv(Event) -> LoadEnv Event"""
 
+class UpgradeEnv(Event):
+	"""UpgradeEnv(Event) -> UpgradeEnv Event"""
+
 class EnvCreated(Event):
 	"""EnvCreated(Event) -> EnvCreated Event"""
 
@@ -99,16 +102,16 @@ class Environment(Component):
 	channel = "env"
 
 	version = VERSION
-	config = CONFIG
+	defaultConfig = CONFIG
 
-	def __init__(self, path, name, config=None):
+	def __init__(self, path, name, defaultConfig=None):
 		super(Environment, self).__init__()
 
 		self.path = os.path.abspath(os.path.expanduser(path))
 		self.name = name
 
-		if config:
-			self.config.update(config)
+		if defaultConfig:
+			self.defaultConfig.update(defaultConfig)
 
 	@listener("create")
 	def onCREATE(self):
@@ -134,10 +137,12 @@ class Environment(Component):
 		createFile(configfile)
 		config = Config(configfile)
 		config.read(configfile)
-		for section in self.config:
+		for section in self.defaultConfig:
 			if not config.has_section(section):
 				config.add_section(section)
-			for option, value in self.config[section].iteritems():
+			for option, value in self.defaultConfig[section].iteritems():
+				if type(value) == str:
+					value = value % {"name": self.name}
 				config.set(section, option, value)
 		config.write(open(configfile, "w"))
 
@@ -145,7 +150,7 @@ class Environment(Component):
 
 	@listener("verify")
 	def onVERIFY(self, load=False):
-		"""E.onVERIFY(load=False) -> None
+		"""E.onVERIFY(load=False)
 
 		Verify the Environment by checking it's version against
 		the expected version.
@@ -181,7 +186,7 @@ class Environment(Component):
 
 	@listener("load")
 	def onLOAD(self, verify=False):
-		"""E.onLOAD(verify=False) -> None
+		"""E.onLOAD(verify=False)
 
 		Load the Environment. Load the configuration and logging
 		components. If verify=True, verify the Environment first.
@@ -195,16 +200,26 @@ class Environment(Component):
 			configfile = os.path.join(self.path, "conf", "%s.ini" % self.name)
 			self.config = Config(configfile)
 			self.manager += self.config
-			self.push(LoadConfig(), "load", "config")
+			self.send(LoadConfig(), "load", "config")
 
 			# Create Logger Component
 			logname = self.name
-			logtype = self.config.get("logging", "type")
-			loglevel = self.config.get("logging", "level")
-			logfile = config.get("logging", "file") % {"name": self.name}
+			logtype = self.config.get("logging", "type", "file")
+			loglevel = self.config.get("logging", "level", "INFO")
+			logfile = self.config.get("logging", "file", "/dev/null")
+			logfile = logfile % {"name": self.name}
 			if not os.path.isabs(logfile):
 				logfile = os.path.join(self.path, logfile)
 			self.log = Logger(logname, logtype, loglevel, logfile)
 			self.manager += self.log
 
 			self.push(EnvLoaded(), "loaded", self.channel)
+
+	@listener("upgrade")
+	def onUPGRADE(self, load=False):
+		"""E.onUPGRADE()
+
+		Default Upgrade Event. This is a Base Environment and doesn't
+		do anything useful. Listen to this event to faciliate chnages
+		and upgrades to your system/application Environment.
+		"""
