@@ -67,7 +67,7 @@ class Logger(Component):
 
 	channel = "log"
 
-	def __init__(self, name, type, filename, level):
+	def __init__(self, filename, name, type, level):
 		super(Logger, self).__init__()
 
 		self.logger = logging.getLogger(name)
