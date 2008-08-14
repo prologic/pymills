@@ -83,7 +83,7 @@ class Event(object):
 		"x.__repr__() <==> repr(x)"
 
 		if self.channel is not None and self.target is not None:
-			channelStr = "%s:%s" % (self.channel, self.target)
+			channelStr = "%s:%s" % (self.target, self.channel)
 		elif self.channel is not None:
 			channelStr = self.channel
 		else:
