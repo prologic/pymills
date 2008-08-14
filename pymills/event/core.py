@@ -70,6 +70,12 @@ class Manager(object):
 
 		return self._channels.keys()
 
+	def genHandlers(self, channel):
+		for handler in self._global:
+			yield handler
+		for handler in self._channels[channel]:
+			yield handler
+
 	def getHandlers(self, channel=None):
 		"""E.getHandlers(channel=None) -> list
 
@@ -163,12 +169,11 @@ class Manager(object):
 				target = event.target
 				if target is not None:
 					channel = "%s:%s" % (target, channel)
-				handlers = list(self._global) + self.getHandlers(channel)
-				if handlers == []:
+				if not self._global and channel not in self._channels:
 					_queue.remove(event)
 					raise UnhandledEvent, event
 				try:
-					for handler in handlers:
+					for handler in self.genHandlers(channel):
 						if handler.args:
 							if handler.args[0] in ["e", "evt", "event"]:
 								if handler(event, *event.args, **event.kwargs):
@@ -200,11 +205,11 @@ class Manager(object):
 			event.target = target
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
-			handlers = list(self._global) + self.getHandlers(channel)
-			if handlers == []:
+			if not self._global and channel not in self._channels:
+				_queue.remove(event)
 				raise UnhandledEvent, event
 			try:
-				for handler in handlers:
+				for handler in self.genHandlers(channel):
 					if handler.args:
 						if handler.args[0] in ["e", "evt", "event"]:
 							if handler(event, *event.args, **event.kwargs):
