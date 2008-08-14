@@ -61,37 +61,37 @@ class Event(object):
 	list of arguments and dictionary of keyword arguments.
 	"""
 
-	def __new__(cls, *args, **kwargs):
-		self = object.__new__(Event)
+	channel = None
+	target = None
 
-		self.name = cls.__name__
+	source = None # Used by Bridge
+	ignore = False # Used by Bridge
+
+	def __init__(self, *args, **kwargs):
+		self.name = self.__class__.__name__
 		self.args = args
 		self.kwargs = kwargs
-
-		self.channel = None
-		self.target = None
-
-		self.source = None # Used by Bridge
-		self.ignore = False # Used by Bridge
-
-		return self
 
 	def __eq__(self, y):
 		" x.__eq__(y) <==> x==y"
 
-		attrs = ["name", "args", "kwargs", "channel"]
+		attrs = ["name", "args", "kwargs", "channel", "target"]
 		r = [getattr(self, a) == getattr(y, a) for a in attrs]
 		return False not in r
 
 	def __repr__(self):
 		"x.__repr__() <==> repr(x)"
 
-		attrs = ((k, v) for k, v in self.kwargs.items())
-		attrStrings = ("%s=%s" % (k, v) for k, v in attrs)
-		channel = self.channel or ""
-		return "<%s/%s %s {%s}>" % (
-				self.name, channel,
-				self.args, ", ".join(attrStrings))
+		if self.channel is not None and self.target is not None:
+			channelStr = "%s:%s" % (self.channel, self.target)
+		elif self.channel is not None:
+			channelStr = self.channel
+		else:
+			channelStr = ""
+		argsStr = ", ".join([("%s" % arg) for arg in self.args])
+		kwargsStr = ", ".join(
+				[("%s=%s" % kwarg) for kwarg in self.kwargs.iteritems()])
+		return "<%s/%s (%s, %s)>" % (self.name, channelStr, argsStr, kwargsStr)
 
 	def __getitem__(self, x):
 		"x.__getitem__(y) <==> x[y]"
