@@ -71,5 +71,5 @@ class Config(Component, ConfigParser):
 		Save the configuration file.
 		"""
 
-		with open(self.configfile, "w") as f:
+		with open(self.filename, "w") as f:
 			self.write(f)
