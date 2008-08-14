@@ -17,38 +17,38 @@ from event import *
 ### Events
 ###
 
-class Debug(Log):
-	"""Debug(Log) -> Debug Log Event
+class Debug(Event):
+	"""Debug(Event) -> Debug Log Event
 
 	args: msg
 	"""
 
-class Info(Log):
-	"""Info(Log) -> Info Log Event
+class Info(Event):
+	"""Info(Event) -> Info Log Event
 
 	args: msg
 	"""
 
-class Warning(Log):
-	"""Warning(Log) -> Warning Log Event
+class Warning(Event):
+	"""Warning(Event) -> Warning Log Event
 
 	args: msg
 	"""
 
-class Error(Log):
-	"""Error(Log) -> Error Log Event
+class Error(Event):
+	"""Error(Event) -> Error Log Event
 
 	args: msg
 	"""
 
-class Exception(Log):
-	"""Exception(Log) -> Exception Log Event
+class Exception(Event):
+	"""Exception(Event) -> Exception Log Event
 
 	args: msg
 	"""
 
-class Critical(Log):
-	"""Critical(Log) -> Critical Log Event
+class Critical(Event):
+	"""Critical(Event) -> Critical Log Event
 
 	args: msg
 	"""
