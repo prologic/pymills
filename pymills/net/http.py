@@ -270,14 +270,14 @@ class HTTP(Component):
 
 		try:
 			self.send(Request(request, response), command.upper())
-		except Exception, error:
-			self.sendError(sock, 500, "Internal Server Error", request, response)
-			raise
 		except HTTPError, error:
 			self.sendError(sock, error[0], error[1], request, response)
 		except UnhandledEvent:
 			self.sendError(sock, 501, "Unsupported method (%r)" % command,
 					request, response)
+		except Exception, error:
+			self.sendError(sock, 500, "Internal Server Error", request, response)
+			raise
 
 	###
 	### Supporting Functions
