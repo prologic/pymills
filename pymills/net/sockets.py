@@ -232,69 +232,68 @@ class Server(Component):
 
 	address = ""
 	port = 0
-	buffers = {}
 
-	_fds = []
-	_closeFlags = []
+	_buffers = {}
+
+	_socks = []
+	_read = []
+	_write = []
+	_close = []
 
 	def __getitem__(self, y):
 		"x.__getitem__(y) <==> x[y]"
 
-		return self._fds[y]
+		return self._socks[y]
 
 	def __contains__(self, y):
 		"x.__contains__(y) <==> y in x"
 	
-		return y in self._fds
+		return y in self._socks
 
 	def poll(self, wait=POLL_INTERVAL):
-		try:
-			r, w, e = select.select(self._fds, self._fds, [], wait)
-		except socket.error, error:
-			if error[0] == 9:
-				for sock in e:
-					self.close(sock)
+		r, w, e = select.select(self._read, self._write, [], wait)
 
 		for sock in w:
-			if self.buffers[sock]:
-				data = self.buffers[sock][0]
+			if self._buffers[sock]:
+				data = self._buffers[sock][0]
 				self.send(Write(sock, data), "write", self.channel)
 			else:
-				if sock in self._closeFlags:
+				if sock in self._close:
 					self.close(sock)
+				else:
+					self._write.remove(sock)
 			
 		for sock in r:
 			if sock == self._sock:
-				newsock, host = self._sock.accept()
+				newsock, host = sock.accept()
 				newsock.setblocking(False)
 				newsock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-				self._fds.append(newsock)
-				self.buffers[newsock] = []
-				host, port = host
-				self.push(Connect(newsock, host, port), "connect", self.channel)
+				self._socks.append(newsock)
+				self._read.append(newsock)
+				self._buffers[newsock] = []
+				self.push(Connect(newsock, *host), "connect", self.channel)
 			else:
 				try:
 					data = sock.recv(BUFFER_SIZE)
+					if data:
+						self.push(Read(sock, data), "read", self.channel)
+					else:
+						self.close(sock)
 				except socket.error, e:
 					self.push(Error(sock, e), "error", self.channel)
 					self.close(sock)
-					continue
-
-				if not data:
-					self.close(sock)
-					continue
-
-				self.push(Read(sock, data), "read", self.channel)
 
 	def close(self, sock=None):
 		if sock in self:
 			self.push(Close(sock), "close", self.channel)
 
 	def write(self, sock, data):
-		self.buffers[sock].append(data)
+		if not sock in self._write:
+			self._write.append(sock)
+		self._buffers[sock].append(data)
 
 	def broadcast(self, data):
-		for sock in self._fds[1:]:
+		for sock in self._socks[1:]:
 			self.write(sock, data)
 
 	@filter("write")
@@ -309,9 +308,9 @@ class Server(Component):
 		try:
 			bytes = sock.send(data)
 			if bytes < len(data):
-				self.buffers[sock][0] = data[bytes:]
+				self._buffers[sock][0] = data[bytes:]
 			else:
-				del self.buffers[sock][0]
+				del self._buffers[sock][0]
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close(sock)
@@ -328,28 +327,33 @@ class Server(Component):
 		"""
 
 		if sock:
-			if sock not in self._fds:
+			if sock not in self._socks:
 				# Invalid/Closed socket
 				return
 
 			if not sock == self._sock:
-				if self.buffers[sock]:
-					self._closeFlags.append(sock)
+				if self._buffers[sock]:
+					self._close.append(sock)
 					return
-
-				if sock in self._closeFlags:
-					self._closeFlags.remove(sock)
 
 			try:
 				sock.shutdown(2)
 				sock.close()
+
+				if sock in self._socks:
+					self._socks.remove(sock)
+				if sock in self._read:
+					self._read.remove(sock)
+				if sock in self._write:
+					self._write.remove(sock)
+				if sock in self._close:
+					self._close.remove(sock)
+
+				self.push(Disconnect(sock), "disconnect", self.channel)
 			except socket.error, e:
 				self.push(Error(sock, e), "error", self.channel)
-
-			self._fds.remove(sock)
-			self.push(Disconnect(sock), "disconnect", self.channel)
 		else:
-			for sock in self._fds:
+			for sock in self._socks:
 				self.close(sock)
 
 
@@ -368,7 +372,8 @@ class TCPServer(Server):
 		self._sock.bind((address, port))
 		self._sock.listen(BACKLOG)
 
-		self._fds.append(self._sock)
+		self._socks.append(self._sock)
+		self._read.append(self._sock)
 
 		self.address = address
 		self.port = port
