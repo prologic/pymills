@@ -13,9 +13,10 @@ from __future__ import with_statement
 
 import os
 
+import config
 from event import *
 from log import Logger
-from config import Config, LoadConfig, SaveConfig
+from config import Config
 
 ###
 ### Constants
@@ -49,35 +50,35 @@ def createFile(filename, data=None):
 ### Events
 ###
 
-class CreateEnv(Event):
-	"""CreateEnv(Event) -> CreateEnv Event"""
+class Create(Event):
+	"""Create(Event) -> Create Event"""
 
-class LoadEnv(Event):
-	"""LoadEnv(Event) -> LoadEnv Event"""
+class Load(Event):
+	"""Load(Event) -> Load Event"""
 
-class UpgradeEnv(Event):
-	"""UpgradeEnv(Event) -> UpgradeEnv Event"""
+class Upgrade(Event):
+	"""Upgrade(Event) -> Upgrade Event"""
 
-class EnvCreated(Event):
-	"""EnvCreated(Event) -> EnvCreated Event"""
+class Created(Event):
+	"""Created(Event) -> Created Event"""
 
-class EnvLoaded(Event):
-	"""EnvLoaded(Event) -> Loaded Event"""
+class Loaded(Event):
+	"""Loaded(Event) -> Loaded Event"""
 
-class EnvInvalid(Event):
-	"""EnvInvalid(Event) -> EnvInvalid Event
-
-	args: path, msg
-	"""
-
-class EnvNeedsUpgrade(Event):
-	"""EnvNeedsUpgrade(Event) -> EnvNeedsUpgrade Event
+class Invalid(Event):
+	"""Invalid(Event) -> Invalid Event
 
 	args: path, msg
 	"""
 
-class EnvUpgraded(Event):
-	"""EnvUpgraded(Event) -> Upgraded Event"""
+class NeedsUpgrade(Event):
+	"""NeedsUpgrade(Event) -> NeedsUpgrade Event
+
+	args: path, msg
+	"""
+
+class Upgraded(Event):
+	"""Upgraded(Event) -> Upgraded Event"""
 
 ###
 ### Components
@@ -92,11 +93,11 @@ class Environment(Component):
 	This component can be extended to provide more complex
 	system and application environments. This component will
 	expose the following events:
-	 * EnvCreated
-	 * EnvLoaded
-	 * EnvInvalid
-	 * EnvNeedsUpgrade
-	 * EnvUpgraded
+	 * Created
+	 * Loaded
+	 * Invalid
+	 * NeedsUpgrade
+	 * Upgraded
 	"""
 
 	channel = "env"
@@ -133,7 +134,7 @@ class Environment(Component):
 		createFile(configfile)
 		self.config = Config(configfile)
 		self.manager += self.config
-		self.send(LoadConfig(), "load", "config")
+		self.send(config.Load(), "load", "config")
 		for section in CONFIG:
 			if not self.config.has_section(section):
 				self.config.add_section(section)
@@ -141,9 +142,9 @@ class Environment(Component):
 				if type(value) == str:
 					value = value % {"name": self.name}
 				self.config.set(section, option, value)
-		self.send(SaveConfig(), "save", "config")
+		self.send(config.Save(), "save", "config")
 
-		self.send(EnvCreated(), "created", self.channel)
+		self.send(Created(), "created", self.channel)
 
 	@listener("verify")
 	def onVERIFY(self, load=False):
@@ -154,32 +155,32 @@ class Environment(Component):
 
 		If the Environment's version does not match, send
 		an EnvNeedsUpgrade event. If the Environment is
-		invalid and cannot be read, send an EnvInvalid
-		event. If load=True, send a LoadEnv event.
+		invalid and cannot be read, send an Invalid
+		event. If load=True, send a Load event.
 		"""
 
 		with open(os.path.join(self.path, "VERSION"), "r") as f:
 			version = f.read().strip()
 			if not version:
 				msg = "No Environment version information"
-				self.push(EnvInvalid(self.env.path, msg), "invalid", self.channel)
+				self.push(Invalid(self.env.path, msg), "invalid", self.channel)
 			else:
 				try:
 					verion = int(version)
 					if self.version > version:
 						self.push(
-								EnvNeedsUpgrade(self.env.path),
+								NeedsUpgrade(self.env.path),
 								"needsupgrade",
 								self.channel)
 				except ValueError:
 					msg = "Environment version information invalid"
 					self.push(
-							EnvInvalid(self.env.path, msg),
+							Invalid(self.env.path, msg),
 							"invalid",
 							self.channel)
 
 		if load:
-			self.push(LoadEnv90, "load", self.channel)
+			self.push(Load(), "load", self.channel)
 
 	@listener("load")
 	def onLOAD(self, verify=False):
@@ -190,14 +191,14 @@ class Environment(Component):
 		"""
 
 		if verify:
-			self.push(VerifyEnv(load=True), "verify", self.channel)
+			self.push(Verify(load=True), "verify", self.channel)
 		else:
 
 			# Create Config Component
 			configfile = os.path.join(self.path, "conf", "%s.ini" % self.name)
 			self.config = Config(configfile)
 			self.manager += self.config
-			self.send(LoadConfig(), "load", "config")
+			self.send(config.Load(), "load", "config")
 
 			# Create Logger Component
 			logname = self.name
@@ -210,13 +211,4 @@ class Environment(Component):
 			self.log = Logger(logfile, logname, logtype, loglevel)
 			self.manager += self.log
 
-			self.push(EnvLoaded(), "loaded", self.channel)
-
-	@listener("upgrade")
-	def onUPGRADE(self, load=False):
-		"""E.onUPGRADE()
-
-		Default Upgrade Event. This is a Base Environment and doesn't
-		do anything useful. Listen to this event to faciliate chnages
-		and upgrades to your system/application Environment.
-		"""
+			self.push(Loaded(), "loaded", self.channel)

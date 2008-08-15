@@ -20,11 +20,11 @@ from event import *
 ### Events
 ###
 
-class LoadConfig(Event):
-	"""LoadConfig(Event) -> LoadConfig Event"""
+class Load(Event):
+	"""Load(Event) -> Load Event"""
 
-class SaveConfig(Event):
-	"""SaveConfig(Event) -> SaveConfig Event"""
+class Save(Event):
+	"""Save(Event) -> Save Event"""
 
 ###
 ### Components
