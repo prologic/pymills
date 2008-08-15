@@ -24,6 +24,7 @@ from wsgiref.headers import Headers
 
 try:
 	import cherrypy
+	from cherrypy.lib.static import serve_file
 	from cherrypy import HTTPError, NotFound, HTTPRedirect
 except ImportError:
 	cherrypy = None
@@ -140,12 +141,45 @@ class _Response(object):
 				str(self.headers),
 				body)
 
+
 ###
-### Protocol Class
+### Dispatcher
+###
+
+class Dispatcher(Component):
+
+	defaults = ["index.html"]
+	docroot = os.path.join(os.getcwd(), "htdocs")
+
+	@listener("GET")
+	def onGET(self, request, response):
+		path_info = request.path_info.lstrip(os.sep)
+
+		if path_info:
+			filename = os.path.abspath(os.path.join(self.docroot, path_info))
+		else:
+			for default in self.defaults:
+				filename = os.path.abspath(os.path.join(self.docroot, default))
+				if os.path.exists(filename):
+					break
+				else:
+					filename = None
+
+		try:
+			self.send(Request(request, response), "GET", path_info)
+		except UnhandledEvent:
+			if filename:
+				serve_file(filename)
+				self.send(Response(request, response), "response")
+			else:
+				raise NotFound()
+
+###
+### Protocol Component
 ###
 
 class HTTP(Component):
-	"""HTTP(event) -> new HTTP object
+	"""HTTP() -> HTTP Component
 
 	Create a new HTTP object which implements the HTTP
 	protocol. Note this doesn't actually do anything
