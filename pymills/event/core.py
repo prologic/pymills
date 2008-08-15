@@ -206,7 +206,6 @@ class Manager(object):
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
 			if not self._global and channel not in self._channels:
-				_queue.remove(event)
 				raise UnhandledEvent, event
 			try:
 				for handler in self.genHandlers(channel):
