@@ -140,17 +140,14 @@ def listener(channel=None):
 
 from pymills.event.core import Manager, Component, Worker
 from pymills.event.bridge import Bridge, DummyBridge
-from pymills.event.timers import Timers
 from pymills.event.debugger import Debugger
 
 manager = Manager()
 debugger = Debugger()
-timers = Timers()
 
 __all__ = (
 	"manager",
 	"debugger",
-	"timers",
 	"filter",
 	"listener",
 	"Event",

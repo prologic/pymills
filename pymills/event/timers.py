@@ -12,65 +12,6 @@ from time import time
 from pymills.event.core import Component
 
 
-class Timers(Component):
-	"""Timers(manager) -> new timers component
-
-	Creates a new timers component that allows you to add
-	timed-events which will fire a "Timer" event when
-	they are triggered.
-	"""
-
-	timers = []
-
-	def __len__(self):
-		"T.__len__() <==> len(T)"
-
-		return len(self.timers)
-
-	def __getitem__(self, y):
-		"T.__getitem__(y) <==> T[y]"
-
-		return self.timers[y]
-
-	def __delitem__(self, y):
-		"T.__delitem__(y) <==> del T[y]"
-
-		del self.timers[y]
-
-	def remove(self, timer):
-		"T.remove(timer) -- remove first occurrence of timer"
-
-		self.timers.remove(timer)
-
-	def add(self, s, e, c="timer", t=None, persist=False, start=False):
-		"""T.add(s, e, c="timer", t=None, persist=False, start=False) -> None
-
-		Add a new event (e) to be timed and triggered after (s)
-		seconds to the specified channel (c) and target (t).
-		Default channel is "timer" and target None. If persist
-		is True, the timer will be persistent and run indefinately.
-		If start is True, the timer will trigger before the next
-		cycle, but only if perist is also True (as this only makes
-		sense in persistent timers).
-		"""
-
-		self.timers.append(Timer(self.manager, s, e, c, t, persist))
-		if start and persist:
-			self.push(e, c, t)
-
-	def poll(self):
-		"""T.poll() -> None
-
-		Poll for the next timer event. If any trigger push
-		a "Timer" event onto the queue. Reset timers
-		that are marked with the forever flag.
-		"""
-
-		for timer in self.timers[:]:
-			if timer.poll():
-				self.timers.remove(timer)
-
-
 class Timer(Component):
 	"""Timer(s, e, c, t, persist) -> new timer object
 
@@ -79,10 +20,8 @@ class Timer(Component):
 	queue held by the Timers component.
 	"""
 
-	def __init__(self, manager, s, e, c="timer", t=None, persist=False):
-		"initializes x; see x.__class__.__doc__ for signature"
-
-		super(Timer, self).__init__(manager)
+	def __init__(self, s, e, c="timer", t=None, persist=False):
+		super(Timer, self).__init__()
 
 		self.s = s
 		self.e = e
