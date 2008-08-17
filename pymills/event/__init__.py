@@ -112,7 +112,7 @@ def workers():
 	return [thread for thread in threads() if isinstance(thread, Worker)]
 
 
-def filter(channel="*"):
+def filter(channel=None):
 	"Decorator function for a filter"
 
 	def decorate(f):
@@ -125,7 +125,7 @@ def filter(channel="*"):
 	return decorate
 
 
-def listener(channel="*"):
+def listener(channel=None):
 	"Decorator function for a listener"
 
 	def decorate(f):
