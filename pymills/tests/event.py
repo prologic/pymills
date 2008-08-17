@@ -86,6 +86,58 @@ class EventTestCase(unittest.TestCase):
 
 		self.assertEquals(len(event.manager._handlers), 0)
 
+	def testTargetsAndChannels(self):
+		"""Test Components, Targets and Channels
+
+		Test that Components can be set up with a channel
+		and that event handlers of that Component work
+		correctly. That is, Components that have their
+		own channel, have their own global channel and
+		each channel is unique to that Component.
+		"""
+
+		class Foo(Component):
+
+			channel = "foo"
+
+			flag = False
+
+			@filter()
+			def onALL(self, event, *args, **kwargs):
+				self.flag = True
+				return True
+
+			@listener("foo")
+			def onFOO(self):
+				self.flag = False
+
+		class Bar(Component):
+
+			flag = False
+
+			@listener("bar")
+			def onBAR(self):
+				self.flag = True
+
+		foo = Foo()
+		bar = Bar()
+		event.manager += foo
+		event.manager += bar
+
+		try:
+			event.manager.send(Event(), "dummy")
+			self.fail()
+		except UnhandledEvent:
+			pass
+
+		event.manager.send(Event(), "foo", foo.channel)
+		self.assertTrue(foo.flag)
+		event.manager.send(Event(), "bar")
+		self.assertTrue(bar.flag)
+
+		foo.unregister()
+		bar.unregister()
+
 	def testComponentLinks(self):
 		"""Test Component Links
 

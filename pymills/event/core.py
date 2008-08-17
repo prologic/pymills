@@ -68,6 +68,12 @@ class Manager(object):
 	def genHandlers(self, channel):
 		for handler in self._global:
 			yield handler
+
+		if ":" in channel:
+			x = "%s:*" % channel.split(":")[0]
+			for handler in self._channels[x]:
+				yield handler
+
 		for handler in self._channels[channel]:
 			yield handler
 
@@ -254,7 +260,7 @@ class Component(Manager):
 
 		for handler in handlers:
 			if self.channel is not None:
-				channel = "%s:%s" % (self.channel, handler.channel)
+				channel = "%s:%s" % (self.channel, handler.channel or "*")
 			else:
 				channel = handler.channel
 
