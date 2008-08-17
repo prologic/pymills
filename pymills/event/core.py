@@ -70,7 +70,7 @@ class Manager(object):
 		for handler in self._global:
 			yield handler
 
-		if ":" in channel:
+		if ":" in channel and not channel.endswith("*"):
 			x = "%s:*" % channel.split(":")[0]
 			for handler in self.channels[x]:
 				yield handler
