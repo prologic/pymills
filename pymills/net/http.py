@@ -30,16 +30,15 @@ except ImportError:
 	cherrypy = None
 
 import pymills
-from pymills.event import listener, Event, UnhandledEvent
-from pymills.event.core import Component
+from pymills.event import *
 
 ###
 ### Defaults/Constants
 ###
 
-SERVER_VERSION   = "pymills/%s" % pymills.__version__
+SERVER_VERSION = "pymills/%s" % pymills.__version__
 PROTOCOL_VERSION = "HTTP/1.1"
-BUFFER_SIZE      = 65535
+BUFFER_SIZE = 131072
 
 DEFAULT_ERROR_MESSAGE = """\
 <head>
@@ -64,9 +63,23 @@ def quoteHTML(html):
 ### Events
 ###
 
-class Request(Event): pass
-class Response(Event): pass
-class Stream(Event): pass
+class Request(Event):
+	"""Request(Event) -> Request Event
+
+	args: request, response
+	"""
+
+class Response(Event):
+	"""Response(Event) -> Response Event
+
+	args: request, response
+	"""
+
+class Stream(Event):
+	"""Stream(Event) -> Stream Event
+
+	args: request, response
+	"""
 
 ###
 ### Supporting Classes
@@ -151,23 +164,98 @@ class Dispatcher(Component):
 	defaults = ["index.html"]
 	docroot = os.path.join(os.getcwd(), "htdocs")
 
-	@listener("GET")
-	def onGET(self, request, response):
-		path_info = request.path_info.lstrip(os.sep)
+	def findChannel(self, request):
+		"""findChannel(request) -> channel, vpath
 
-		if path_info:
-			filename = os.path.abspath(os.path.join(self.docroot, path_info))
+		Find a channel appropiate for the given request and return
+		it and the virtual path that's left.
+
+		This will return two objects. The first will be a channel,
+		which is used to send the request to the appropiate handler.
+		Any parameters from the query string or request body will be
+		sent to that handler as keyword arguments.
+
+		The channel is found by traversing the system's event channels,
+		and matching path components to successive channels in the system.
+		
+		The second object returned will be a list of names which are
+		"virtual path" components: parts of the URL which are dynamic,
+		and were not used when looking up the channel.
+		These virtual path components are passed to the handler as
+		positional arguments.
+
+		path			channel			vpath
+		--------------------------------------
+		/				index
+		/hello		hello
+		/foo/			foo:index
+		/foo/1		foo:index		 [1]
+		/foo/bar		foo:bar
+
+		If a channel cannot be found for a given path, but there is
+		a default channel, then this will be used.
+		"""
+
+		path = request.path_info
+		names = [x for x in path.strip('/').split('/') if x]
+		if names == []:
+			if "index" in self.manager.channels:
+				return "index", []
+			elif "default" in self.manager.channels:
+				return "default", []
+			else:
+				return None, []
 		else:
-			for default in self.defaults:
-				filename = os.path.abspath(os.path.join(self.docroot, default))
-				if os.path.exists(filename):
-					break
+			channel = ""
+			candidates = []
+			defaults = ["*", "index", "default",
+					"HEAD", "GET", "PUT", "POST", "DELETE"]
+			for i, name in enumerate(names):
+				if channel:
+					channel = "%s/%s" % (channel, name)
 				else:
-					filename = None
+					channel = name
+				y = ("%s:%s" % (channel, x) for x in defaults)
+				for x in y:
+					if x in self.manager.channels:
+						candidates.append((i, x))
 
-		try:
-			self.send(Request(request, response), "GET", path_info)
-		except UnhandledEvent:
+			if candidates:
+				#print "Candidates:"
+				#for i, candidate in candidates:
+				#	print " %s (%d)" % (candidate, i)
+				#	for handler in self.manager.handlers(candidate):
+				#		print "  %s" % handler
+
+				i, channel = candidates.pop()
+
+				vpath = names[(i + 1):]
+				vpath = [x.replace("%2F", "/") for x in vpath]
+	
+				return channel, vpath
+			else:
+				return None, []
+
+	@filter("request")
+	def onREQUEST(self, request, response):
+		channel, vpath = self.findChannel(request)
+		
+		if channel:
+			#print "channel: %s" % channel
+			#print "vpath:   %s" % vpath
+			self.send(Request(request, response, *vpath), channel)
+		else:
+			path_info = request.path_info.strip("/")
+			if path_info:
+				filename = os.path.abspath(os.path.join(self.docroot, path_info))
+			else:
+				for default in self.defaults:
+					filename = os.path.abspath(os.path.join(self.docroot, default))
+					if os.path.exists(filename):
+						break
+					else:
+						filename = None
+
 			if filename:
 				serve_file(filename)
 				self.send(Response(request, response), "response")
@@ -260,11 +348,11 @@ class HTTP(Component):
 				base_version_number = version.split("/", 1)[1]
 				version_number = base_version_number.split(".")
 				# RFC 2145 section 3.1 says there can be only one "." and
-				#   - major and minor numbers MUST be treated as
-				#	  separate integers;
-				#   - HTTP/2.4 is a lower version than HTTP/2.13, which in
-				#	  turn is lower than HTTP/12.3;
-				#   - Leading zeros MUST be ignored by recipients.
+				#	- major and minor numbers MUST be treated as
+				#		separate integers;
+				#	- HTTP/2.4 is a lower version than HTTP/2.13, which in
+				#		turn is lower than HTTP/12.3;
+				#	- Leading zeros MUST be ignored by recipients.
 				if len(version_number) != 2:
 					raise ValueError
 				version_number = int(version_number[0]), int(version_number[1])
@@ -274,7 +362,7 @@ class HTTP(Component):
 				closeConnection = False
 			if version_number >= (2, 0):
 				return self.sendError(sock, 505,
-						  "Invalid HTTP Version (%s)" % base_version_number)
+						"Invalid HTTP Version (%s)" % base_version_number)
 		elif len(words) == 2:
 			command, path_info = words
 			self.__commands[sock] = command
@@ -299,11 +387,11 @@ class HTTP(Component):
 
 		conntype = headers.get('Connection', "")
 		if (conntype.lower() == 'keep-alive' and
-			  PROTOCOL_VERSION >= "HTTP/1.1"):
+				PROTOCOL_VERSION >= "HTTP/1.1"):
 			request.close = False
 
 		try:
-			self.send(Request(request, response), command.upper())
+			self.send(Request(request, response), "request")
 		except HTTPError, error:
 			self.sendError(sock, error[0], error[1], request, response)
 		except UnhandledEvent:
