@@ -313,7 +313,7 @@ class HTTP(Component):
 			self.write(request.sock, response())
 			self.push(Stream(request, response), "stream")
 		else:
-			self.write(request.sock, str(response))
+			self.write(request.sock, response())
 			if request.close:
 				self.close(request.sock)
 
@@ -436,7 +436,7 @@ class HTTP(Component):
 		response.headers.add_header('Connection', 'close')
 
 		if self.__commands[sock] != "HEAD" and code >= 200 and code not in (204, 304):
-			self.write(sock, str(response))
+			self.write(sock, response())
 
 		self.close(sock)
 
