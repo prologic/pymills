@@ -36,14 +36,15 @@ class Manager(object):
 	def __init__(self, *args, **kwargs):
 		super(Manager, self).__init__()
 
+		self._queue = []
 		self._global = set()
 		self._handlers = set()
-		self._channels = defaultdict(lambda: [])
-		self._queue = []
+
 		self.manager = self
+		self.channels = defaultdict(lambda: [])
 
 	def __getitem__(self, x):
-		return self._channels[x]
+		return self.channels[x]
 
 	def __len__(self):
 		return len(self._queue)
@@ -71,10 +72,10 @@ class Manager(object):
 
 		if ":" in channel:
 			x = "%s:*" % channel.split(":")[0]
-			for handler in self._channels[x]:
+			for handler in self.channels[x]:
 				yield handler
 
-		for handler in self._channels[channel]:
+		for handler in self.channels[channel]:
 			yield handler
 
 	def add(self, handler, channel=None):
@@ -93,12 +94,12 @@ class Manager(object):
 		if channel is None:
 			self._global.add(handler)
 		else:
-			if channel in self._channels:
-				if handler not in self._channels[channel]:
-					self._channels[channel].append(handler)
-					self._channels[channel].sort(cmp=_sortHandlers)
+			if channel in self.channels:
+				if handler not in self.channels[channel]:
+					self.channels[channel].append(handler)
+					self.channels[channel].sort(cmp=_sortHandlers)
 			else:
-				self._channels[channel] = [handler]
+				self.channels[channel] = [handler]
 
 	def remove(self, handler, channel=None):
 		"""E.remove(handler, channel=None) -> None
@@ -113,7 +114,7 @@ class Manager(object):
 		if channel is None:
 			if handler in self._global:
 				self._global.remove(handler)
-			keys = self._channels.keys()
+			keys = self.channels.keys()
 		else:
 			keys = [channel]
 
@@ -121,8 +122,8 @@ class Manager(object):
 			self._handlers.remove(handler)
 
 		for channel in keys:
-			if handler in self._channels[channel]:
-				self._channels[channel].remove(handler)
+			if handler in self.channels[channel]:
+				self.channels[channel].remove(handler)
 
 
 	def push(self, event, channel, target=None):
@@ -158,7 +159,7 @@ class Manager(object):
 				target = event.target
 				if target is not None:
 					channel = "%s:%s" % (target, channel)
-				if not self._global and channel not in self._channels:
+				if not self._global and channel not in self.channels:
 					_queue.remove(event)
 					raise UnhandledEvent, event
 				try:
@@ -194,7 +195,7 @@ class Manager(object):
 			event.target = target
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
-			if not self._global and channel not in self._channels:
+			if not self._global and channel not in self.channels:
 				raise UnhandledEvent, event
 			try:
 				for handler in self.genHandlers(channel):
