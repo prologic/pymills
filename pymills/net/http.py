@@ -109,6 +109,9 @@ class _Request(object):
 		self.sock = None
 		self.close = True
 
+	def __repr__(self):
+		return "<Request %s %s %s>" % (self.method, self.version, self.path_info)
+
 class _Response(object):
 	"""_Response(request) -> new Response object
 
@@ -131,11 +134,11 @@ class _Response(object):
 		self.status = "200 OK"
 
 	def __repr__(self):
-		return "<Response %s %s>" % (
-			self.__class__.__name__,
-			self.headers["Content-Type"])
+		return "<Response %s %s (%d)>" % (
+				self.status,
+				self.headers["Content-Type"], len(self.body))
 
-	def __str__(self):
+	def __call__(self):
 		if type(self.body) == file:
 			contentLength = os.fstat(self.body.fileno())[stat.ST_SIZE]
 			contentType = guess_type(self.body.name)[0] or "application/octet-stream"
@@ -307,7 +310,7 @@ class HTTP(Component):
 	@listener("response")
 	def onRESPONSE(self, request, response):
 		if type(response.body) == file:
-			self.write(request.sock, str(response))
+			self.write(request.sock, response())
 			self.push(Stream(request, response), "stream")
 		else:
 			self.write(request.sock, str(response))
