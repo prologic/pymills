@@ -65,14 +65,6 @@ class Manager(object):
 		y.unregister()
 		return self
 
-	def getChannels(self):
-		"""E.getChannels() -> list
-
-		Return a list of all available channels.
-		"""
-
-		return self._channels.keys()
-
 	def genHandlers(self, channel):
 		for handler in self._global:
 			yield handler
