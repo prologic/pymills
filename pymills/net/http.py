@@ -221,12 +221,6 @@ class Dispatcher(Component):
 						candidates.append((i, x))
 
 			if candidates:
-				#print "Candidates:"
-				#for i, candidate in candidates:
-				#	print " %s (%d)" % (candidate, i)
-				#	for handler in self.manager.handlers(candidate):
-				#		print "  %s" % handler
-
 				i, channel = candidates.pop()
 
 				vpath = names[(i + 1):]
@@ -241,8 +235,6 @@ class Dispatcher(Component):
 		channel, vpath = self.findChannel(request)
 		
 		if channel:
-			#print "channel: %s" % channel
-			#print "vpath:   %s" % vpath
 			self.send(Request(request, response, *vpath), channel)
 		else:
 			path_info = request.path_info.strip("/")
