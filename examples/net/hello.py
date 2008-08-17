@@ -51,7 +51,7 @@ class Test(Component):
 	@listener("request")
 	def onREQUEST(self, request, response):
 		response.body = "OK"
-		self.send(Response(request, response), "response")
+		self.send(Response(response), "response")
 
 class WebServer(TCPServer, HTTP): pass
 
