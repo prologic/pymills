@@ -76,19 +76,15 @@ class EventTestCase(unittest.TestCase):
 		listener = ListenerComponent()
 		event.manager += listener
 
-		self.assertTrue(
-				filter.onFOO in event.manager.getHandlers("foo"))
-		self.assertTrue(
-				listener.onFOO in event.manager.getHandlers("foo"))
-		self.assertTrue(
-				filter.onBAR in event.manager.getHandlers("bar"))
-		self.assertTrue(
-				listener.onBAR in event.manager.getHandlers("bar"))
+		self.assertTrue(filter.onFOO in event.manager["foo"])
+		self.assertTrue(listener.onFOO in event.manager["foo"])
+		self.assertTrue(filter.onBAR in event.manager["bar"])
+		self.assertTrue(listener.onBAR in event.manager["bar"])
 
 		filter.unregister()
 		listener.unregister()
 
-		self.assertEquals(len(event.manager.getHandlers()), 0)
+		self.assertEquals(len(event.manager._handlers), 0)
 
 	def testComponentLinks(self):
 		"""Test Component Links
@@ -101,36 +97,18 @@ class EventTestCase(unittest.TestCase):
 		bar = Bar()
 		foo + bar
 
-		handlers = foo.getHandlers()
-		self.assertTrue(foo.onFOO in handlers)
-		self.assertTrue(bar.onBAR in handlers)
-		self.assertTrue(foo.onGOTBAR in handlers)
+		self.assertTrue(foo.onFOO in foo._handlers)
+		self.assertTrue(bar.onBAR in foo._handlers)
+		self.assertTrue(foo.onGOTBAR in foo._handlers)
 
 		foo.send(Event(), "foo")
 		self.assertTrue(foo.gotbar)
 
 		foo - bar
 
-		handlers = foo.getHandlers()
-		self.assertTrue(foo.onFOO in handlers)
-		self.assertTrue(bar.onBAR not in handlers)
-		self.assertTrue(foo.onGOTBAR in handlers)
-
-	def testWorker(self):
-		"""Test Worker
-
-		...
-		"""
-
-#		foo = FooWorker(event.manager)
-
-#		r = self.send(Event(), "foo")
-#		self.assertEquals(r, ["foo"])
-
-#		foo.stop()
-#		foo.unregister()
-
-#		self.assertEquals(self.getHandlers(), [])
+		self.assertTrue(foo.onFOO in foo._handlers)
+		self.assertTrue(bar.onBAR not in foo._handlers)
+		self.assertTrue(foo.onGOTBAR in foo._handlers)
 
 	def testEvent(self):
 		"""Test Event
@@ -162,6 +140,7 @@ class EventTestCase(unittest.TestCase):
 		"""
 
 		self.assertEquals(len(event.manager), 0)
+		self.assertEquals(len(event.manager._handlers), 0)
 
 	def testManagerAddRemove(self):
 		"""Test Manager.add & Manager.remove
@@ -194,31 +173,26 @@ class EventTestCase(unittest.TestCase):
 
 		event.manager.add(onFOO, "foo")
 		event.manager.add(onBAR, "bar")
-		self.assertTrue(
-				onFOO in event.manager.getHandlers("foo"))
-		self.assertTrue(
-				onBAR in event.manager.getHandlers("bar"))
+		self.assertTrue(onFOO in event.manager["foo"])
+		self.assertTrue(onBAR in event.manager["bar"])
 
 		try:
 			event.manager.add(onTEST)
 		except EventError:
 			pass
 
-		self.assertFalse(onTEST in event.manager.getHandlers())
+		self.assertFalse(onTEST in event.manager._global)
 
 		event.manager.remove(onFOO)
-		self.assertTrue(
-				onFOO not in event.manager.getHandlers())
+		self.assertTrue(onFOO not in event.manager._handlers)
 
 		event.manager.remove(onBAR, "bar")
-		self.assertTrue(
-				onBAR not in event.manager.getHandlers("bar"))
+		self.assertTrue(onBAR not in event.manager["bar"])
 		self.assertTrue(onBAR in event.manager._global)
 		event.manager.remove(onBAR)
-		self.assertTrue(
-				onBAR not in event.manager.getHandlers())
+		self.assertTrue(onBAR not in event.manager._handlers)
 
-		self.assertEquals(len(event.manager.getHandlers()), 0)
+		self.assertEquals(len(event.manager._handlers), 0)
 
 	def testManagerPushFlushSend(self):
 		"""Test Manager's push, flush and send
@@ -261,10 +235,10 @@ class EventTestCase(unittest.TestCase):
 		event.manager.add(onBAR, "bar")
 
 		self.assertTrue(onSTOP in event.manager._global)
-		self.assertTrue(onTEST in event.manager.getHandlers("test"))
-		self.assertTrue(onFOO in event.manager.getHandlers("test"))
-		self.assertTrue(onBAR in event.manager.getHandlers("bar"))
-		self.assertEquals(len(event.manager.getHandlers()), 4)
+		self.assertTrue(onTEST in event.manager["test"])
+		self.assertTrue(onFOO in event.manager["test"])
+		self.assertTrue(onBAR in event.manager["bar"])
+		self.assertEquals(len(event.manager._handlers), 4)
 
 		event.manager.push(Test(self, time.time()), "test")
 		event.manager.flush()
@@ -291,7 +265,7 @@ class EventTestCase(unittest.TestCase):
 		event.manager.remove(onFOO, "test")
 		event.manager.remove(onBAR, "bar")
 
-		self.assertEquals(len(event.manager.getHandlers()), 0)
+		self.assertEquals(len(event.manager._handlers), 0)
 
 def suite():
 	return unittest.makeSuite(EventTestCase, "test")

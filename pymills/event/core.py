@@ -42,6 +42,9 @@ class Manager(object):
 		self._queue = []
 		self.manager = self
 
+	def __getitem__(self, x):
+		return self._channels[x]
+
 	def __len__(self):
 		return len(self._queue)
 
@@ -75,18 +78,6 @@ class Manager(object):
 			yield handler
 		for handler in self._channels[channel]:
 			yield handler
-
-	def getHandlers(self, channel=None):
-		"""E.getHandlers(channel=None) -> list
-
-		Givan a channel return all handlers on that channel.
-		If channel is None, then return all handlers.
-		"""
-
-		if channel:
-			return self._channels[channel]
-		else:
-			return self._handlers
 
 	def add(self, handler, channel=None):
 		"""E.add(handler, channel) -> None
@@ -284,7 +275,7 @@ class Component(Manager):
 		this component
 		"""
 
-		for handler in self.getHandlers().copy():
+		for handler in self._handlers.copy():
 			self.manager.remove(handler)
 
 		self.manager = self
