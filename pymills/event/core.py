@@ -66,7 +66,7 @@ class Manager(object):
 		y.unregister()
 		return self
 
-	def genHandlers(self, channel):
+	def handlers(self, channel):
 		for handler in self._global:
 			yield handler
 
@@ -163,7 +163,7 @@ class Manager(object):
 					_queue.remove(event)
 					raise UnhandledEvent, event
 				try:
-					for handler in self.genHandlers(channel):
+					for handler in self.handlers(channel):
 						if handler.args:
 							if handler.args[0] in ["e", "evt", "event"]:
 								if handler(event, *event.args, **event.kwargs):
@@ -198,7 +198,7 @@ class Manager(object):
 			if not self._global and channel not in self.channels:
 				raise UnhandledEvent, event
 			try:
-				for handler in self.genHandlers(channel):
+				for handler in self.handlers(channel):
 					if handler.args:
 						if handler.args[0] in ["e", "evt", "event"]:
 							if handler(event, *event.args, **event.kwargs):
