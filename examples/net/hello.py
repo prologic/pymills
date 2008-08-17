@@ -48,8 +48,8 @@ def parse_options():
 
 class Test(Component):
 
-	@listener("GET")
-	def onGET(self, request, response):
+	@listener("request")
+	def onREQUEST(self, request, response):
 		response.body = "OK"
 		self.send(Response(request, response), "response")
 

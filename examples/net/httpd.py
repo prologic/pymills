@@ -82,8 +82,8 @@ class Test(Component):
 	docroot = os.path.join(os.getcwd(), "htdocs")
 	defaults = ["index.html"]
 
-	@listener("GET")
-	def onGET(self, request, response):
+	@listener("request")
+	def onREQUEST(self, request, response):
 		digest_auth(realm="pymills", users={"prologic": "semaj2891"})
 
 		path_info = request.path_info.lstrip(os.sep)
