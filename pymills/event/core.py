@@ -157,18 +157,21 @@ class Manager(object):
 				event = q.pop()
 				channel = event.channel
 				target = event.target
+				eargs = event.args
+				ekwargs = event.kwargs
 				if target:
 					channel = "%s:%s" % (target, channel)
 				try:
 					handled = False
 					for handler in self.handlers(channel):
+						args = handler.args
 						handled = True
-						if handler.args:
-							if handler.args[0] in ["e", "evt", "event"]:
-								if handler(event, *event.args, **event.kwargs):
+						if args:
+							if args[0] == "event":
+								if handler(event, *eargs, **ekwargs):
 									break
 							else:
-								if handler(*event.args, **event.kwargs):
+								if handler(*eargs, **ekwargs):
 									break
 						else:
 							if handler():
@@ -192,18 +195,21 @@ class Manager(object):
 		if self.manager == self:
 			event.channel = channel
 			event.target = target
+			eargs = event.args
+			ekwargs = event.kwargs
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
 			try:
 				handled = False
 				for handler in self.handlers(channel):
+					args = handler.args
 					handled = True
-					if handler.args:
-						if handler.args[0] in ["e", "evt", "event"]:
-							if handler(event, *event.args, **event.kwargs):
+					if args:
+						if args[0] == "event":
+							if handler(event, *eargs, **ekwargs):
 								break
 						else:
-							if handler(*event.args, **event.kwargs):
+							if handler(*eargs, **ekwargs):
 								break
 					else:
 						if handler():
