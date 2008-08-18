@@ -42,7 +42,7 @@ class Manager(object):
 		self._handlers = set()
 
 		self.manager = self
-		self.channels = defaultdict(lambda: [])
+		self.channels = defaultdict(dict)
 
 	def __getitem__(self, x):
 		return self.channels[x]
