@@ -15,9 +15,12 @@ implementations.
 
 import re
 import os
+import cgi
 import stat
 import mimetools
 from time import strftime
+from urllib import unquote
+from urlparse import urlparse
 from cStringIO import StringIO
 from mimetypes import guess_type
 from wsgiref.headers import Headers
@@ -37,7 +40,7 @@ from pymills.event import *
 ###
 
 SERVER_VERSION = "pymills/%s" % pymills.__version__
-PROTOCOL_VERSION = "HTTP/1.1"
+SERVER_PROTOCOL = "HTTP/1.1"
 BUFFER_SIZE = 131072
 
 DEFAULT_ERROR_MESSAGE = """\
@@ -56,8 +59,32 @@ DEFAULT_ERROR_MESSAGE = """\
 ### Supporting Functions
 ###
 
+quoted_slash = re.compile("(?i)%2F")
+
 def quoteHTML(html):
 	return html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+image_map_pattern = re.compile(r"[0-9]+,[0-9]+")
+
+def parse_query_string(query_string, keep_blank_values=True):
+	"""parse_query_string(query_string) -> dict
+
+	Build a params dictionary from a query_string.
+	If keep_blank_values is True (the default), keep
+	values that are blank.
+	"""
+
+	if image_map_pattern.match(query_string):
+		# Server-side image map. Map the coords to 'x' and 'y'
+		# (like CGI::Request does).
+		pm = query_string.split(",")
+		pm = {'x': int(pm[0]), 'y': int(pm[1])}
+	else:
+		pm = cgi.parse_qs(query_string, keep_blank_values)
+		for key, val in pm.items():
+			if len(val) == 1:
+				pm[key] = val[0]
+	return pm
 
 ###
 ### Events
@@ -86,31 +113,27 @@ class Stream(Event):
 ###
 
 class _Request(object):
-	"""_Request(method, path_info, version, headers) -> new HTTP Request object
+	"""_Request(method, path, version, qa, headers) -> new HTTP Request object
 
-	Request object that holds an incoming request. The URI, the version
-	of the request, the headers and body. This also holds a _Response
-	object ready to respond with.
+	Request object that holds an incoming request.
 	"""
 
 	script_name = "/"
 	protocol = (1, 1)
 
-	def __init__(self, method, path_info, version, headers):
+	def __init__(self, method, path, version, qs, headers):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self.method = method
-		self.path_info = path_info
+		self.path = self.path_info = path
 		self.version = version
+		self.qs = self.query_string = qs
 		self.headers = headers
 
 		self.body = StringIO()
 
-		self.sock = None
-		self.close = True
-
 	def __repr__(self):
-		return "<Request %s %s %s>" % (self.method, self.version, self.path_info)
+		return "<Request %s %s %s>" % (self.method, self.version, self.path)
 
 class _Response(object):
 	"""_Response(request) -> new Response object
@@ -120,11 +143,12 @@ class _Response(object):
 	is sent in the correct order.
 	"""
 
-	def __init__(self, request, body=""):
+	def __init__(self, sock, body=""):
 		"initializes x; see x.__class__.__doc__ for signature"
-		
-		self.request = request
 
+		self.sock = sock
+		self.close = False
+		
 		self.headers = Headers([
 			("Server", SERVER_VERSION),
 			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z")),
@@ -152,7 +176,7 @@ class _Response(object):
 			self.headers["Content-Length"] = contentLength
 
 		return "%s %s\r\n%s%s" % (
-				PROTOCOL_VERSION,
+				SERVER_PROTOCOL,
 				self.status,
 				str(self.headers),
 				body)
@@ -199,7 +223,7 @@ class Dispatcher(Component):
 		a default channel, then this will be used.
 		"""
 
-		path = request.path_info
+		path = request.path
 		names = [x for x in path.strip('/').split('/') if x]
 		if names == []:
 			if "index" in self.manager.channels:
@@ -238,11 +262,12 @@ class Dispatcher(Component):
 		channel, vpath = self.findChannel(request)
 		
 		if channel:
-			self.send(Request(request, response, *vpath), channel)
+			params = parse_query_string(request.qs)
+			self.send(Request(request, response, *vpath, **params), channel)
 		else:
-			path_info = request.path_info.strip("/")
-			if path_info:
-				filename = os.path.abspath(os.path.join(self.docroot, path_info))
+			path = request.path.strip("/")
+			if path:
+				filename = os.path.abspath(os.path.join(self.docroot, path))
 			else:
 				for default in self.defaults:
 					filename = os.path.abspath(os.path.join(self.docroot, default))
@@ -297,25 +322,25 @@ class HTTP(Component):
 	###
 
 	@listener("stream")
-	def onSTREAM(self, request, response):
+	def onSTREAM(self, response):
 		data = response.body.read(BUFFER_SIZE)
 		if data:
-			self.write(request.sock, data)
-			self.push(Stream(request, response), "stream")
+			self.write(response.sock, data)
+			self.push(Stream(response), "stream")
 		else:
 			response.body.close()
-			if request.close:
-				self.close(request.sock)
+			if response.close:
+				self.close(response.sock)
 		
 	@listener("response")
-	def onRESPONSE(self, request, response):
+	def onRESPONSE(self, response):
 		if type(response.body) == file:
-			self.write(request.sock, response())
-			self.push(Stream(request, response), "stream")
+			self.write(response.sock, response())
+			self.push(Stream(response), "stream")
 		else:
-			self.write(request.sock, response())
-			if request.close:
-				self.close(request.sock)
+			self.write(response.sock, response())
+			if response.close:
+				self.close(response.sock)
 
 	@listener("read")
 	def onREAD(self, sock, data):
@@ -332,76 +357,78 @@ class HTTP(Component):
 		data = data.strip()
 
 		requestline, data = re.split("\r?\n", data, 1)
-		words = requestline.split()
 
-		if len(words) == 3:
-			command, path_info, version = words
-			self.__commands[sock] = command
-			if version[:5] != "HTTP/":
-				return self.sendError(sock, 400, "Bad request version (%r)" % version)
-			try:
-				base_version_number = version.split("/", 1)[1]
-				version_number = base_version_number.split(".")
-				# RFC 2145 section 3.1 says there can be only one "." and
-				#	- major and minor numbers MUST be treated as
-				#		separate integers;
-				#	- HTTP/2.4 is a lower version than HTTP/2.13, which in
-				#		turn is lower than HTTP/12.3;
-				#	- Leading zeros MUST be ignored by recipients.
-				if len(version_number) != 2:
-					raise ValueError
-				version_number = int(version_number[0]), int(version_number[1])
-			except (ValueError, IndexError):
-				return self.sendError(sock, 400, "Bad request version (%r)" % version)
-			if version_number >= (1, 1) and PROTOCOL_VERSION >= "HTTP/1.1":
-				closeConnection = False
-			if version_number >= (2, 0):
-				return self.sendError(sock, 505,
-						"Invalid HTTP Version (%s)" % base_version_number)
-		elif len(words) == 2:
-			command, path_info = words
-			self.__commands[sock] = command
-			closeConnection = True
-			if command != "GET":
-				return self.sendError(sock, 400,
-								"Bad HTTP/0.9 request type (%r)" % command)
-		elif not words:
-			return
-		else:
-			return self.sendError(sock, 400, "Bad request syntax (%r)" % requestline)
+		method, path, protocol = requestline.strip().split(" ", 2)
+		scheme, location, path, params, qs, frag = urlparse(path)
+
+		if frag:
+			return self.sendError(sock, 400, "Illegal #fragment in Request-URI.")
+		
+		if params:
+			path = path + ";" + params
+		
+		# Unquote the path+params (e.g. "/this%20path" -> "this path").
+		# http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html#sec5.1.2
+		#
+		# But note that "...a URI must be separated into its components
+		# before the escaped characters within those components can be
+		# safely decoded." http://www.ietf.org/rfc/rfc2396.txt, sec 2.4.2
+		atoms = [unquote(x) for x in quoted_slash.split(path)]
+		path = "%2F".join(atoms)
+		
+		# Compare request and server HTTP protocol versions, in case our
+		# server does not support the requested protocol. Limit our output
+		# to min(req, server). We want the following output:
+		#	 request	server	 actual written   supported response
+		#	 protocol   protocol  response protocol	feature set
+		# a	 1.0		1.0		   1.0				1.0
+		# b	 1.0		1.1		   1.1				1.0
+		# c	 1.1		1.0		   1.0				1.0
+		# d	 1.1		1.1		   1.1				1.1
+		# Notice that, in (b), the response will be "HTTP/1.1" even though
+		# the client only understands 1.0. RFC 2616 10.5.6 says we should
+		# only return 505 if the _major_ version is different.
+		rp = int(protocol[5]), int(protocol[7])
+		sp = int(SERVER_PROTOCOL[5]), int(SERVER_PROTOCOL[7])
+		if sp[0] != rp[0]:
+			return self.sendError(sock, 505, "HTTP Version Not Supported")
 
 		headers = mimetools.Message(StringIO(data), 0)
 
-		request = _Request(command, path_info, version, headers)
-		request.sock = sock
-		response = _Response(request)
+		request = _Request(method, path, protocol, qs, headers)
+		response = _Response(sock)
 
 		if cherrypy:
 			cherrypy.request = request
 			cherrypy.response = response
 
-		conntype = headers.get('Connection', "")
-		if (conntype.lower() == 'keep-alive' and
-				PROTOCOL_VERSION >= "HTTP/1.1"):
-			request.close = False
-
+		# Persistent connection support
+		if protocol == "HTTP/1.1":
+			# Both server and client are HTTP/1.1
+			if headers.get("HTTP_CONNECTION", "") == "close":
+				response.close = True
+		else:
+			# Either the server or client (or both) are HTTP/1.0
+			if headers.get("HTTP_CONNECTION", "") != "Keep-Alive":
+				response.close = True
+		
 		try:
 			self.send(Request(request, response), "request")
 		except HTTPError, error:
-			self.sendError(sock, error[0], error[1], request, response)
+			self.sendError(sock, error[0], error[1], response)
 		except UnhandledEvent:
 			self.sendError(sock, 501, "Unsupported method (%r)" % command,
 					request, response)
 		except Exception, error:
-			self.sendError(sock, 500, "Internal Server Error", request, response)
+			self.sendError(sock, 500, "Internal Server Error", response)
 			raise
 
 	###
 	### Supporting Functions
 	###
 
-	def sendError(self, sock, code, message=None, request=None, response=None):
-		"""H.sendError(sock, code, message=None, request=None, response=None) -> None
+	def sendError(self, sock, code, message=None, response=None):
+		"""H.sendError(sock, code, message=None, response=None) -> None
 		
 		Send an error reply.
 
@@ -430,7 +457,7 @@ class HTTP(Component):
 			"explain": explain}
 
 		if response is None:
-			response = _Response(request)
+			response = _Response(sock)
 		response.body = content
 		response.status = "%s %s" % (code, message)
 		response.headers.add_header('Connection', 'close')
