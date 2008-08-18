@@ -27,7 +27,7 @@ from wsgiref.headers import Headers
 try:
 	import cherrypy
 	from cherrypy.lib.static import serve_file
-	from cherrypy._cpcgifs import .FieldStorage
+	from cherrypy._cpcgifs import FieldStorage
 	from cherrypy import HTTPError, NotFound, HTTPRedirect
 except ImportError:
 	cherrypy = None
@@ -112,16 +112,15 @@ def parseHeaders(data):
 		
 	return headers, data.read()
 
-	def processBody(headers, self, ):
+	def processBody(headers, body):
 		if "Content-Type" not in self.headers:
 			headers["Content-Type"] = ""
 		
 		try:
-			forms = _cpcgifs.FieldStorage(fp=self.rfile,
-										  headers=h,
-										  # FieldStorage only recognizes POST.
-										  environ={'REQUEST_METHOD': "POST"},
-										  keep_blank_values=1)
+			form = FieldStorage(fp=body,
+				headers=headers,
+				environ={"REQUEST_METHOD": "POST"},
+				keep_blank_values=True)
 		except Exception, e:
 			if e.__class__.__name__ == 'MaxSizeExceeded':
 				# Post data is too big
@@ -129,17 +128,30 @@ def parseHeaders(data):
 			else:
 				raise
 		
-		# Note that, if headers['Content-Type'] is multipart/*,
-		# then forms.file will not exist; instead, each form[key]
-		# item will be its own file object, and will be handled
-		# by params_from_CGI_form.
-		if forms.file:
-			# request body was a content-type other than form params.
-			self.body = forms.file
+		if form.file:
+			return form.file
 		else:
-			self.body_params = p = http.params_from_CGI_form(forms)
-			self.params.update(p)
+			return dictform(form)
 
+def dictform(form):
+	d = {}
+	for key in form.keys():
+		values = form[key]
+		if isinstance(values, list):
+			d[key] = []
+			for item in values:
+				if item.filename is not None:
+					value = item # It's a file upload
+				else:
+					value = item.value # It's a regular field
+				d[key].append(value)
+		else:
+			if values.filename is not None:
+				value = values # It's a file upload
+			else:
+				value = values.value # It's a regular field
+			d[key] = value
+	return d
 
 ###
 ### Events
@@ -274,7 +286,7 @@ class Dispatcher(Component):
 		else:
 			target, channel = os.path.split(path)
 
-		print "path:	%s" % path
+		print "path:    %s" % path
 		print "target:  %s" % target
 		print "channel: %s" % channel
 
@@ -297,6 +309,11 @@ class Dispatcher(Component):
 		
 		if channel:
 			params = parseQueryString(request.qs)
+			x = processBody(request.headers, request.body)
+			if type(x) == dict:
+				params.update(x)
+			else:
+				request.body = x
 			self.send(Request(request, response, **params), channel)
 		else:
 			path = request.path.strip("/")
@@ -416,8 +433,8 @@ class HTTP(Component):
 			# Compare request and server HTTP protocol versions, in case our
 			# server does not support the requested protocol. Limit our output
 			# to min(req, server). We want the following output:
-			#	 request	server	 actual written   supported response
-			#	 protocol   protocol  response protocol	feature set
+			#	 request	server	 actual written supported response
+			#	 protocol protocol response protocol	feature set
 			# a	 1.0		1.0		   1.0				1.0
 			# b	 1.0		1.1		   1.1				1.0
 			# c	 1.1		1.0		   1.0				1.0
