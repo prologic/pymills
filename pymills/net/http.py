@@ -113,7 +113,7 @@ def parseHeaders(data):
 	return headers, data.read()
 
 def processBody(headers, body):
-	if "Content-Type" not in self.headers:
+	if "Content-Type" not in headers:
 		headers["Content-Type"] = ""
 	
 	try:
