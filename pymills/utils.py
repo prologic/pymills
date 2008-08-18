@@ -267,32 +267,40 @@ class OptionParser(optparse.OptionParser):
 		return (values, args)
 
 
-def getFiles(path, find=".*", tests=[isfile], fullPath=False):
-	"""getFiles(path, find=".*", tests=[isfile], fullPath=False) -> list of files
+def getFiles(root, pattern=".*", tests=[isfile], **kwargs):
+	"""getFiles(root, pattern=".*", tests=[isfile], f**kwargs) -> list of files
 
-	Return a list of files in the specified path
+	Return a list of files in the specified path (root)
 	applying the predicates listed in tests returning
-	only the files that match the pattern "find".
-	Include the full path if fullPath=True for files
-	found.
+	only the files that match the pattern. Some optional
+	kwargs can be specified:
+	 * full=True      (Return full paths)
+	 * recursive=True (Recursive mode)
 	"""
 
-	def testFile(file):
+	def test(file, tests):
 		for test in tests:
 			if not test(file):
 				return False
 		return True
 
-	files = os.listdir(path)
-	list = []
-	for file in files:
-		if testFile(os.path.join(path, file)) and \
-				re.match(find, file):
-			if fullPath:
-				list.append(os.path.join(path, file))
+	full = kwargs.get("full", False)
+	recursive = kwargs.get("recursive", False)
+
+	files = []
+
+	for file in os.listdir(root):
+		path = os.path.abspath(os.path.join(root, file))
+		if os.path.isdir(path):
+			if recursive:
+				files.extend(getFiles(path, pattern, **kwargs))
+		elif test(path, tests) and re.match(pattern, path):
+			if full:
+				files.append(path)
 			else:
-				list.append(file)
-	return list
+				files.append(file)
+
+	return files
 
 
 def isReadable(file):
