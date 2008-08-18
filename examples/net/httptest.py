@@ -33,8 +33,6 @@ def main():
 		try:
 			manager.flush()
 			server.poll()
-		except UnhandledEvent:
-			pass
 		except KeyboardInterrupt:
 			break
 
