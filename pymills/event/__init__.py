@@ -53,7 +53,7 @@ class UnhandledEvent(EventError):
 		super(UnhandledEvent, self).__init__(event)
 
 
-class Event(object):
+class Event:
 	"""Event(*args, **kwargs) -> new event object
 
 	Create a new event object populating it with the given
