@@ -161,19 +161,17 @@ class Manager(object):
 				ekwargs = event.kwargs
 				if target:
 					channel = "%s:%s" % (target, channel)
+				if channel not in self.channels and not self._global:
+					raise UnhandledEvent(event)
 				try:
-					handled = False
 					for handler in self.handlers(channel):
 						args = handler.args
-						handled = True
 						if args and args[0] == "event":
 							if handler(event, *eargs, **ekwargs):
 								break
 						else:
 							if handler(*eargs, **ekwargs):
 								break
-					if not handled:
-						raise UnhandledEvent(event)
 				except:
 					raise
 		else:
@@ -195,19 +193,17 @@ class Manager(object):
 			ekwargs = event.kwargs
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
+			if channel not in self.channels and not self._global:
+				raise UnhandledEvent(event)
 			try:
-				handled = False
 				for handler in self.handlers(channel):
 					args = handler.args
-					handled = True
 					if args and args[0] == "event":
 						if handler(event, *eargs, **ekwargs):
 							break
 					else:
 						if handler(*eargs, **ekwargs):
 							break
-				if not handled:
-					raise UnhandledEvent(event)
 			except:
 				raise
 		else:
