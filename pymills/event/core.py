@@ -163,11 +163,15 @@ class Manager(object):
 					channel = "%s:%s" % (target, channel)
 				for handler in self.handlers(channel):
 					args = handler.args
-					if args and args[0] == "event":
-						if handler(event, *eargs, **ekwargs):
-							break
+					if args:
+						if args[0] == "event":
+							if handler(event, *eargs, **ekwargs):
+								break
+						else:
+							if handler(*eargs, **ekwargs):
+								break
 					else:
-						if handler(*eargs, **ekwargs):
+						if handler():
 							break
 		else:
 			self.manager.flush()
@@ -190,11 +194,15 @@ class Manager(object):
 				channel = "%s:%s" % (target, channel)
 			for handler in self.handlers(channel):
 				args = handler.args
-				if args and args[0] == "event":
-					if handler(event, *eargs, **ekwargs):
-						break
+				if args:
+					if args[0] == "event":
+						if handler(event, *eargs, **ekwargs):
+							break
+					else:
+						if handler(*eargs, **ekwargs):
+							break
 				else:
-					if handler(*eargs, **ekwargs):
+					if handler():
 						break
 		else:
 			self.manager.send(event, channel, target)
