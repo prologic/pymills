@@ -8,6 +8,7 @@ Core components and managers.
 """
 
 from time import sleep
+from itertools import chain
 from threading import Thread
 from collections import defaultdict
 from inspect import getmembers, ismethod
@@ -67,16 +68,12 @@ class Manager(object):
 		return self
 
 	def handlers(self, channel):
-		for handler in self._global:
-			yield handler
-
+		channels = self.channels
 		if ":" in channel and not channel.endswith("*"):
 			x = "%s:*" % channel.split(":")[0]
-			for handler in self.channels[x]:
-				yield handler
-
-		for handler in self.channels[channel]:
-			yield handler
+			return chain(self._global, channels[x], channels[channel])
+		else:
+			return chain(self._global, channels[channel])
 
 	def add(self, handler, channel=None):
 		"""E.add(handler, channel) -> None
