@@ -10,6 +10,7 @@ Core components and managers.
 from time import sleep
 from itertools import chain
 from threading import Thread
+from collections import deque
 from collections import defaultdict
 from inspect import getmembers, ismethod
 
@@ -37,7 +38,10 @@ class Manager(object):
 	def __init__(self, *args, **kwargs):
 		super(Manager, self).__init__()
 
-		self._queue = []
+		self._flushing = False
+		self._queueIn = deque()
+		self._queueOut = deque()
+
 		self._global = set()
 		self._handlers = set()
 
@@ -48,7 +52,7 @@ class Manager(object):
 		return self.channels[x]
 
 	def __len__(self):
-		return len(self._queue)
+		return len(self._queueIn)
 
 	def __add__(self, y):
 		y.register(self.manager)
@@ -136,7 +140,9 @@ class Manager(object):
 		if self.manager == self:
 			event.channel = channel
 			event.target = target
-			self._queue.append(event)
+			self._queueIn.append(event)
+			if not self._flushing:
+				self._queueOut.append(event)
 		else:
 			self.manager.push(event, channel, target)
 
@@ -149,9 +155,9 @@ class Manager(object):
 		"""
 
 		if self.manager == self:
-			_queue = self._queue
-			queue = _queue[:]
-			for event in queue:
+			self._flushing = True
+			while self._queueOut:
+				event = self._queueOut.pop()
 				channel = event.channel
 				target = event.target
 				if target is not None:
@@ -173,8 +179,9 @@ class Manager(object):
 								break
 				except:
 					raise
-				finally:
-					_queue.remove(event)
+			self._flushing = True
+			self._queueOut = self._queueIn
+			self._queueIn = deque()
 		else:
 			self.manager.flush()
 
