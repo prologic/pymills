@@ -157,12 +157,12 @@ class Manager(object):
 				event = q.pop()
 				channel = event.channel
 				target = event.target
-				if target is not None:
+				if target:
 					channel = "%s:%s" % (target, channel)
-				if not self._global and channel not in self.channels:
-					raise UnhandledEvent, event
 				try:
+					handled = False
 					for handler in self.handlers(channel):
+						handled = True
 						if handler.args:
 							if handler.args[0] in ["e", "evt", "event"]:
 								if handler(event, *event.args, **event.kwargs):
@@ -173,6 +173,8 @@ class Manager(object):
 						else:
 							if handler():
 								break
+					if not handled:
+						raise UnhandledEvent(event)
 				except:
 					raise
 		else:
@@ -192,10 +194,10 @@ class Manager(object):
 			event.target = target
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
-			if not self._global and channel not in self.channels:
-				raise UnhandledEvent, event
 			try:
+				handled = False
 				for handler in self.handlers(channel):
+					handled = True
 					if handler.args:
 						if handler.args[0] in ["e", "evt", "event"]:
 							if handler(event, *event.args, **event.kwargs):
@@ -206,6 +208,8 @@ class Manager(object):
 					else:
 						if handler():
 							break
+				if not handled:
+					raise UnhandledEvent(event)
 			except:
 				raise
 		else:
