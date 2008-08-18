@@ -112,26 +112,26 @@ def parseHeaders(data):
 		
 	return headers, data.read()
 
-	def processBody(headers, body):
-		if "Content-Type" not in self.headers:
-			headers["Content-Type"] = ""
-		
-		try:
-			form = FieldStorage(fp=body,
-				headers=headers,
-				environ={"REQUEST_METHOD": "POST"},
-				keep_blank_values=True)
-		except Exception, e:
-			if e.__class__.__name__ == 'MaxSizeExceeded':
-				# Post data is too big
-				raise cherrypy.HTTPError(413)
-			else:
-				raise
-		
-		if form.file:
-			return form.file
+def processBody(headers, body):
+	if "Content-Type" not in self.headers:
+		headers["Content-Type"] = ""
+	
+	try:
+		form = FieldStorage(fp=body,
+			headers=headers,
+			environ={"REQUEST_METHOD": "POST"},
+			keep_blank_values=True)
+	except Exception, e:
+		if e.__class__.__name__ == 'MaxSizeExceeded':
+			# Post data is too big
+			raise cherrypy.HTTPError(413)
 		else:
-			return dictform(form)
+			raise
+	
+	if form.file:
+		return form.file
+	else:
+		return dictform(form)
 
 def dictform(form):
 	d = {}
