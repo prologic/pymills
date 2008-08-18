@@ -38,9 +38,7 @@ class Manager(object):
 	def __init__(self, *args, **kwargs):
 		super(Manager, self).__init__()
 
-		self._flushing = False
-		self._queueIn = deque()
-		self._queueOut = deque()
+		self._queue = deque()
 
 		self._global = set()
 		self._handlers = set()
@@ -52,7 +50,7 @@ class Manager(object):
 		return self.channels[x]
 
 	def __len__(self):
-		return len(self._queueIn)
+		return len(self._queue)
 
 	def __add__(self, y):
 		y.register(self.manager)
@@ -140,9 +138,7 @@ class Manager(object):
 		if self.manager == self:
 			event.channel = channel
 			event.target = target
-			self._queueIn.append(event)
-			if not self._flushing:
-				self._queueOut.append(event)
+			self._queue.append(event)
 		else:
 			self.manager.push(event, channel, target)
 
@@ -155,34 +151,30 @@ class Manager(object):
 		"""
 
 		if self.manager == self:
-			self._flushing = True
-			try:
-				while self._queueOut:
-					event = self._queueOut.pop()
-					channel = event.channel
-					target = event.target
-					if target is not None:
-						channel = "%s:%s" % (target, channel)
-					if not self._global and channel not in self.channels:
-						raise UnhandledEvent, event
-					try:
-						for handler in self.handlers(channel):
-							if handler.args:
-								if handler.args[0] in ["e", "evt", "event"]:
-									if handler(event, *event.args, **event.kwargs):
-										break
-								else:
-									if handler(*event.args, **event.kwargs):
-										break
-							else:
-								if handler():
+			q = self._queue
+			self._queue = deque()
+			while q:
+				event = q.pop()
+				channel = event.channel
+				target = event.target
+				if target is not None:
+					channel = "%s:%s" % (target, channel)
+				if not self._global and channel not in self.channels:
+					raise UnhandledEvent, event
+				try:
+					for handler in self.handlers(channel):
+						if handler.args:
+							if handler.args[0] in ["e", "evt", "event"]:
+								if handler(event, *event.args, **event.kwargs):
 									break
-					except:
-						raise
-			finally:
-				self._flushing = True
-				self._queueOut = self._queueIn
-				self._queueIn = deque()
+							else:
+								if handler(*event.args, **event.kwargs):
+									break
+						else:
+							if handler():
+								break
+				except:
+					raise
 		else:
 			self.manager.flush()
 
