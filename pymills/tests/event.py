@@ -124,12 +124,6 @@ class EventTestCase(unittest.TestCase):
 		event.manager += foo
 		event.manager += bar
 
-		try:
-			event.manager.send(Event(), "dummy")
-			self.fail()
-		except UnhandledEvent:
-			pass
-
 		event.manager.send(Event(), "foo", foo.channel)
 		self.assertTrue(foo.flag)
 		event.manager.send(Event(), "bar")

@@ -14,7 +14,7 @@ from collections import deque
 from collections import defaultdict
 from inspect import getmembers, ismethod
 
-from pymills.event import EventError, UnhandledEvent
+from pymills.event import EventError
 
 
 def _sortHandlers(x, y):
@@ -161,19 +161,14 @@ class Manager(object):
 				ekwargs = event.kwargs
 				if target:
 					channel = "%s:%s" % (target, channel)
-				if channel not in self.channels and not self._global:
-					raise UnhandledEvent(event)
-				try:
-					for handler in self.handlers(channel):
-						args = handler.args
-						if args and args[0] == "event":
-							if handler(event, *eargs, **ekwargs):
-								break
-						else:
-							if handler(*eargs, **ekwargs):
-								break
-				except:
-					raise
+				for handler in self.handlers(channel):
+					args = handler.args
+					if args and args[0] == "event":
+						if handler(event, *eargs, **ekwargs):
+							break
+					else:
+						if handler(*eargs, **ekwargs):
+							break
 		else:
 			self.manager.flush()
 
@@ -193,19 +188,14 @@ class Manager(object):
 			ekwargs = event.kwargs
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
-			if channel not in self.channels and not self._global:
-				raise UnhandledEvent(event)
-			try:
-				for handler in self.handlers(channel):
-					args = handler.args
-					if args and args[0] == "event":
-						if handler(event, *eargs, **ekwargs):
-							break
-					else:
-						if handler(*eargs, **ekwargs):
-							break
-			except:
-				raise
+			for handler in self.handlers(channel):
+				args = handler.args
+				if args and args[0] == "event":
+					if handler(event, *eargs, **ekwargs):
+						break
+				else:
+					if handler(*eargs, **ekwargs):
+						break
 		else:
 			self.manager.send(event, channel, target)
 

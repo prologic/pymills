@@ -46,13 +46,6 @@ class EventError(Exception):
 	"Event Error"
 
 
-class UnhandledEvent(EventError):
-	"Unhandled Event Error"
-
-	def __init__(self, event):
-		super(UnhandledEvent, self).__init__(event)
-
-
 class Event:
 	"""Event(*args, **kwargs) -> new event object
 
@@ -152,7 +145,6 @@ __all__ = (
 	"listener",
 	"Event",
 	"EventError",
-	"UnhandledEvent",
 	"Manager",
 	"Component",
 	"Worker",
