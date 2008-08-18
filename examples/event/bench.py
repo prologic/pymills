@@ -114,7 +114,7 @@ class Receiver(Component):
 
 	@listener("helo")
 	def onHELO(self, address, port):
-		self.send(Hello("hello"), "hello", self.channel)
+		self.push(Hello("hello"), "hello", self.channel)
 
 	@listener("hello")
 	def onHELLO(self, message=""):
