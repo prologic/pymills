@@ -166,15 +166,11 @@ class Manager(object):
 					for handler in self.handlers(channel):
 						args = handler.args
 						handled = True
-						if args:
-							if args[0] == "event":
-								if handler(event, *eargs, **ekwargs):
-									break
-							else:
-								if handler(*eargs, **ekwargs):
-									break
+						if args and args[0] == "event":
+							if handler(event, *eargs, **ekwargs):
+								break
 						else:
-							if handler():
+							if handler(*eargs, **ekwargs):
 								break
 					if not handled:
 						raise UnhandledEvent(event)
@@ -204,15 +200,11 @@ class Manager(object):
 				for handler in self.handlers(channel):
 					args = handler.args
 					handled = True
-					if args:
-						if args[0] == "event":
-							if handler(event, *eargs, **ekwargs):
-								break
-						else:
-							if handler(*eargs, **ekwargs):
-								break
+					if args and args[0] == "event":
+						if handler(event, *eargs, **ekwargs):
+							break
 					else:
-						if handler():
+						if handler(*eargs, **ekwargs):
 							break
 				if not handled:
 					raise UnhandledEvent(event)
