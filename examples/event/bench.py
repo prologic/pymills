@@ -166,8 +166,9 @@ def main():
 	state = State()
 	event.manager += state
 
-	debugger.set(opts.debug)
-	event.manager += debugger
+	if opts.debug:
+		debugger.enable()
+		event.manager += debugger
 
 	if opts.listen or args:
 		nodes = []
