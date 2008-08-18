@@ -72,11 +72,12 @@ def main():
 		profiler = hotshot.Profile("httpd.prof")
 		profiler.start()
 
-	debugger.set(opts.debug)
-	debugger.IgnoreEvents = ["Read", "Write", "Close"]
+	if opts.debug:
+		debugger.enable()
+		debugger.IgnoreEvents = ["Read", "Write", "Close"]
+		event.manager += debugger
 
 	server = WebServer(port, address)
-	event.manager += debugger
 	event.manager += server
 	event.manager += Test()
 
