@@ -156,32 +156,33 @@ class Manager(object):
 
 		if self.manager == self:
 			self._flushing = True
-			while self._queueOut:
-				event = self._queueOut.pop()
-				channel = event.channel
-				target = event.target
-				if target is not None:
-					channel = "%s:%s" % (target, channel)
-				if not self._global and channel not in self.channels:
-					_queue.remove(event)
-					raise UnhandledEvent, event
-				try:
-					for handler in self.handlers(channel):
-						if handler.args:
-							if handler.args[0] in ["e", "evt", "event"]:
-								if handler(event, *event.args, **event.kwargs):
-									break
+			try:
+				while self._queueOut:
+					event = self._queueOut.pop()
+					channel = event.channel
+					target = event.target
+					if target is not None:
+						channel = "%s:%s" % (target, channel)
+					if not self._global and channel not in self.channels:
+						raise UnhandledEvent, event
+					try:
+						for handler in self.handlers(channel):
+							if handler.args:
+								if handler.args[0] in ["e", "evt", "event"]:
+									if handler(event, *event.args, **event.kwargs):
+										break
+								else:
+									if handler(*event.args, **event.kwargs):
+										break
 							else:
-								if handler(*event.args, **event.kwargs):
+								if handler():
 									break
-						else:
-							if handler():
-								break
-				except:
-					raise
-			self._flushing = True
-			self._queueOut = self._queueIn
-			self._queueIn = deque()
+					except:
+						raise
+			finally:
+				self._flushing = True
+				self._queueOut = self._queueIn
+				self._queueIn = deque()
 		else:
 			self.manager.flush()
 
