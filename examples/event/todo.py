@@ -11,7 +11,7 @@ class TodoList(Component):
 	def add(self, name, description):
 		assert name not in self.todos, "To-do already in list"
 		self.todos[name] = description
-		self.push(Event("Todo", name, description), "added")
+		self.push(Event(name, description), "added")
 
 class TodoPrinter(Component):
 
@@ -23,7 +23,7 @@ class TodoPrinter(Component):
 def main():
 	event.manager += TodoPrinter()
 	todo = TodoList()
-	event.manager ++ todo
+	event.manager += todo
 
 	todo.add("Make coffee", "Really need to make some coffee")
 	todo.add("Bug triage", "Double-check that all known issues were addressed")
