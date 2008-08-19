@@ -42,6 +42,13 @@ from inspect import getargspec
 from threading import enumerate as threads
 
 
+try:
+	import psyco
+	psyco.full()
+except ImportError:
+	pass
+
+
 class EventError(Exception):
 	"Event Error"
 
