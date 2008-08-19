@@ -9,7 +9,7 @@ Test all functionality of the Utils library.
 
 import unittest
 
-from pymills.utils import notags, getProgName, caller
+from pymills.utils import notags, getProgName 
 
 class UtilsTestCase(unittest.TestCase):
 
@@ -30,17 +30,6 @@ class UtilsTestCase(unittest.TestCase):
 		"""
 
 		self.assertEquals(getProgName(), "run.py")
-
-	def test_caller(self):
-		"""Test caller functions
-
-		Test the "caller" function.
-		"""
-
-		self.assertEquals(caller(1), "run")
-		self.assertEquals(caller(), "run")
-		self.assertEquals(caller(0), "test_caller")
-		self.assertEquals(caller(-1), "caller")
 
 def suite():
 	return unittest.makeSuite(UtilsTestCase, "test")
