@@ -53,7 +53,7 @@ class EventError(Exception):
 	"Event Error"
 
 
-class Event:
+class Event(object):
 	"""Event(*args, **kwargs) -> new event object
 
 	Create a new event object populating it with the given
@@ -66,10 +66,12 @@ class Event:
 	source = None # Used by Bridge
 	ignore = False # Used by Bridge
 
-	def __init__(self, *args, **kwargs):
-		self.name = self.__class__.__name__
+	def __new__(cls, *args, **kwargs):
+		self = object.__new__(Event)
+		self.name = cls.__name__
 		self.args = args
 		self.kwargs = kwargs
+		return self
 
 	def __eq__(self, y):
 		" x.__eq__(y) <==> x==y"
