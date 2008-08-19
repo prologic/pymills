@@ -329,19 +329,6 @@ def mkpasswd(n):
 				for x in range(n)], "")
 
 
-def caller(n=1):
-	"""caller(n=1) -> str
-
-	Return the name of the calling function.
-	If n is specified, return the n'th function
-	in the stack.
-	"""
-
-	from traceback import extract_stack
-	stack = extract_stack()
-	return stack[-n-2][2]
-
-
 def validateEmail(email):
 	"""validateEmail(email) -> bool
 
