@@ -10,10 +10,6 @@ from pymills.net.sockets import UDPClient
 
 class UDPClient(UDPClient):
 
-	@listener("connect")
-	def onCONNECT(self, host, port):
-		print "Connected to %s" % host
-
 	@listener("read")
 	def onREAD(self, line):
 		line = line.strip()
@@ -21,17 +17,14 @@ class UDPClient(UDPClient):
 
 def main(host, port):
 
-	client = UDPClient()
+	client = UDPClient(9999)
 	event.manager += client
 
-	print "Trying %s..." % host
-	client.open(host, int(port))
-
-	while client.connected:
+	while True:
 		manager.flush()
 		client.poll()
-		line = raw_input().strip()
-		client.write("%s\n" % line)
+		data = raw_input().strip()
+		client.write((host, int(port)), data)
 
 if __name__ == "__main__":
 	import sys

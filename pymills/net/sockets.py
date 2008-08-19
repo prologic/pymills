@@ -50,14 +50,14 @@ class Client(Component):
 	server = {}
 	issuer = {}
 	connected = False
-	buffer = []
 
-	_fds = []
-	_closeFlag = False
+	_buffer = []
+	_socks = []
+	_close = False
 
 	def poll(self, wait=POLL_INTERVAL):
 		try:
-			r, w, e = select.select(self._fds, self._fds, [], wait)
+			r, w, e = select.select(self._socks, self._socks, [], wait)
 		except socket.error, error:
 			if error[0] == errno.EBADF:
 				self.connected = False
@@ -86,11 +86,11 @@ class Client(Component):
 				return
 
 		if w:
-			if self.buffer:
-				data = self.buffer[0]
+			if self._buffer:
+				data = self._buffer[0]
 				self.send(Write(data), "write", self.channel)
 			else:
-				if self._closeFlag:
+				if self._close:
 					self.close()
 
 	def open(self, host, port, ssl=False):
@@ -108,7 +108,7 @@ class Client(Component):
 			if self.ssl:
 				self._ssock = socket.ssl(self._sock)
 			
-			r, w, e = select.select([], self._fds, [], CONNECT_TIMEOUT)
+			r, w, e = select.select([], self._socks, [], CONNECT_TIMEOUT)
 			if w:
 				self.connected = True
 				self.push(Connect(host, port), "connect", self.channel)
@@ -120,11 +120,11 @@ class Client(Component):
 			self.close()
 
 	def close(self):
-		if self._fds:
+		if self._socks:
 			self.push(Close(), "close", self.channel)
 	
 	def write(self, data):
-		self.buffer.append(data)
+		self._buffer.append(data)
 
 	@filter("close")
 	def onCLOSE(self):
@@ -134,12 +134,12 @@ class Client(Component):
 		If it is, this should be called by the sub-class first.
 		"""
 
-		if self.buffer:
-			self._closeFlag = True
+		if self._buffer:
+			self._close = True
 			return
 
 		try:
-			self._fds.remove(self._sock)
+			self._socks.remove(self._sock)
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, error:
@@ -161,7 +161,7 @@ class TCPClient(Client):
 		if bind is not None:
 			self._sock.bind((bind, 0))
 
-		self._fds.append(self._sock)
+		self._socks.append(self._sock)
 
 		super(TCPClient, self).open(host, port, ssl)
 
@@ -180,9 +180,9 @@ class TCPClient(Client):
 				bytes = self._sock.send(data)
 
 			if bytes < len(data):
-				self.buffer[0] = data[bytes:]
+				self._buffer[0] = data[bytes:]
 			else:
-				del self.buffer[0]
+				del self._buffer[0]
 		except socket.error, error:
 			if error[0] in [32, 107]:
 				self.close()
@@ -190,43 +190,6 @@ class TCPClient(Client):
 				self.push(Error(error), "error", self.channel)
 				self.close()
 
-class UDPClient(Client):
-
-	def open(self, host, port):
-		self._sock = socket.socket(
-				socket.AF_INET,
-				socket.SOCK_DGRAM)
-
-		self.host = host
-		self.port = port
-		self.addr = (host, port)
-
-		self._sock.setblocking(False)
-
-		self.connected = True
-
-		self.push(Connect(host, port), "connect", self.channel)
-
-	@filter("write")
-	def onWRITE(self, data):
-		"""Write Event
-
-		Typically this should NOT be overridden by sub-classes.
-		If it is, this should be called by the sub-class first.
-		"""
-
-		try:
-			bytes = self._sock.sendto(data, self.addr)
-			if bytes < len(data):
-				self.buffer[0] = data[bytes:]
-			else:
-				del self.buffer[0]
-		except socket.error, e:
-			if e[0] in [32, 107]:
-				self.close()
-			else:
-				self.push(Error(e), "error", self.channel)
-				self.close()
 
 class Server(Component):
 
@@ -389,23 +352,23 @@ class UDPServer(Server):
 		self._sock.setblocking(False)
 		self._sock.bind((address, port))
 
-		self._fds.append(self._sock)
+		self._socks.append(self._sock)
+		self._read = [self._sock]
 
 		self.address = address
 		self.port = port
 
 	def poll(self, wait=POLL_INTERVAL):
-		try:
-			r, w, e = select.select(self._fds, self._fds, self._fds, wait)
-		except socket.error, error:
-			if error[0] == 9:
-				for sock in e:
-					self.close(sock)
+		r, w, e = select.select(self._read, self._write, [], wait)
 
 		if w:
-			for address, data in self.buffers.iteritems():
+			for address, data in self._buffers.iteritems():
 				if data:
 					self.send(Write(address, data[0]), "write", self.channel)
+				else:
+					if self._close:
+						self.close()
+			self._write.remove(w[0])
 
 		if r:
 			try:
@@ -420,15 +383,17 @@ class UDPServer(Server):
 				self.close()
 
 	def write(self, address, data):
-		if not self.buffers.has_key(address):
-			self.buffers[address] = []
-		self.buffers[address].append(data)
+		if not self._write:
+			self._write.append(self._sock)
+		if not self._buffers.has_key(address):
+			self._buffers[address] = []
+		self._buffers[address].append(data)
 
 	def broadcast(self, data):
-		pass
+		self.write("<broadcast", data)
 
 	def close(self):
-		if self._fds:
+		if self._socks:
 			self.push(Close(), "close", self.channel)
 
 	@filter("close")
@@ -440,7 +405,9 @@ class UDPServer(Server):
 		"""
 
 		try:
-			self._fds.remove(self._sock)
+			self._socks.remove(self._sock)
+			self._read.remove(self._sock)
+			self._write.remove(self._sock)
 			self._sock.shutdown(2)
 			self._sock.close()
 		except socket.error, error:
@@ -457,10 +424,12 @@ class UDPServer(Server):
 
 		try:
 			self._sock.sendto(data, address)
-			del self.buffers[address][0]
+			del self._buffers[address][0]
 		except socket.error, e:
 			if e[0] in [32, 107]:
 				self.close()
 			else:
 				self.push(Error(e), "error", self.channel)
 				self.close()
+
+UDPClient = UDPServer

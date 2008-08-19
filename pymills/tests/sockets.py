@@ -10,8 +10,10 @@
 import unittest
 from time import sleep
 
-from pymills.event import filter, listener, Worker
+from pymills import event
+from pymills.event import *
 from pymills.net.sockets import TCPClient, TCPServer
+from pymills.net.sockets import UDPClient, UDPServer
 
 class Manager(Worker):
 
@@ -28,51 +30,46 @@ class Manager(Worker):
 			if self.client.connected:
 				self.client.poll()
 
-class Client(TCPClient):
+class Client(Component):
 
 	channel = "client"
 
-	connectedFlag = False
-	disconnectedFlag = False
+	connected = False
+	disconnected = False
 	error = None
-	dataIn = ""
+	data = ""
 
 	@listener("connect")
 	def onCONNECT(self, host, port):
-		self.connectedFlag = True
+		self.connected = True
 
 	@listener("disconnect")
 	def onDISCONNECT(self):
-		self.disconnectedFlag = True
+		self.disconnected = True
 
 	@listener("read")
 	def onREAD(self, data):
-		self.dataIn = data
+		self.data = data
 
 	@listener("error")
 	def onERROR(self, error):
 		self.error = error
 
-class Server(TCPServer):
+class Server(Component):
 
 	channel = "server"
 
-	dataIn = ""
-	clients = []
+	data = ""
 	errors = {}
+	server = None
 
 	@listener("connect")
 	def onCONNECT(self, sock, host, port):
-		self.clients.append(sock)
-		self.write(sock, "Ready")
-
-	@listener("disconnect")
-	def onDISCONNECT(self, sock):
-		self.clients.remove(sock)
+		self.server.write(sock, "Ready")
 
 	@listener("read")
 	def onREAD(self, sock, data):
-		self.dataIn = data
+		self.data = data
 
 	@listener("error")
 	def onERROR(self, sock, error):
@@ -80,50 +77,81 @@ class Server(TCPServer):
 
 class SocketsTestCase(unittest.TestCase):
 
-	def testTCPClient(self):
-		"""Test sockets.TCPClient
+	def testTCPClientServer(self):
+		"""Test sockets.TCPClient and sockets.TCPServer
 
-		1. Test that a TCPClient can open a connection to
-		   a given host and port
-		2. Test that a TCPClient can receive data from an
-		   open connection.
-		3. Test that a TCPClient can write data to an open
-		   connection.
-		4. Test that a TCPClient can disconnect from an
-		   open connection.
+		Test that communication between a TCPClient and
+		TCPServer work correctly.
 		"""
 
 		manager = Manager()
-		server = Server(9999)
-		manager += server
+		tcpserver = TCPServer(9999, channel="server")
+		tcpclient = TCPClient(channel="client")
+		server = Server()
 		client = Client()
+		manager += tcpserver
+		manager += tcpclient
+		manager += server
 		manager += client
-		manager.server = server
-		manager.client = client
+		manager.server = tcpserver
+		server.server = tcpserver
+		manager.client = tcpclient
 
 		manager.start()
 
 		try:
-			#1
-			client.open("localhost", 9999)
+			tcpclient.open("localhost", 9999)
 			sleep(0.1)
-			self.assertTrue(client.connectedFlag)
+			self.assertTrue(client.connected)
 
-			#2
-			self.assertTrue(client.dataIn == "Ready")
+			self.assertTrue(client.data == "Ready")
 
-			#3
-			client.write("foo")
+			tcpclient.write("foo")
 			sleep(0.1)
-			self.assertTrue(server.dataIn == "foo")
+			self.assertTrue(server.data == "foo")
 
-			#4
-			client.close()
+			tcpclient.close()
 			sleep(0.1)
-			self.assertTrue(client.disconnectedFlag)
+			self.assertTrue(client.disconnected)
 		finally:
 			manager.stop()
 			manager.join()
+
+	def testUDPClientServer(self):
+		"""Test sockets.UDPClient and sockets.UDPServer
+
+		Test that communication between a UDPClient and
+		UDPServer work correctly.
+		"""
+
+		manager = Manager()
+		udpserver = UDPServer(9999, channel="server")
+		udpclient = UDPClient(10000, channel="client")
+		server = Server()
+		client = Client()
+		manager += udpserver
+		manager += udpclient
+		manager += server
+		manager += client
+		manager.server = udpserver
+		server.server = udpserver
+		manager.client = udpclient
+
+		manager.start()
+
+		try:
+			udpclient.connected = True
+			#udpclient.open("localhost", 9999)
+			#sleep(0.1)
+			#self.assertTrue(client.connected)
+
+			udpclient.write(("localhost", 9999), "foo")
+			sleep(0.1)
+			self.assertTrue(server.data == "foo")
+		finally:
+			manager.stop()
+			manager.join()
+
 
 def suite():
 	return unittest.makeSuite(SocketsTestCase, "test")
