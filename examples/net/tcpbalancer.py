@@ -175,8 +175,6 @@ def main():
 			server.poll()
 			if target.connected:
 				target.poll()
-		except UnhandledEvent:
-			pass
 		except KeyboardInterrupt:
 			target.close()
 			server.close()

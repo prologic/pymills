@@ -161,8 +161,6 @@ def main():
 				break
 			if opts.time > 0 and (time.time() - sTime) > opts.time:
 				break
-		except UnhandledEvent:
-			pass
 		except KeyboardInterrupt:
 			break
 

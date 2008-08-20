@@ -79,8 +79,6 @@ def main():
 		try:
 			manager.flush()
 			bot.poll()
-		except UnhandledEvent:
-			pass
 		except KeyboardInterrupt:
 			bot.ircQUIT()
 

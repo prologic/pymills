@@ -151,8 +151,6 @@ def main():
 		try:
 			manager.flush()
 			mta.poll()
-		except UnhandledEvent:
-			pass
 		except Exception, error:
 			print >> sys.stderr, "ERROR: %s" % error
 			print >> sys.stderr, format_exc()

@@ -10,7 +10,7 @@
 import math
 from time import time, sleep
 
-from pymills.event import listener, Event, UnhandledEvent, Worker
+from pymills.event import listener, Event, Worker
 
 
 class SignalEvent(Event):
@@ -41,10 +41,7 @@ class Node(Worker):
 
 	def run(self):
 		while self.isRunning():
-			try:
-				self.flush()
-			except UnhandledEvent:
-				pass
+			self.flush()
 			sleep(0.01)
 
 	inputs = property(_getInputs)
@@ -163,10 +160,7 @@ class Neuron(Node):
 				self.compute()
 				self._level = 0.0
 				self._ls = None
-			try:
-				self.event.flush()
-			except UnhandledEvent:
-				pass
+			self.event.flush()
 			sleep(0.01)
 
 	threshold = property(_get_threshold, _set_threshold)

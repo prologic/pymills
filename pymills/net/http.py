@@ -377,12 +377,11 @@ class HTTP(Component):
 				response.close = True
 		
 		try:
-			self.send(Request(request, response), "request")
+			if not self.send(Request(request, response), "request"):
+				self.sendError(sock, 501, "Unsupported method (%r)" % command,
+						request, response)
 		except HTTPError, error:
 			self.sendError(sock, error[0], error[1], response)
-		except UnhandledEvent:
-			self.sendError(sock, 501, "Unsupported method (%r)" % command,
-					request, response)
 		except Exception, error:
 			self.sendError(sock, 500, "Internal Server Error", response)
 			raise
