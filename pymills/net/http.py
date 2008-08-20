@@ -21,7 +21,7 @@ import mimetools
 from time import strftime
 from urllib import unquote
 from urlparse import urlparse
-from cStringIO import StringIO
+from StringIO import StringIO
 from mimetypes import guess_type
 from wsgiref.headers import Headers
 
@@ -315,8 +315,6 @@ class HTTP(Component):
 	 * ...
 	"""
 
-	__commands = {}
-
 	###
 	### Event Processing
 	###
@@ -352,11 +350,7 @@ class HTTP(Component):
 		lines of text, leave in the buffer.
 		"""
 
-		self.__commands[sock] = None
-		closeConnection = True
-		data = data.strip()
-
-		requestline, data = re.split("\r?\n", data, 1)
+		requestline, data = re.split("\r?\n", data.strip(), 1)
 
 		method, path, protocol = requestline.strip().split(" ", 2)
 		scheme, location, path, params, qs, frag = urlparse(path)
@@ -461,9 +455,6 @@ class HTTP(Component):
 		response.body = content
 		response.status = "%s %s" % (code, message)
 		response.headers.add_header('Connection', 'close')
-
-		if self.__commands[sock] != "HEAD" and code >= 200 and code not in (204, 304):
-			self.write(sock, response())
 
 		self.close(sock)
 
