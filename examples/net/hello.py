@@ -9,7 +9,7 @@ import hotshot.stats
 from pymills import event
 from pymills.event import *
 from pymills.net.sockets import TCPServer
-from pymills.net.http import HTTP, Response
+from pymills.net.http import HTTP, Response, Dispatcher
 from pymills import __version__ as systemVersion
 
 USAGE = "%prog [options]"
@@ -48,8 +48,13 @@ def parse_options():
 
 class Test(Component):
 
-	@listener("request")
-	def onREQUEST(self, request, response):
+	@listener("hello")
+	def onHello(self, request, response):
+		response.body = "Hello World!"
+		self.send(Response(response), "response")
+
+	@listener("test")
+	def onTEST(self, request, response):
 		response.body = "OK"
 		self.send(Response(response), "response")
 
@@ -78,8 +83,12 @@ def main():
 		event.manager += debugger
 
 	server = WebServer(port, address)
+	dispatcher = Dispatcher()
+	dispatcher.docroot = "/var/www/"
+
 	event.manager += server
 	event.manager += Test()
+	event.manager += dispatcher
 
 	while True:
 		try:
