@@ -28,7 +28,8 @@ def main():
 	todo.add("Make coffee", "Really need to make some coffee")
 	todo.add("Bug triage", "Double-check that all known issues were addressed")
 
-	manager.flush()
+	for value in manager:
+		print value
 
 if __name__ == "__main__":
 	main()
