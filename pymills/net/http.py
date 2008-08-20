@@ -136,7 +136,7 @@ class _Request(object):
 		return "<Request %s %s %s>" % (self.method, self.version, self.path)
 
 class _Response(object):
-	"""_Response(request) -> new Response object
+	"""_Response(sock, body="") -> new Response object
 
 	A Response object that holds the response to
 	send back to the client. This ensure that the correct data
@@ -248,7 +248,7 @@ class Dispatcher(Component):
 
 			if filename:
 				serve_file(filename)
-				self.send(Response(request, response), "response")
+				self.send(Response(response), "response")
 			else:
 				raise NotFound()
 
