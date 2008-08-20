@@ -21,7 +21,7 @@ import mimetools
 from time import strftime
 from urllib import unquote
 from urlparse import urlparse
-from StringIO import StringIO
+from cStringIO import StringIO
 from mimetypes import guess_type
 from wsgiref.headers import Headers
 
