@@ -219,8 +219,7 @@ class Dispatcher(Component):
 		else:
 			target, channel = os.path.split(path)
 
-		defaults = [channel or "index",
-				"HEAD", "GET", "PUT", "POST", "DELETE"]
+		defaults = [channel or "index", request.method.upper()]
 
 		if target:
 			channels = ("%s:%s" % (target, channel) for channel in defaults)
@@ -290,6 +289,8 @@ class HTTP(Component):
 	 * ...
 	"""
 
+	_requests = {}
+
 	###
 	### Event Processing
 	###
@@ -325,46 +326,54 @@ class HTTP(Component):
 		lines of text, leave in the buffer.
 		"""
 
-		requestline, data = re.split("\r?\n", data.strip(), 1)
+		if sock in self._requests:
+			request = self._requests[sock]
+			request.body.write(data)
+			del self._requests[sock]
+		else:
+			requestline, data = re.split("\r?\n", data.strip(), 1)
 
-		method, path, protocol = requestline.strip().split(" ", 2)
-		scheme, location, path, params, qs, frag = urlparse(path)
+			method, path, protocol = requestline.strip().split(" ", 2)
+			scheme, location, path, params, qs, frag = urlparse(path)
 
-		if frag:
-			return self.sendError(sock, 400, "Illegal #fragment in Request-URI.")
+			if frag:
+				return self.sendError(sock, 400,
+						"Illegal #fragment in Request-URI.")
 		
-		if params:
-			path = path + ";" + params
+			if params:
+				path = path + ";" + params
 		
-		# Unquote the path+params (e.g. "/this%20path" -> "this path").
-		# http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html#sec5.1.2
-		#
-		# But note that "...a URI must be separated into its components
-		# before the escaped characters within those components can be
-		# safely decoded." http://www.ietf.org/rfc/rfc2396.txt, sec 2.4.2
-		atoms = [unquote(x) for x in quoted_slash.split(path)]
-		path = "%2F".join(atoms)
+			# Unquote the path+params (e.g. "/this%20path" -> "this path").
+			# http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html#sec5.1.2
+			#
+			# But note that "...a URI must be separated into its components
+			# before the escaped characters within those components can be
+			# safely decoded." http://www.ietf.org/rfc/rfc2396.txt, sec 2.4.2
+			atoms = [unquote(x) for x in quoted_slash.split(path)]
+			path = "%2F".join(atoms)
 		
-		# Compare request and server HTTP protocol versions, in case our
-		# server does not support the requested protocol. Limit our output
-		# to min(req, server). We want the following output:
-		#	 request	server	 actual written   supported response
-		#	 protocol   protocol  response protocol	feature set
-		# a	 1.0		1.0		   1.0				1.0
-		# b	 1.0		1.1		   1.1				1.0
-		# c	 1.1		1.0		   1.0				1.0
-		# d	 1.1		1.1		   1.1				1.1
-		# Notice that, in (b), the response will be "HTTP/1.1" even though
-		# the client only understands 1.0. RFC 2616 10.5.6 says we should
-		# only return 505 if the _major_ version is different.
-		rp = int(protocol[5]), int(protocol[7])
-		sp = int(SERVER_PROTOCOL[5]), int(SERVER_PROTOCOL[7])
-		if sp[0] != rp[0]:
-			return self.sendError(sock, 505, "HTTP Version Not Supported")
+			# Compare request and server HTTP protocol versions, in case our
+			# server does not support the requested protocol. Limit our output
+			# to min(req, server). We want the following output:
+			#	 request	server	 actual written   supported response
+			#	 protocol   protocol  response protocol	feature set
+			# a	 1.0		1.0		   1.0				1.0
+			# b	 1.0		1.1		   1.1				1.0
+			# c	 1.1		1.0		   1.0				1.0
+			# d	 1.1		1.1		   1.1				1.1
+			# Notice that, in (b), the response will be "HTTP/1.1" even though
+			# the client only understands 1.0. RFC 2616 10.5.6 says we should
+			# only return 505 if the _major_ version is different.
+			rp = int(protocol[5]), int(protocol[7])
+			sp = int(SERVER_PROTOCOL[5]), int(SERVER_PROTOCOL[7])
+			if sp[0] != rp[0]:
+				return self.sendError(sock, 505, "HTTP Version Not Supported")
 
-		headers = mimetools.Message(StringIO(data), 0)
+			headers = mimetools.Message(StringIO(data), 0)
 
-		request = _Request(method, path, protocol, qs, headers)
+			request = _Request(method, path, protocol, qs, headers)
+			request.body.write(data)
+
 		response = _Response(sock)
 
 		if cherrypy:
@@ -381,6 +390,11 @@ class HTTP(Component):
 			if headers.get("HTTP_CONNECTION", "") != "Keep-Alive":
 				response.close = True
 		
+		if headers.get("Expect", "") == "100-continue":
+			self._requests[sock] = request
+			self.sendSimple(sock, 100)
+			return
+
 		try:
 			if not self.send(Request(request, response), "request"):
 				self.sendError(sock, 501, "Unsupported method (%r)" % command,
@@ -394,6 +408,34 @@ class HTTP(Component):
 	###
 	### Supporting Functions
 	###
+
+	def sendSimple(self, sock, code, message=""):
+		"""H.sendSimple(sock, code, message="")
+
+		Send a simple response.
+		"""
+
+		try:
+			short, long = RESPONSES[code]
+		except KeyError:
+			short, long = "???", "???"
+
+		if not message:
+			message = short
+
+		response = _Response(sock)
+		response.body = message
+		response.status = "%s %s" % (code, message)
+
+		if response.status[:3] == "413" and response.protocol == "HTTP/1.1":
+			# Request Entity Too Large
+			response.close = True
+			response.headers.add_header("Connection", "close")
+
+		self.send(Response(response), "response")
+
+		if response.close:
+			self.close(sock)
 
 	def sendError(self, sock, code, message=None, response=None):
 		"""H.sendError(sock, code, message=None, response=None) -> None
