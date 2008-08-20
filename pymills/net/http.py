@@ -425,6 +425,8 @@ class HTTP(Component):
 		response.status = "%s %s" % (code, message)
 		response.headers.add_header('Connection', 'close')
 
+		self.send(Response(response), "response")
+
 		self.close(sock)
 
 ###
