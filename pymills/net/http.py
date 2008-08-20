@@ -118,7 +118,7 @@ class _Request(object):
 	Request object that holds an incoming request.
 	"""
 
-	script_name = "/"
+	script_name = ""
 	protocol = (1, 1)
 
 	def __init__(self, method, path, version, qs, headers):
@@ -213,7 +213,11 @@ class Dispatcher(Component):
 		"""
 
 		path = request.path
-		target, channel = os.path.split(path.strip("/"))
+		if path.endswith("/"):
+			target = path.rstrip("/")
+			channel = "index"
+		else:
+			target, channel = os.path.split(path)
 
 		defaults = ["*", channel or "index",
 				"HEAD", "GET", "PUT", "POST", "DELETE"]
@@ -224,7 +228,8 @@ class Dispatcher(Component):
 			channels = defaults
 
 		for channel in channels:
-			if channel in self.manager.channels:
+			found = channel in self.manager.channels
+			if found:
 				return channel
 
 	@filter("request")
