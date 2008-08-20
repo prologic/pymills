@@ -48,6 +48,8 @@ def parse_options():
 
 class Test(Component):
 
+	channel = "/"
+
 	@listener("hello")
 	def onHello(self, request, response):
 		response.body = "Hello World!"
