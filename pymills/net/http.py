@@ -219,7 +219,7 @@ class Dispatcher(Component):
 		else:
 			target, channel = os.path.split(path)
 
-		defaults = ["*", channel or "index",
+		defaults = [channel or "index",
 				"HEAD", "GET", "PUT", "POST", "DELETE"]
 
 		if target:
