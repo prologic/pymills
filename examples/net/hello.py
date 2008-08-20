@@ -12,7 +12,7 @@ from pymills.net.sockets import TCPServer
 from pymills.net.http import HTTP, Response, Dispatcher
 from pymills import __version__ as systemVersion
 
-USAGE = "%prog [options]"
+USAGE = "%prog [options] [path]"
 VERSION = "%prog v" + systemVersion
 
 ###
@@ -84,7 +84,8 @@ def main():
 
 	server = WebServer(port, address)
 	dispatcher = Dispatcher()
-	dispatcher.docroot = "/var/www/"
+	if args:
+		dispatcher.docroot = args[0]
 
 	event.manager += server
 	event.manager += Test()
@@ -94,8 +95,6 @@ def main():
 		try:
 			manager.flush()
 			server.poll()
-		except UnhandledEvent:
-			pass
 		except KeyboardInterrupt:
 			break
 
