@@ -192,31 +192,20 @@ class Dispatcher(Component):
 	docroot = os.path.join(os.getcwd(), "htdocs")
 
 	def findChannel(self, request):
-		"""findChannel(request) -> channel, vpath
+		"""findChannel(request) -> channel
 
-		Find a channel appropiate for the given request and return
-		it and the virtual path that's left.
-
-		This will return two objects. The first will be a channel,
-		which is used to send the request to the appropiate handler.
-		Any parameters from the query string or request body will be
-		sent to that handler as keyword arguments.
+		Find and return an appropiate channel
+		for the given request.
 
 		The channel is found by traversing the system's event channels,
 		and matching path components to successive channels in the system.
-		
-		The second object returned will be a list of names which are
-		"virtual path" components: parts of the URL which are dynamic,
-		and were not used when looking up the channel.
-		These virtual path components are passed to the handler as
-		positional arguments.
 
-		path			channel			vpath
-		--------------------------------------
+		path			channel			
+		---------------------
 		/				index
 		/hello		hello
 		/foo/			foo:index
-		/foo/1		foo:index		 [1]
+		/foo/1		foo:index
 		/foo/bar		foo:bar
 
 		If a channel cannot be found for a given path, but there is
@@ -224,46 +213,27 @@ class Dispatcher(Component):
 		"""
 
 		path = request.path
-		names = [x for x in path.strip('/').split('/') if x]
-		if names == []:
-			if "index" in self.manager.channels:
-				return "index", []
-			elif "default" in self.manager.channels:
-				return "default", []
-			else:
-				return None, []
+		target, channel = os.path.split(path.strip("/"))
+
+		defaults = ["*", channel or "index",
+				"HEAD", "GET", "PUT", "POST", "DELETE"]
+
+		if target:
+			channels = ("%s:%s" % (target, channel) for channel in defaults)
 		else:
-			channel = ""
-			candidates = []
-			defaults = ["*", "index", "default",
-					"HEAD", "GET", "PUT", "POST", "DELETE"]
-			for i, name in enumerate(names):
-				if channel:
-					channel = "%s/%s" % (channel, name)
-				else:
-					channel = name
-				y = ("%s:%s" % (channel, x) for x in defaults)
-				for x in y:
-					if x in self.manager.channels:
-						candidates.append((i, x))
+			channels = defaults
 
-			if candidates:
-				i, channel = candidates.pop()
-
-				vpath = names[(i + 1):]
-				vpath = [x.replace("%2F", "/") for x in vpath]
-	
-				return channel, vpath
-			else:
-				return None, []
+		for channel in channels:
+			if channel in self.manager.channels:
+				return channel
 
 	@filter("request")
 	def onREQUEST(self, request, response):
-		channel, vpath = self.findChannel(request)
+		channel = self.findChannel(request)
 		
 		if channel:
 			params = parse_query_string(request.qs)
-			self.send(Request(request, response, *vpath, **params), channel)
+			self.send(Request(request, response, **params), channel)
 		else:
 			path = request.path.strip("/")
 			if path:
