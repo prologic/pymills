@@ -302,7 +302,10 @@ class Server(Component):
 			try:
 				sock.shutdown(2)
 				sock.close()
-
+				self.push(Disconnect(sock), "disconnect", self.channel)
+			except socket.error, e:
+				self.push(Error(sock, e), "error", self.channel)
+			finally:
 				if sock in self._socks:
 					self._socks.remove(sock)
 				if sock in self._read:
@@ -311,10 +314,9 @@ class Server(Component):
 					self._write.remove(sock)
 				if sock in self._close:
 					self._close.remove(sock)
+				if sock in self._buffers:
+					del self._buffers[sock]
 
-				self.push(Disconnect(sock), "disconnect", self.channel)
-			except socket.error, e:
-				self.push(Error(sock, e), "error", self.channel)
 		else:
 			for sock in self._socks:
 				self.close(sock)
