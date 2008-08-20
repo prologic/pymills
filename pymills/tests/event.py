@@ -215,8 +215,8 @@ class EventTestCase(unittest.TestCase):
 
 		event.manager.add(onFOO)
 		event.manager.add(onBAR)
-		self.assertTrue(onFOO in event.manager._global)
-		self.assertTrue(onBAR in event.manager._global)
+		self.assertTrue(onFOO in event.manager.channels["*"])
+		self.assertTrue(onBAR in event.manager.channels["*"])
 
 		event.manager.add(onFOO, "foo")
 		event.manager.add(onBAR, "bar")
@@ -228,14 +228,14 @@ class EventTestCase(unittest.TestCase):
 		except EventError:
 			pass
 
-		self.assertFalse(onTEST in event.manager._global)
+		self.assertFalse(onTEST in event.manager.channels["*"])
 
 		event.manager.remove(onFOO)
 		self.assertTrue(onFOO not in event.manager._handlers)
 
 		event.manager.remove(onBAR, "bar")
 		self.assertTrue(onBAR not in event.manager["bar"])
-		self.assertTrue(onBAR in event.manager._global)
+		self.assertTrue(onBAR in event.manager.channels["*"])
 		event.manager.remove(onBAR)
 		self.assertTrue(onBAR not in event.manager._handlers)
 
@@ -281,7 +281,7 @@ class EventTestCase(unittest.TestCase):
 		event.manager.add(onFOO, "test")
 		event.manager.add(onBAR, "bar")
 
-		self.assertTrue(onSTOP in event.manager._global)
+		self.assertTrue(onSTOP in event.manager.channels["*"])
 		self.assertTrue(onTEST in event.manager["test"])
 		self.assertTrue(onFOO in event.manager["test"])
 		self.assertTrue(onBAR in event.manager["bar"])

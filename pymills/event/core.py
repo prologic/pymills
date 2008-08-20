@@ -40,11 +40,10 @@ class Manager(object):
 
 		self._queue = deque()
 
-		self._global = set()
 		self._handlers = set()
 
 		self.manager = self
-		self.channels = defaultdict(dict)
+		self.channels = defaultdict(list)
 
 	def __iter__(self):
 		return self
@@ -103,9 +102,9 @@ class Manager(object):
 		channels = self.channels
 		if ":" in channel and not channel.endswith("*"):
 			x = "%s:*" % channel.split(":")[0]
-			return chain(self._global, channels[x], channels[channel])
+			return chain(channels["*"], channels[x], channels[channel])
 		else:
-			return chain(self._global, channels[channel])
+			return chain(channels["*"], channels[channel])
 
 	def add(self, handler, channel=None):
 		"""E.add(handler, channel) -> None
@@ -121,14 +120,14 @@ class Manager(object):
 		self._handlers.add(handler)
 
 		if channel is None:
-			self._global.add(handler)
+			channel = "*"
+
+		if channel in self.channels:
+			if handler not in self.channels[channel]:
+				self.channels[channel].append(handler)
+				self.channels[channel].sort(cmp=_sortHandlers)
 		else:
-			if channel in self.channels:
-				if handler not in self.channels[channel]:
-					self.channels[channel].append(handler)
-					self.channels[channel].sort(cmp=_sortHandlers)
-			else:
-				self.channels[channel] = [handler]
+			self.channels[channel] = [handler]
 
 	def remove(self, handler, channel=None):
 		"""E.remove(handler, channel=None) -> None
@@ -141,8 +140,8 @@ class Manager(object):
 		"""
 
 		if channel is None:
-			if handler in self._global:
-				self._global.remove(handler)
+			if handler in self.channels["*"]:
+				self.channels["*"].remove(handler)
 			keys = self.channels.keys()
 		else:
 			keys = [channel]
