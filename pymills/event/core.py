@@ -192,6 +192,7 @@ class Manager(object):
 			ekwargs = event.kwargs
 			if target is not None:
 				channel = "%s:%s" % (target, channel)
+			handler = None
 			for handler in self.handlers(channel):
 				args = handler.args
 				if args:
@@ -204,8 +205,9 @@ class Manager(object):
 				else:
 					if handler():
 						break
+			return handler is not None
 		else:
-			self.manager.send(event, channel, target)
+			return self.manager.send(event, channel, target)
 
 
 class Component(Manager):
