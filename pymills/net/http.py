@@ -415,7 +415,8 @@ class HTTP(Component):
 			self.sendError(sock, 500, "Internal Server Error", response)
 			raise
 		finally:
-			del self._requests[sock]
+			if sock in self._requests:
+				del self._requests[sock]
 
 	###
 	### Supporting Functions
