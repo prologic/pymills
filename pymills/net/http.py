@@ -411,6 +411,8 @@ class HTTP(Component):
 		except Exception, error:
 			self.sendError(sock, 500, "Internal Server Error", response)
 			raise
+		finally:
+			del self._requests[sock]
 
 	###
 	### Supporting Functions
