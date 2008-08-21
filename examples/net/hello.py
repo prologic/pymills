@@ -60,6 +60,11 @@ class Test(Component):
 		response.body = "OK"
 		self.send(Response(response), "response")
 
+	@listener("post")
+	def onPOST(self, request, response):
+		response.body = request.body.read()
+		self.send(Response(response), "response")
+
 class WebServer(TCPServer, HTTP): pass
 
 ###

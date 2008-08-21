@@ -329,10 +329,8 @@ class HTTP(Component):
 		if sock in self._requests:
 			request = self._requests[sock]
 			request.body.write(data)
-			del self._requests[sock]
 		else:
-			requestline, data = re.split("\r?\n", data.strip(), 1)
-
+			requestline, data = re.split("\r?\n", data, 1)
 			method, path, protocol = requestline.strip().split(" ", 2)
 			scheme, location, path, params, qs, frag = urlparse(path)
 
@@ -369,10 +367,22 @@ class HTTP(Component):
 			if sp[0] != rp[0]:
 				return self.sendError(sock, 505, "HTTP Version Not Supported")
 
-			headers = mimetools.Message(StringIO(data), 0)
+			assert "\r\n\r\n" in data
+			headers, body = data.split("\r\n\r\n")
+			headers = mimetools.Message(StringIO(headers), False)
 
 			request = _Request(method, path, protocol, qs, headers)
-			request.body.write(data)
+			request.body.write(body)
+		
+			if headers.get("Expect", "") == "100-continue":
+				self._requests[sock] = request
+				self.sendSimple(sock, 100)
+				return
+
+			contentLength = int(headers.get("Content-Length", "0"))
+			if not request.body.tell() == contentLength:
+				self._requests[sock] = request
+				return
 
 		response = _Response(sock)
 
@@ -381,19 +391,16 @@ class HTTP(Component):
 			cherrypy.response = response
 
 		# Persistent connection support
-		if protocol == "HTTP/1.1":
+		if request.protocol == "HTTP/1.1":
 			# Both server and client are HTTP/1.1
-			if headers.get("HTTP_CONNECTION", "") == "close":
+			if request.headers.get("HTTP_CONNECTION", "") == "close":
 				response.close = True
 		else:
 			# Either the server or client (or both) are HTTP/1.0
-			if headers.get("HTTP_CONNECTION", "") != "Keep-Alive":
+			if request.headers.get("HTTP_CONNECTION", "") != "Keep-Alive":
 				response.close = True
-		
-		if headers.get("Expect", "") == "100-continue":
-			self._requests[sock] = request
-			self.sendSimple(sock, 100)
-			return
+
+		request.body.seek(0)
 
 		try:
 			if not self.send(Request(request, response), "request"):
