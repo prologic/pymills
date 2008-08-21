@@ -329,6 +329,9 @@ class HTTP(Component):
 		if sock in self._requests:
 			request = self._requests[sock]
 			request.body.write(data)
+			contentLength = int(request.headers.get("Content-Length", "0"))
+			if not request.body.tell() == contentLength:
+				return
 		else:
 			requestline, data = re.split("\r?\n", data, 1)
 			method, path, protocol = requestline.strip().split(" ", 2)
