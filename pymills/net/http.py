@@ -17,7 +17,6 @@ import re
 import os
 import cgi
 import stat
-import mimetools
 from time import strftime
 from urllib import unquote
 from urlparse import urlparse
@@ -55,6 +54,13 @@ DEFAULT_ERROR_MESSAGE = """\
 </body>
 """
 
+COMMA_SEPARATED_HEADERS = ["ACCEPT", "ACCEPT-CHARSET", "ACCEPT-ENCODING",
+		"ACCEPT-LANGUAGE", "ACCEPT-RANGES", "ALLOW", "CACHE-CONTROL",
+		"CONNECTION", "CONTENT-ENCODING", "CONTENT-LANGUAGE", "EXPECT",
+		"IF-MATCH", "IF-NONE-MATCH", "PRAGMA", "PROXY-AUTHENTICATE", "TE",
+		"TRAILER", "TRANSFER-ENCODING", "UPGRADE", "VARY", "VIA", "WARNING",
+		"WWW-AUTHENTICATE"]
+
 ###
 ### Supporting Functions
 ###
@@ -75,16 +81,53 @@ def parse_query_string(query_string, keep_blank_values=True):
 	"""
 
 	if image_map_pattern.match(query_string):
-		# Server-side image map. Map the coords to 'x' and 'y'
+		# Server-side image map. Map the coords to "x" and "y"
 		# (like CGI::Request does).
 		pm = query_string.split(",")
-		pm = {'x': int(pm[0]), 'y': int(pm[1])}
+		pm = {"x": int(pm[0]), "y": int(pm[1])}
 	else:
 		pm = cgi.parse_qs(query_string, keep_blank_values)
 		for key, val in pm.items():
 			if len(val) == 1:
 				pm[key] = val[0]
 	return pm
+
+
+def parseHeaders(data):
+	environ = {}
+		
+	while True:
+		line = data.readline()
+		if not line:
+			# No more data--illegal end of headers
+			raise ValueError("Illegal end of headers.")
+		
+		if line == "\r\n":
+			# Normal end of headers
+			break
+		
+		if line[0] in " \t":
+			# It's a continuation line.
+			v = line.strip()
+		else:
+			k, v = line.split(":", 1)
+			k, v = k.strip().upper(), v.strip()
+			envname = "HTTP_" + k.replace("-", "_")
+		
+		if k in COMMA_SEPARATED_HEADERS:
+			existing = environ.get(envname)
+			if existing:
+				v = ", ".join((existing, v))
+		environ[envname] = v
+	
+	ct = environ.pop("HTTP_CONTENT_TYPE", None)
+	if ct is not None:
+		environ["CONTENT_TYPE"] = ct
+	cl = environ.pop("HTTP_CONTENT_LENGTH", None)
+	if cl is not None:
+		environ["CONTENT_LENGTH"] = cl
+
+	return environ, data.read()
 
 ###
 ### Events
@@ -264,7 +307,7 @@ class HTTP(Component):
 	"""HTTP() -> HTTP Component
 
 	Create a new HTTP object which implements the HTTP
-	protocol. Note this doesn't actually do anything
+	protocol. Note this doesn"t actually do anything
 	usefull unless used in conjunction with either:
 	 * pymills.net.sockets.TCPClient or
 	 * pymills.net.sockets.TCPServer
@@ -329,7 +372,7 @@ class HTTP(Component):
 		if sock in self._requests:
 			request = self._requests[sock]
 			request.body.write(data)
-			contentLength = int(request.headers.get("Content-Length", "0"))
+			contentLength = int(request.headers.get("CONTENT_LENGTH", "0"))
 			if not request.body.tell() == contentLength:
 				return
 		else:
@@ -371,18 +414,17 @@ class HTTP(Component):
 				return self.sendError(sock, 505, "HTTP Version Not Supported")
 
 			assert "\r\n\r\n" in data
-			headers, body = data.split("\r\n\r\n")
-			headers = mimetools.Message(StringIO(headers), False)
+			headers, body = parseHeaders(StringIO(data))
 
 			request = _Request(method, path, protocol, qs, headers)
 			request.body.write(body)
 		
-			if headers.get("Expect", "") == "100-continue":
+			if headers.get("EXPECT", "") == "100-continue":
 				self._requests[sock] = request
 				self.sendSimple(sock, 100)
 				return
 
-			contentLength = int(headers.get("Content-Length", "0"))
+			contentLength = int(headers.get("CONTENT_LENGTH", "0"))
 			if not request.body.tell() == contentLength:
 				self._requests[sock] = request
 				return
@@ -483,7 +525,7 @@ class HTTP(Component):
 			response = _Response(sock)
 		response.body = content
 		response.status = "%s %s" % (code, message)
-		response.headers.add_header('Connection', 'close')
+		response.headers.add_header("Connection", "close")
 
 		self.send(Response(response), "response")
 
@@ -494,67 +536,67 @@ class HTTP(Component):
 ###
 
 RESPONSES = {
-	100: ('Continue', 'Request received, please continue'),
-	101: ('Switching Protocols',
-		'Switching to new protocol; obey Upgrade header'),
+	100: ("Continue", "Request received, please continue"),
+	101: ("Switching Protocols",
+		"Switching to new protocol; obey Upgrade header"),
 
-	200: ('OK', 'Request fulfilled, document follows'),
-	201: ('Created', 'Document created, URL follows'),
-	202: ('Accepted',
-		'Request accepted, processing continues off-line'),
-	203: ('Non-Authoritative Information', 'Request fulfilled from cache'),
-	204: ('No Content', 'Request fulfilled, nothing follows'),
-	205: ('Reset Content', 'Clear input form for further input.'),
-	206: ('Partial Content', 'Partial content follows.'),
+	200: ("OK", "Request fulfilled, document follows"),
+	201: ("Created", "Document created, URL follows"),
+	202: ("Accepted",
+		"Request accepted, processing continues off-line"),
+	203: ("Non-Authoritative Information", "Request fulfilled from cache"),
+	204: ("No Content", "Request fulfilled, nothing follows"),
+	205: ("Reset Content", "Clear input form for further input."),
+	206: ("Partial Content", "Partial content follows."),
 
-	300: ('Multiple Choices',
-		'Object has several resources -- see URI list'),
-	301: ('Moved Permanently', 'Object moved permanently -- see URI list'),
-	302: ('Found', 'Object moved temporarily -- see URI list'),
-	303: ('See Other', 'Object moved -- see Method and URL list'),
-	304: ('Not Modified',
-		'Document has not changed since given time'),
-	305: ('Use Proxy',
-		'You must use proxy specified in Location to access this '
-		'resource.'),
-	307: ('Temporary Redirect',
-		'Object moved temporarily -- see URI list'),
+	300: ("Multiple Choices",
+		"Object has several resources -- see URI list"),
+	301: ("Moved Permanently", "Object moved permanently -- see URI list"),
+	302: ("Found", "Object moved temporarily -- see URI list"),
+	303: ("See Other", "Object moved -- see Method and URL list"),
+	304: ("Not Modified",
+		"Document has not changed since given time"),
+	305: ("Use Proxy",
+		"You must use proxy specified in Location to access this "
+		"resource."),
+	307: ("Temporary Redirect",
+		"Object moved temporarily -- see URI list"),
 
-	400: ('Bad Request',
-		'Bad request syntax or unsupported method'),
-	401: ('Unauthorized',
-		'No permission -- see authorization schemes'),
-	402: ('Payment Required',
-		'No payment -- see charging schemes'),
-	403: ('Forbidden',
-		'Request forbidden -- authorization will not help'),
-	404: ('Not Found', 'Nothing matches the given URI'),
-	405: ('Method Not Allowed',
-		'Specified method is invalid for this server.'),
-	406: ('Not Acceptable', 'URI not available in preferred format.'),
-	407: ('Proxy Authentication Required', 'You must authenticate with '
-		'this proxy before proceeding.'),
-	408: ('Request Timeout', 'Request timed out; try again later.'),
-	409: ('Conflict', 'Request conflict.'),
-	410: ('Gone',
-		'URI no longer exists and has been permanently removed.'),
-	411: ('Length Required', 'Client must specify Content-Length.'),
-	412: ('Precondition Failed', 'Precondition in headers is false.'),
-	413: ('Request Entity Too Large', 'Entity is too large.'),
-	414: ('Request-URI Too Long', 'URI is too long.'),
-	415: ('Unsupported Media Type', 'Entity body in unsupported format.'),
-	416: ('Requested Range Not Satisfiable',
-		'Cannot satisfy request range.'),
-	417: ('Expectation Failed',
-		'Expect condition could not be satisfied.'),
+	400: ("Bad Request",
+		"Bad request syntax or unsupported method"),
+	401: ("Unauthorized",
+		"No permission -- see authorization schemes"),
+	402: ("Payment Required",
+		"No payment -- see charging schemes"),
+	403: ("Forbidden",
+		"Request forbidden -- authorization will not help"),
+	404: ("Not Found", "Nothing matches the given URI"),
+	405: ("Method Not Allowed",
+		"Specified method is invalid for this server."),
+	406: ("Not Acceptable", "URI not available in preferred format."),
+	407: ("Proxy Authentication Required", "You must authenticate with "
+		"this proxy before proceeding."),
+	408: ("Request Timeout", "Request timed out; try again later."),
+	409: ("Conflict", "Request conflict."),
+	410: ("Gone",
+		"URI no longer exists and has been permanently removed."),
+	411: ("Length Required", "Client must specify Content-Length."),
+	412: ("Precondition Failed", "Precondition in headers is false."),
+	413: ("Request Entity Too Large", "Entity is too large."),
+	414: ("Request-URI Too Long", "URI is too long."),
+	415: ("Unsupported Media Type", "Entity body in unsupported format."),
+	416: ("Requested Range Not Satisfiable",
+		"Cannot satisfy request range."),
+	417: ("Expectation Failed",
+		"Expect condition could not be satisfied."),
 
-	500: ('Internal Server Error', 'Server got itself in trouble'),
-	501: ('Not Implemented',
-		'Server does not support this operation'),
-	502: ('Bad Gateway', 'Invalid responses from another server/proxy.'),
-	503: ('Service Unavailable',
-		'The server cannot process the request due to a high load'),
-	504: ('Gateway Timeout',
-		'The gateway server did not receive a timely response'),
-	505: ('HTTP Version Not Supported', 'Cannot fulfill request.'),
+	500: ("Internal Server Error", "Server got itself in trouble"),
+	501: ("Not Implemented",
+		"Server does not support this operation"),
+	502: ("Bad Gateway", "Invalid responses from another server/proxy."),
+	503: ("Service Unavailable",
+		"The server cannot process the request due to a high load"),
+	504: ("Gateway Timeout",
+		"The gateway server did not receive a timely response"),
+	505: ("HTTP Version Not Supported", "Cannot fulfill request."),
 }
