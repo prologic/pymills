@@ -27,6 +27,7 @@ from wsgiref.headers import Headers
 try:
 	import cherrypy
 	from cherrypy.lib.static import serve_file
+	from cherrypy._cpcgifs import .FieldStorage
 	from cherrypy import HTTPError, NotFound, HTTPRedirect
 except ImportError:
 	cherrypy = None
@@ -110,6 +111,35 @@ def parseHeaders(data):
 		headers[k] = v
 		
 	return headers, data.read()
+
+	def processBody(headers, self, ):
+		if "Content-Type" not in self.headers:
+			headers["Content-Type"] = ""
+		
+		try:
+			forms = _cpcgifs.FieldStorage(fp=self.rfile,
+										  headers=h,
+										  # FieldStorage only recognizes POST.
+										  environ={'REQUEST_METHOD': "POST"},
+										  keep_blank_values=1)
+		except Exception, e:
+			if e.__class__.__name__ == 'MaxSizeExceeded':
+				# Post data is too big
+				raise cherrypy.HTTPError(413)
+			else:
+				raise
+		
+		# Note that, if headers['Content-Type'] is multipart/*,
+		# then forms.file will not exist; instead, each form[key]
+		# item will be its own file object, and will be handled
+		# by params_from_CGI_form.
+		if forms.file:
+			# request body was a content-type other than form params.
+			self.body = forms.file
+		else:
+			self.body_params = p = http.params_from_CGI_form(forms)
+			self.params.update(p)
+
 
 ###
 ### Events
@@ -244,6 +274,10 @@ class Dispatcher(Component):
 		else:
 			target, channel = os.path.split(path)
 
+		print "path:	%s" % path
+		print "target:  %s" % target
+		print "channel: %s" % channel
+
 		defaults = [channel or "index", request.method.upper()]
 
 		if target:
@@ -253,6 +287,7 @@ class Dispatcher(Component):
 
 		for channel in channels:
 			found = channel in self.manager.channels
+			print " channel: %s (Found: %s)" % (channel, found)
 			if found:
 				return channel
 
