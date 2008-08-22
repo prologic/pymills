@@ -72,8 +72,8 @@ def quoteHTML(html):
 
 image_map_pattern = re.compile(r"[0-9]+,[0-9]+")
 
-def parse_query_string(query_string, keep_blank_values=True):
-	"""parse_query_string(query_string) -> dict
+def parseQueryString(query_string, keep_blank_values=True):
+	"""parseQueryString(query_string) -> dict
 
 	Build a params dictionary from a query_string.
 	If keep_blank_values is True (the default), keep
@@ -279,7 +279,7 @@ class Dispatcher(Component):
 		channel = self.findChannel(request)
 		
 		if channel:
-			params = parse_query_string(request.qs)
+			params = parseQueryString(request.qs)
 			self.send(Request(request, response, **params), channel)
 		else:
 			path = request.path.strip("/")
