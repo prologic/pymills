@@ -354,7 +354,7 @@ class HTTP(Component):
 		if sock in self._requests:
 			request = self._requests[sock]
 			request.body.write(data)
-			contentLength = int(request.headers.get("CONTENT_LENGTH", "0"))
+			contentLength = int(request.headers.get("Content-Length", "0"))
 			if not request.body.tell() == contentLength:
 				return
 		else:
@@ -401,12 +401,12 @@ class HTTP(Component):
 			request = _Request(method, path, protocol, qs, headers)
 			request.body.write(body)
 		
-			if headers.get("EXPECT", "") == "100-continue":
+			if headers.get("Expect", "") == "100-continue":
 				self._requests[sock] = request
 				self.sendSimple(sock, 100)
 				return
 
-			contentLength = int(headers.get("CONTENT_LENGTH", "0"))
+			contentLength = int(headers.get("Content-Length", "0"))
 			if not request.body.tell() == contentLength:
 				self._requests[sock] = request
 				return
