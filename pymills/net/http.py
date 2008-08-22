@@ -33,6 +33,7 @@ except ImportError:
 
 import pymills
 from pymills.event import *
+from pymills.datatypes import CaselessDict
 
 ###
 ### Defaults/Constants
@@ -87,7 +88,7 @@ def parseQueryString(query_string, keep_blank_values=True):
 
 
 def parseHeaders(data):
-	environ = {}
+	headers = CaselessDict()
 		
 	while True:
 		line = data.readline()
@@ -106,9 +107,9 @@ def parseHeaders(data):
 			k, v = line.split(":", 1)
 			k, v = k.strip(), v.strip()
 
-		environ[k] = v
+		headers[k] = v
 		
-	return environ, data.read()
+	return headers, data.read()
 
 ###
 ### Events
