@@ -54,13 +54,6 @@ DEFAULT_ERROR_MESSAGE = """\
 </body>
 """
 
-COMMA_SEPARATED_HEADERS = ["ACCEPT", "ACCEPT-CHARSET", "ACCEPT-ENCODING",
-		"ACCEPT-LANGUAGE", "ACCEPT-RANGES", "ALLOW", "CACHE-CONTROL",
-		"CONNECTION", "CONTENT-ENCODING", "CONTENT-LANGUAGE", "EXPECT",
-		"IF-MATCH", "IF-NONE-MATCH", "PRAGMA", "PROXY-AUTHENTICATE", "TE",
-		"TRAILER", "TRANSFER-ENCODING", "UPGRADE", "VARY", "VIA", "WARNING",
-		"WWW-AUTHENTICATE"]
-
 ###
 ### Supporting Functions
 ###
@@ -111,22 +104,10 @@ def parseHeaders(data):
 			v = line.strip()
 		else:
 			k, v = line.split(":", 1)
-			k, v = k.strip().upper(), v.strip()
-			envname = "HTTP_" + k.replace("-", "_")
-		
-		if k in COMMA_SEPARATED_HEADERS:
-			existing = environ.get(envname)
-			if existing:
-				v = ", ".join((existing, v))
-		environ[envname] = v
-	
-	ct = environ.pop("HTTP_CONTENT_TYPE", None)
-	if ct is not None:
-		environ["CONTENT_TYPE"] = ct
-	cl = environ.pop("HTTP_CONTENT_LENGTH", None)
-	if cl is not None:
-		environ["CONTENT_LENGTH"] = cl
+			k, v = k.strip(), v.strip()
 
+		environ[k] = v
+		
 	return environ, data.read()
 
 ###
