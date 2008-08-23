@@ -26,15 +26,14 @@ from wsgiref.headers import Headers
 
 try:
 	import cherrypy
+	from cherrypy import HTTPError, NotFound
 	from cherrypy.lib.static import serve_file
 	from cherrypy._cpcgifs import FieldStorage
-	from cherrypy import HTTPError, NotFound, HTTPRedirect
 except ImportError:
 	cherrypy = None
 
 import pymills
 from pymills.event import *
-from pymills.datatypes import CaselessDict
 
 ###
 ### Defaults/Constants
@@ -89,7 +88,7 @@ def parseQueryString(query_string, keep_blank_values=True):
 
 
 def parseHeaders(data):
-	headers = CaselessDict()
+	headers = Headers([])
 		
 	while True:
 		line = data.readline()
@@ -108,7 +107,7 @@ def parseHeaders(data):
 			k, v = line.split(":", 1)
 			k, v = k.strip(), v.strip()
 
-		headers[k] = v
+		headers.add_header(k, v)
 		
 	return headers, data.read()
 
