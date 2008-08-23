@@ -285,10 +285,6 @@ class Dispatcher(Component):
 		else:
 			target, channel = os.path.split(path)
 
-		print "path:    %s" % path
-		print "target:  %s" % target
-		print "channel: %s" % channel
-
 		defaults = [channel or "index", request.method.upper()]
 
 		if target:
@@ -298,7 +294,6 @@ class Dispatcher(Component):
 
 		for channel in channels:
 			found = channel in self.manager.channels
-			print " channel: %s (Found: %s)" % (channel, found)
 			if found:
 				return channel
 
