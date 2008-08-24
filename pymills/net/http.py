@@ -276,14 +276,6 @@ class Dispatcher(Component):
 		The channel is found by traversing the system's event channels,
 		and matching path components to successive channels in the system.
 
-		path			channel			
-		---------------------
-		/				index
-		/hello		hello
-		/foo/			foo:index
-		/foo/1		foo:index
-		/foo/bar		foo:bar
-
 		If a channel cannot be found for a given path, but there is
 		a default channel, then this will be used.
 		"""
