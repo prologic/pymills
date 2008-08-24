@@ -84,15 +84,17 @@ class Event(object):
 		"x.__repr__() <==> repr(x)"
 
 		if self.channel is not None and self.target is not None:
-			channelStr = "%s:%s" % (self.target, self.channel)
+			channel = "%s:%s" % (self.target, self.channel)
 		elif self.channel is not None:
-			channelStr = self.channel
+			channel = self.channel
 		else:
-			channelStr = ""
-		argsStr = ", ".join([("%s" % arg) for arg in self.args])
-		kwargsStr = ", ".join(
+			channel = ""
+		args = ", ".join([("%s" % arg) for arg in self.args])
+		kwargs = ", ".join(
 				[("%s=%s" % kwarg) for kwarg in self.kwargs.iteritems()])
-		return "<%s/%s (%s, %s)>" % (self.name, channelStr, argsStr, kwargsStr)
+		if args:
+			args = "%s, %s" % (args, kwargs)
+		return "<%s/%s (%s)>" % (self.name, channel, args)
 
 	def __getitem__(self, x):
 		"x.__getitem__(y) <==> x[y]"
