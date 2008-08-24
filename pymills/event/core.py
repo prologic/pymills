@@ -14,7 +14,7 @@ from collections import deque
 from collections import defaultdict
 from inspect import getmembers, ismethod
 
-from pymills.event import EventError
+from pymills.event import Event, EventError
 
 
 def _sortHandlers(x, y):
@@ -24,6 +24,13 @@ def _sortHandlers(x, y):
 		return -1
 	else:
 		return 1
+
+
+class Registered(Event):
+	"""Registered(Event) -> Registered Event
+
+	args: manager
+	"""
 
 
 class Manager(object):
@@ -44,6 +51,11 @@ class Manager(object):
 
 		self.manager = self
 		self.channels = defaultdict(list)
+
+	def __repr__(self):
+		q = len(self._queue)
+		h = len(self._handlers)
+		return "<Manager (q: %d h: %d)>" % (q, h)
 
 	def __iter__(self):
 		return self
@@ -275,9 +287,14 @@ class Component(Manager):
 	def __del__(self):
 		self.unregister()
 
-	def register(self, manager):
-		self.manager = manager
+	def __repr__(self):
+		name = self.__class__.__name__
+		channel = self.channel or ""
+		q = len(self._queue)
+		h = len(self._handlers)
+		return "<%s/%s component (q: %d h: %d)>" % (name, channel, q, h)
 
+	def register(self, manager):
 		handlers = [x[1] for x in getmembers(
 			self, lambda x: ismethod(x) and
 			callable(x) and x.__name__.startswith("on") and
@@ -289,7 +306,14 @@ class Component(Manager):
 			else:
 				channel = handler.channel
 
-			self.manager.add(handler, channel)
+			manager.add(handler, channel)
+
+		if not manager == self:
+			print "%s registered with %s" % (self, manager)
+			manager.push(Registered(manager), "registered", self.channel)
+
+		self.manager = manager
+
 
 	def unregister(self):
 		"""C.unregister() -> None
