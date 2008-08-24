@@ -281,6 +281,10 @@ class Dispatcher(Component):
 		"""
 
 		path = request.path
+		names = [x for x in path.strip('/').split('/') if x] + ['index']
+
+		print "names: %s" % repr(names)
+
 		if path.endswith("/"):
 			target = path.rstrip("/")
 			channel = "index"
@@ -289,6 +293,10 @@ class Dispatcher(Component):
 
 		defaults = [channel or "index", request.method.upper()]
 
+		print "path:    %s" % path
+		print "channel: %s" % channel
+		print "target:  %s" % target
+
 		if target:
 			channels = ("%s:%s" % (target, channel) for channel in defaults)
 		else:
@@ -296,6 +304,7 @@ class Dispatcher(Component):
 
 		for channel in channels:
 			found = channel in self.manager.channels
+			print " channel: %s (Found: %s)" % (channel, found)
 			if found:
 				return channel
 
