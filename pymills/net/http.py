@@ -21,6 +21,7 @@ from time import strftime
 from urllib import unquote
 from urlparse import urlparse
 from cStringIO import StringIO
+from Cookie import SimpleCookie
 from mimetypes import guess_type
 from wsgiref.headers import Headers
 
@@ -195,6 +196,10 @@ class _Request(object):
 		self.version = version
 		self.qs = self.query_string = qs
 		self.headers = headers
+		self.cookie = SimpleCookie()
+
+		if self.headers["Cookie"]:
+			self.cookie.load(self.headers["Cookie"])
 
 		self.body = StringIO()
 
@@ -219,6 +224,7 @@ class _Response(object):
 			("Server", SERVER_VERSION),
 			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z")),
 			("Content-Type", "text/html")])
+		self.cookie = SimpleCookie()
 
 		self.body = ""
 		self.status = "200 OK"
@@ -229,6 +235,8 @@ class _Response(object):
 				self.headers["Content-Type"], len(self.body))
 
 	def __call__(self):
+		status = self.status
+
 		if type(self.body) == file:
 			contentLength = os.fstat(self.body.fileno())[stat.ST_SIZE]
 			contentType = guess_type(self.body.name)[0] or "application/octet-stream"
@@ -241,11 +249,13 @@ class _Response(object):
 		if contentLength:
 			self.headers["Content-Length"] = contentLength
 
-		return "%s %s\r\n%s%s" % (
-				SERVER_PROTOCOL,
-				self.status,
-				str(self.headers),
-				body)
+		headers = self.headers
+
+		if self.cookie:
+			for k, v in self.cookie.items():
+				headers.add_header("Set-Cookie", v.OutputString())
+
+		return "%s %s\r\n%s%s" % (SERVER_PROTOCOL, status, headers, body)
 
 
 ###
@@ -446,7 +456,7 @@ class HTTP(Component):
 
 			request = _Request(method, path, protocol, qs, headers)
 			request.body.write(body)
-		
+
 			if headers.get("Expect", "") == "100-continue":
 				self._requests[sock] = request
 				self.sendSimple(sock, 100)

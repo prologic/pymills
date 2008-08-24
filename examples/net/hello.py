@@ -52,7 +52,13 @@ class Test(Component):
 
 	@listener("hello")
 	def onHello(self, request, response):
-		response.body = "Hello World!"
+
+		if request.cookie.get("seen", False):
+			response.body = "Seen you before!"
+		else:
+			response.body = "Hello World!"
+			response.cookie["seen"] = True
+
 		self.send(Response(response), "response")
 
 	@listener("test")
