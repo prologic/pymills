@@ -26,9 +26,9 @@ from wsgiref.headers import Headers
 
 try:
 	import cherrypy
-	from cherrypy import HTTPError, NotFound
 	from cherrypy.lib.static import serve_file
 	from cherrypy._cpcgifs import FieldStorage
+	from cherrypy import HTTPError, NotFound, HTTPRedirect
 except ImportError:
 	cherrypy = None
 
@@ -479,6 +479,9 @@ class HTTP(Component):
 			if not self.send(Request(request, response), "request"):
 				self.sendError(sock, 501, "Unsupported method (%r)" % command,
 						request, response)
+		except HTTPRedirect, error:
+			error.set_response()
+			self.send(Response(response), "response")
 		except HTTPError, error:
 			self.sendError(sock, error[0], error[1], response)
 		except Exception, error:
