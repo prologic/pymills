@@ -98,13 +98,19 @@ class Manager(object):
 
 		return r
 
-	def handlers(self, channel):
+	def handlers(self, s):
 		channels = self.channels
-		if ":" in channel and not channel.endswith("*"):
-			x = "%s:*" % channel.split(":")[0]
-			return chain(channels["*"], channels[x], channels[channel])
+
+		if ":" in s:
+			target, channel = s.split(":", 1)
 		else:
-			return chain(channels["*"], channels[channel])
+			target = None
+
+		if not target == "*":
+			x = "%s:*" % target
+			return chain(channels["*"], channels[x], channels[s])
+		else:
+			return chain(channels["*"], channels[s])
 
 	def add(self, handler, channel=None):
 		"""E.add(handler, channel) -> None
@@ -188,7 +194,9 @@ class Manager(object):
 				target = event.target
 				eargs = event.args
 				ekwargs = event.kwargs
-				if target:
+				if channel == target == "*":
+					channel = "*"
+				elif target:
 					channel = "%s:%s" % (target, channel)
 				for handler in self.handlers(channel):
 					args = handler.args
@@ -219,7 +227,9 @@ class Manager(object):
 			event.target = target
 			eargs = event.args
 			ekwargs = event.kwargs
-			if target is not None:
+			if channel == target == "*":
+				channel = "*"
+			elif target is not None:
 				channel = "%s:%s" % (target, channel)
 			handler = None
 			for handler in self.handlers(channel):
