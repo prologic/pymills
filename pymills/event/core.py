@@ -8,9 +8,9 @@ Core components and managers.
 """
 
 from time import sleep
+from itertools import chain
 from threading import Thread
 from collections import deque
-from itertools import chain, izip
 from collections import defaultdict
 from inspect import getmembers, ismethod
 
@@ -109,18 +109,14 @@ class Manager(object):
 
 		globals = channels["*"]
 
-		if not target == "*":
+		if not channel == "*":
 			x = "%s:*" % target
-			allTargets = channels[x]
+			all = channels[x]
 		else:
-			allTargets = []
+			x = [channels[k] for k in channels if k.endswith(":%s" % channel)]
+			all = [i for y in x for i in y]
 
-		if target == "*" and not channel == "*":
-			allChannels = [i for y in [channels[k] for k in channels if k.endswith(":%s" % channel)] for i in y]
-		else:
-			allChannels = []
-
-		return chain(globals, allTargets, allChannels, channels[s])
+		return chain(globals, all, channels[s])
 
 	def add(self, handler, channel=None):
 		"""E.add(handler, channel) -> None
