@@ -8,9 +8,9 @@ Core components and managers.
 """
 
 from time import sleep
-from itertools import chain
 from threading import Thread
 from collections import deque
+from itertools import chain, izip
 from collections import defaultdict
 from inspect import getmembers, ismethod
 
@@ -104,13 +104,23 @@ class Manager(object):
 		if ":" in s:
 			target, channel = s.split(":", 1)
 		else:
+			channel = s
 			target = None
+
+		globals = channels["*"]
 
 		if not target == "*":
 			x = "%s:*" % target
-			return chain(channels["*"], channels[x], channels[s])
+			allTargets = channels[x]
 		else:
-			return chain(channels["*"], channels[s])
+			allTargets = []
+
+		if target == "*" and not channel == "*":
+			allChannels = [i for y in [channels[k] for k in channels if k.endswith(":%s" % channel)] for i in y]
+		else:
+			allChannels = []
+
+		return chain(globals, allTargets, allChannels, channels[s])
 
 	def add(self, handler, channel=None):
 		"""E.add(handler, channel) -> None
@@ -192,24 +202,10 @@ class Manager(object):
 				event = q.pop()
 				channel = event.channel
 				target = event.target
-				eargs = event.args
-				ekwargs = event.kwargs
-				if channel == target == "*":
-					channel = "*"
-				elif target:
-					channel = "%s:%s" % (target, channel)
-				for handler in self.handlers(channel):
-					args = handler.args
-					if args:
-						if args[0] == "event":
-							if handler(event, *eargs, **ekwargs):
-								break
-						else:
-							if handler(*eargs, **ekwargs):
-								break
-					else:
-						if handler():
-							break
+				try:
+					self.send(event, channel, target)
+				except:
+					pass
 		else:
 			self.manager.flush()
 
