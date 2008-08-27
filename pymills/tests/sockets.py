@@ -22,7 +22,7 @@ class Manager(Worker):
 	events = 0
 
 	def run(self):
-		while self.isRunning():
+		while self.running:
 			self.flush()
 
 			self.server.poll()
