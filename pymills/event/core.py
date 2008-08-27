@@ -393,7 +393,6 @@ class Component(Manager):
 			manager.add(handler, channel)
 
 		if not manager == self:
-			print "%s registered with %s" % (self, manager)
 			manager.push(Registered(manager), "registered", self.channel)
 
 		self.manager = manager
