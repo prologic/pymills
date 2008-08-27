@@ -38,111 +38,12 @@ components are singletons, that is they can only be
 instantiated once.
 """
 
-from inspect import getargspec
-from threading import enumerate as threads
-
-
-try:
-	import psyco
-	psyco.full()
-except ImportError:
-	pass
-
-
-class EventError(Exception):
-	"Event Error"
-
-
-class Event(object):
-	"""Event(*args, **kwargs) -> new event object
-
-	Create a new event object populating it with the given
-	list of arguments and dictionary of keyword arguments.
-	"""
-
-	channel = None
-	target = None
-
-	source = None # Used by Bridge
-	ignore = False # Used by Bridge
-
-	def __new__(cls, *args, **kwargs):
-		self = object.__new__(Event)
-		self.name = cls.__name__
-		self.args = args
-		self.kwargs = kwargs
-		return self
-
-	def __eq__(self, y):
-		" x.__eq__(y) <==> x==y"
-
-		attrs = ["name", "args", "kwargs", "channel", "target"]
-		r = [getattr(self, a) == getattr(y, a) for a in attrs]
-		return False not in r
-
-	def __repr__(self):
-		"x.__repr__() <==> repr(x)"
-
-		if self.channel is not None and self.target is not None:
-			channelStr = "%s:%s" % (self.target, self.channel)
-		elif self.channel is not None:
-			channelStr = self.channel
-		else:
-			channelStr = ""
-		argsStr = ", ".join([("%s" % arg) for arg in self.args])
-		kwargsStr = ", ".join(
-				[("%s=%s" % kwarg) for kwarg in self.kwargs.iteritems()])
-		return "<%s/%s (%s, %s)>" % (self.name, channelStr, argsStr, kwargsStr)
-
-	def __getitem__(self, x):
-		"x.__getitem__(y) <==> x[y]"
-
-		if type(x) == int:
-			return self.args[x]
-		elif type(x) == str:
-			return self.kwargs[x]
-		else:
-			raise KeyError(x)
-
-
-def workers():
-	"""workers() -> list of workers
-
-	Get the current list of active Worker's
-	"""
-
-	return [thread for thread in threads() if isinstance(thread, Worker)]
-
-
-def filter(channel=None):
-	"Decorator function for a filter"
-
-	def decorate(f):
-		f.type = "filter"
-		f.channel = channel
-		f.args = getargspec(f)[0]
-		if f.args and f.args[0] == "self":
-			del f.args[0]
-		return f
-	return decorate
-
-
-def listener(channel=None):
-	"Decorator function for a listener"
-
-	def decorate(f):
-		f.type = "listener"
-		f.channel = channel
-		f.args = getargspec(f)[0]
-		if f.args and f.args[0] == "self":
-			del f.args[0]
-		return f
-	return decorate
-
-
+from pymills.event.errors import EventError
+from pymills.event.core import filter, listener, Event
 from pymills.event.core import Manager, Component, Worker
-from pymills.event.bridge import Bridge, DummyBridge
+
 from pymills.event.debugger import Debugger
+from pymills.event.bridge import Bridge, DummyBridge
 
 manager = Manager()
 debugger = Debugger()
