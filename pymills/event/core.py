@@ -112,10 +112,7 @@ def _sortHandlers(x, y):
 
 
 class Registered(Event):
-	"""Registered(Event) -> Registered Event
-
-	args: manager
-	"""
+	"""Registered(Event) -> Registered Event"""
 
 
 class Manager(object):
@@ -393,7 +390,7 @@ class Component(Manager):
 			manager.add(handler, channel)
 
 		if not manager == self:
-			manager.push(Registered(manager), "registered", self.channel)
+			manager.push(Registered(), "registered", self.channel)
 
 		self.manager = manager
 
