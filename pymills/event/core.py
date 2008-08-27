@@ -394,6 +394,8 @@ class Worker(Component, Thread):
 	def __init__(self, *args, **kwargs):
 		super(Worker, self).__init__(*args, **kwargs)
 
+		self.__running = False
+
 		start = kwargs.get("start", False)
 		if start:
 			self.start()
