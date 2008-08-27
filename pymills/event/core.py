@@ -414,26 +414,21 @@ class Component(Manager):
 
 class Worker(Component, Thread):
 
+	running = False
+
 	def __init__(self, *args, **kwargs):
 		super(Worker, self).__init__(*args, **kwargs)
 
-		self.__running = False
-
-		start = kwargs.get("start", False)
-		if start:
+		if kwargs.get("start", False):
 			self.start()
 
 	def start(self):
-		self.__running = True
-		self.setDaemon(True)
+		self.running = True
 		super(Worker, self).start()
 
 	def stop(self):
-		self.__running = False
-
-	def isRunning(self):
-		return self.__running
+		self.running = False
 
 	def run(self):
-		while self.isRunning():
+		while self.running:
 			sleep(1)
