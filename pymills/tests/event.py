@@ -186,7 +186,7 @@ class EventTestCase(unittest.TestCase):
 		empty.
 		"""
 
-		self.assertEquals(len(event.manager), 0)
+		self.assertEquals(len(event.manager), 2)
 		self.assertEquals(len(event.manager._handlers), 0)
 
 	def testManagerAddRemove(self):
