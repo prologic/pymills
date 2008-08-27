@@ -30,9 +30,6 @@ class Manager(object):
 	"""Manager() -> new event manager
 
 	Create a new event manager which manages events.
-	If server=True, this will listen on the default port
-	of 64000 allowing events to be to other connected
-	remote event managers.
 	"""
 
 	def __init__(self, *args, **kwargs):
