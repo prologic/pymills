@@ -283,17 +283,13 @@ class Dispatcher(Component):
 		path = request.path
 
 		if path.endswith("/"):
-			target = path.rstrip("/")
+			target = path.rstrip("/") or "/"
 			channel = "index"
 		else:
 			target, channel = os.path.split(path)
 
 		defaults = [channel or "index", request.method.upper()]
-
-		if target:
-			channels = ("%s:%s" % (target, channel) for channel in defaults)
-		else:
-			channels = defaults
+		channels = ("%s:%s" % (target, channel) for channel in defaults)
 
 		for channel in channels:
 			found = channel in self.manager.channels
