@@ -204,7 +204,7 @@ class _Request(object):
 		self.body = StringIO()
 
 	def __repr__(self):
-		return "<Request %s %s %s>" % (self.method, self.version, self.path)
+		return "<Request %s %s %s>" % (self.method, self.path, self.version)
 
 class _Response(object):
 	"""_Response(sock, body="") -> new Response object
