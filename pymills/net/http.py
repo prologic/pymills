@@ -214,7 +214,7 @@ class _Response(object):
 	is sent in the correct order.
 	"""
 
-	def __init__(self, sock, body=""):
+	def __init__(self, sock):
 		"initializes x; see x.__class__.__doc__ for signature"
 
 		self.sock = sock
@@ -235,8 +235,6 @@ class _Response(object):
 				self.headers["Content-Type"], len(self.body))
 
 	def __call__(self):
-		status = self.status
-
 		if type(self.body) == file:
 			contentLength = os.fstat(self.body.fileno())[stat.ST_SIZE]
 			contentType = guess_type(self.body.name)[0] or "application/octet-stream"
@@ -249,13 +247,14 @@ class _Response(object):
 		if contentLength:
 			self.headers["Content-Length"] = contentLength
 
-		headers = self.headers
+		for k, v in self.cookie.iteritems():
+			self.headers.add_header("Set-Cookie", v.OutputString())
 
-		if self.cookie:
-			for k, v in self.cookie.items():
-				headers.add_header("Set-Cookie", v.OutputString())
-
-		return "%s %s\r\n%s%s" % (SERVER_PROTOCOL, status, headers, body)
+		return "%s %s\r\n%s%s" % (
+				SERVER_PROTOCOL,
+				self.status,
+				self.headers,
+				body)
 
 
 ###
