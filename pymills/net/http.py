@@ -235,20 +235,18 @@ class _Response(object):
 				self.headers["Content-Type"], len(self.body))
 
 	def __call__(self):
-		if type(self.body) == file:
-			contentLength = os.fstat(self.body.fileno())[stat.ST_SIZE]
-			contentType = guess_type(self.body.name)[0] or "application/octet-stream"
-			body = ""
-			self.headers["Content-Type"] = contentType
-		else:
-			body = self.body
-			contentLength = len(body)
-
-		if contentLength:
-			self.headers["Content-Length"] = contentLength
-
 		for k, v in self.cookie.iteritems():
 			self.headers.add_header("Set-Cookie", v.OutputString())
+
+		if type(self.body) == file:
+			self.headers["Content-Length"] = os.fstat(
+					self.body.fileno())[stat.ST_SIZE]
+			self.headers["Content-Type"] = guess_type(self.body.name)[0] or \
+					"application/octet-stream"
+			body = ""
+		else:
+			self.headers["Content-Length"] = len(self.body)
+			body = self.body
 
 		return "%s %s\r\n%s%s" % (
 				SERVER_PROTOCOL,
