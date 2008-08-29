@@ -198,7 +198,7 @@ class _Request(object):
 		self.headers = headers
 		self.cookie = SimpleCookie()
 
-		if self.headers["Cookie"]:
+		if "Cookie" in self.headers:
 			self.cookie.load(self.headers["Cookie"])
 
 		self.body = StringIO()
