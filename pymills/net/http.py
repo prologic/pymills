@@ -281,24 +281,42 @@ class Dispatcher(Component):
 		"""
 
 		path = request.path
+		method = request.method.upper()
+		names = [x for x in path.strip('/').split('/') if x]
+		defaults = ["index", method]
 
-		if path.endswith("/"):
-			target = path.rstrip("/") or "/"
-			channel = "index"
+		if not names:
+			if "/:index" in self.manager.channels:
+				return "/:index", []
+			elif "/:%s" % method in self.manager.channels:
+				return "/:%s" % method, []
+			else:
+				return None, []
+
+		channel = "/"
+		candidates = []
+		for i, name in enumerate(names):
+			y = ["%s:%s" % (channel, name)] + ["%s:%s" % (channel, x) for x in defaults]
+			for x in y:
+				if x in self.manager.channels:
+					candidates.append([i, x])
+			channel = "".join([channel, name])
+ 
+		for candidate in candidates:
+
+		if candidates:
+			i, channel = candidates.pop()
+
+			vpath = names[(i + 1):]
+			vpath = [x.replace("%2F", "/") for x in vpath]
+
+			return channel, vpath
 		else:
-			target, channel = os.path.split(path)
-
-		defaults = [channel or "index", request.method.upper()]
-		channels = ("%s:%s" % (target, channel) for channel in defaults)
-
-		for channel in channels:
-			found = channel in self.manager.channels
-			if found:
-				return channel
+			return None, []
 
 	@filter("request")
 	def onREQUEST(self, request, response):
-		channel = self.findChannel(request)
+		channel, vpath = self.findChannel(request)
 		
 		if channel:
 			params = parseQueryString(request.qs)
@@ -307,7 +325,7 @@ class Dispatcher(Component):
 				params.update(x)
 			else:
 				request.body = x
-			self.send(Request(request, response, **params), channel)
+			self.send(Request(request, response, *vpath, **params), channel)
 		else:
 			path = request.path.strip("/")
 			if path:
@@ -428,10 +446,10 @@ class HTTP(Component):
 			# to min(req, server). We want the following output:
 			#	 request	server	 actual written supported response
 			#	 protocol protocol response protocol	feature set
-			# a	 1.0		1.0		   1.0				1.0
-			# b	 1.0		1.1		   1.1				1.0
-			# c	 1.1		1.0		   1.0				1.0
-			# d	 1.1		1.1		   1.1				1.1
+			# a	 1.0		1.0			1.0				1.0
+			# b	 1.0		1.1			1.1				1.0
+			# c	 1.1		1.0			1.0				1.0
+			# d	 1.1		1.1			1.1				1.1
 			# Notice that, in (b), the response will be "HTTP/1.1" even though
 			# the client only understands 1.0. RFC 2616 10.5.6 says we should
 			# only return 505 if the _major_ version is different.
