@@ -226,7 +226,7 @@ class _Response(object):
 			("Content-Type", "text/html")])
 		self.cookie = SimpleCookie()
 
-		self.body = ""
+		self.body = StringIO()
 		self.status = "200 OK"
 
 	def __repr__(self):
@@ -243,17 +243,17 @@ class _Response(object):
 					self.body.fileno())[stat.ST_SIZE]
 			self.headers["Content-Type"] = guess_type(self.body.name)[0] or \
 					"application/octet-stream"
-			body = ""
+			return "%s %s\r\n%s" % (
+					SERVER_PROTOCOL,
+					self.status,
+					self.headers)
 		else:
 			self.headers["Content-Length"] = len(self.body)
-			body = self.body
-
-		return "%s %s\r\n%s%s" % (
-				SERVER_PROTOCOL,
-				self.status,
-				self.headers,
-				body)
-
+			return "%s %s\r\n%s%s" % (
+					SERVER_PROTOCOL,
+					self.status,
+					self.headers,
+					self.body)
 
 ###
 ### Dispatcher
