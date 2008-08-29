@@ -299,8 +299,6 @@ class Dispatcher(Component):
 					candidates.append([i, x])
 			channel = "".join([channel, name])
  
-		for candidate in candidates:
-
 		if candidates:
 			i, channel = candidates.pop()
 
