@@ -24,7 +24,6 @@ from cStringIO import StringIO
 from Cookie import SimpleCookie
 from mimetypes import guess_type
 from traceback import format_exc
-from wsgiref.headers import Headers
 
 try:
 	import cherrypy
@@ -36,6 +35,7 @@ except ImportError:
 
 import pymills
 from pymills.event import *
+from pymills.headers import Headers
 
 ###
 ### Defaults/Constants
