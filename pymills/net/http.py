@@ -23,6 +23,7 @@ from urlparse import urlparse
 from cStringIO import StringIO
 from Cookie import SimpleCookie
 from mimetypes import guess_type
+from traceback import format_exc
 from wsgiref.headers import Headers
 
 try:
@@ -339,6 +340,8 @@ class Dispatcher(Component):
 		else:
 			channels = ["index", method]
 
+		vpath = []
+		channel = None
 		for channel in channels:
 			x = "%s:%s" % (candidate, channel)
 			if x in self.manager.channels:
@@ -347,41 +350,42 @@ class Dispatcher(Component):
 				channel = x
 				break
 
-		if i < len(names):
-			vpath = names[i:]
-			vpath = [x.replace("%2F", "/") for x in vpath]
-		else:
-			vpath = []
+		if channel:
+			if i < len(names):
+				vpath = names[i:]
+				vpath = [x.replace("%2F", "/") for x in vpath]
+			else:
+				vpath = []
 
 		return channel, vpath
 
 	@filter("request")
 	def onREQUEST(self, request, response):
-		channel, vpath = self.findChannel(request)
-		
-		if channel:
-			params = parseQueryString(request.qs)
-			x = processBody(request.headers, request.body)
-			if type(x) == dict:
-				params.update(x)
-			else:
-				request.body = x
-			self.send(Request(request, response, *vpath, **params), channel)
+		path = request.path.strip("/")
+		if path:
+			filename = os.path.abspath(os.path.join(self.docroot, path))
 		else:
-			path = request.path.strip("/")
-			if path:
-				filename = os.path.abspath(os.path.join(self.docroot, path))
-			else:
-				for default in self.defaults:
-					filename = os.path.abspath(os.path.join(self.docroot, default))
-					if os.path.exists(filename):
-						break
-					else:
-						filename = None
+			for default in self.defaults:
+				filename = os.path.abspath(os.path.join(self.docroot, default))
+				if os.path.exists(filename):
+					break
+				else:
+					filename = None
 
-			if filename:
-				serve_file(filename)
-				self.send(Response(response), "response")
+		if filename and os.path.exists(filename):
+			serve_file(filename)
+			self.send(Response(response), "response")
+		else:
+			channel, vpath = self.findChannel(request)
+		
+			if channel:
+				params = parseQueryString(request.qs)
+				x = processBody(request.headers, request.body)
+				if type(x) == dict:
+					params.update(x)
+				else:
+					request.body = x
+				self.send(Request(request, response, *vpath, **params), channel)
 			else:
 				raise NotFound()
 
