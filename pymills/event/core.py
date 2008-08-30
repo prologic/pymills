@@ -61,7 +61,7 @@ class Event(object):
 			channelStr = self.channel
 		else:
 			channelStr = ""
-		argsStr = ", ".join([("%s" % arg) for arg in self.args])
+		argsStr = ", ".join([("%s" % repr(arg)) for arg in self.args])
 		kwargsStr = ", ".join(
 				[("%s=%s" % kwarg) for kwarg in self.kwargs.iteritems()])
 		return "<%s/%s (%s, %s)>" % (self.name, channelStr, argsStr, kwargsStr)
