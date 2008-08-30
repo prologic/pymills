@@ -279,10 +279,15 @@ class Dispatcher(Component):
 
 		path = request.path
 		method = request.method.upper()
-		names = [x for x in path.strip('/').split('/') if x]
+		names = [x for x in path.strip('/').split('/') if x] + ["index"]
 		defaults = ["index", method]
 
-		if not names:
+		print "path:     %s" % path
+		print "method:   %s" % method
+		print "names:    %s" % names
+		print "defaults: %s" % defaults
+
+		if names == ["index"]:
 			if "/:index" in self.manager.channels:
 				return "/:index", []
 			elif "/:%s" % method in self.manager.channels:
@@ -295,14 +300,16 @@ class Dispatcher(Component):
 		for i, name in enumerate(names):
 			y = ["%s:%s" % (channel, name)] + ["%s:%s" % (channel, x) for x in defaults]
 			for x in y:
-				if x in self.manager.channels:
+				found = x in self.manager.channels
+				print " %s (%s)" % (x, found)
+				if found:
 					candidates.append([i, x])
 			channel = "".join([channel, ("/" if not channel == "/" else ""), name])
  
 		if candidates:
 			i, channel = candidates.pop()
 
-			vpath = names[i:]
+			vpath = names[(i + 1):]
 			vpath = [x.replace("%2F", "/") for x in vpath]
 
 			return channel, vpath
@@ -312,6 +319,8 @@ class Dispatcher(Component):
 	@filter("request")
 	def onREQUEST(self, request, response):
 		channel, vpath = self.findChannel(request)
+		print "channel: %s" % channel
+		print "vpath: %r" % vpath
 		
 		if channel:
 			params = parseQueryString(request.qs)
