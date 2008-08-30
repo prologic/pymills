@@ -88,9 +88,12 @@ def listener(*args, **kwargs):
 	"""
 
 	def decorate(f):
-		f.type = "filter"
-		f.channel = channel
-		f.args = getargspec(f)[0]
+		f.type = kwargs.get("type", "listener")
+		f.channels = args
+		f.argspec = getargspec(f)
+		f.args = f.argspec[0]
+		f.varargs = (True if f.argspec[1] else False)
+		f.varkw = (True if f.argspec[2] else False)
 		if f.args and f.args[0] == "self":
 			del f.args[0]
 		return f
@@ -317,16 +320,27 @@ class Manager(object):
 			handler = None
 			for handler in self.handlers(channel):
 				args = handler.args
-				if args:
-					if args[0] == "event":
-						if handler(event, *eargs, **ekwargs):
-							break
-					else:
+				varargs = handler.varargs
+				varkw = handler.varkw
+				if args and args[0] == "event":
+					if handler(event, *eargs, **ekwargs):
+						break
+				elif args:
+					if handler(*eargs, **ekwargs):
+						break
+				else:
+					if varargs and varkw:
 						if handler(*eargs, **ekwargs):
 							break
-				else:
-					if handler():
-						break
+					elif varkw:
+						if handler(**ekwargs):
+							break
+					elif varargs:
+						if handler(*eargs):
+							break
+					else:
+						if handler():
+							break
 			return handler is not None
 		else:
 			return self.manager.send(event, channel, target)
