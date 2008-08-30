@@ -143,7 +143,11 @@ class Manager(object):
 		return "<Manager (q: %d h: %d)>" % (q, h)
 
 	def __iter__(self):
-		return self
+		q = self._queue
+		self._queue = deque()
+		while q:
+			event = q.pop()
+			yield self.send(event, event.channel, event.target)
 
 	def __getitem__(self, x):
 		return self.channels[x]
@@ -167,33 +171,6 @@ class Manager(object):
 	def __sub__(self, y):
 		y.unregister()
 		return self
-
-	def next(self):
-		q = self._queue
-		if not q:
-			raise StopIteration
-
-		event = q.pop()
-		channel = event.channel
-		target = event.target
-		eargs = event.args
-		ekwargs = event.kwargs
-		if target:
-			channel = "%s:%s" % (target, channel)
-		r = None
-		for handler in self.handlers(channel):
-			args = handler.args
-			if args:
-				if args[0] == "event":
-					r = handler(event, *eargs, **ekwargs)
-				else:
-					r = handler(*eargs, **ekwargs)
-			else:
-				r = handler()
-			if r:
-				break
-
-		return r
 
 	def handlers(self, s):
 		channels = self.channels
