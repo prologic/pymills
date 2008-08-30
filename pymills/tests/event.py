@@ -273,8 +273,8 @@ class EventTestCase(unittest.TestCase):
 			pass
 
 		@filter()
-		def onSTOP(test, time, stop=False):
-			return stop
+		def onSTOP(*args, **kwargs):
+			return kwargs.get("stop", False)
 
 		event.manager.add(onSTOP)
 		event.manager.add(onTEST, "test")
