@@ -132,6 +132,34 @@ class EventTestCase(unittest.TestCase):
 		foo.unregister()
 		bar.unregister()
 
+	def testMultipleChannels(self):
+		"""Test Multiple Channels
+
+		Test that Event Handlers can listen on Multiple
+		Channels.
+		"""
+
+		class Foo(Component):
+
+			flag = False
+
+			@listener("foo", "bar")
+			def onFOOBAR(self, event, *args, **kwargs):
+				self.flag = True
+
+		foo = Foo()
+		event.manager += foo
+
+		event.manager.send(Event(), "foo")
+		self.assertTrue(foo.flag)
+		foo.flag = False
+
+		event.manager.send(Event(), "bar")
+		self.assertTrue(foo.flag)
+		foo.flag = False
+
+		foo.unregister()
+
 	def testComponentLinks(self):
 		"""Test Component Links
 
