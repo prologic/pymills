@@ -289,10 +289,7 @@ class Manager(object):
 				event = q.pop()
 				channel = event.channel
 				target = event.target
-				try:
-					self.send(event, channel, target)
-				except:
-					pass
+				self.send(event, channel, target)
 		else:
 			self.manager.flush()
 
