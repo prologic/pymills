@@ -373,12 +373,16 @@ class Component(Manager):
 			(getattr(x, "type", None) in ["filter", "listener"]))]
 
 		for handler in handlers:
-			if self.channel is not None:
-				channel = "%s:%s" % (self.channel, handler.channel or "*")
+			if handler.channels:
+				channels = handler.channels
 			else:
-				channel = handler.channel
+				channels = ["*"]
 
-			manager.add(handler, channel)
+			for channel in channels:
+				if self.channel is not None:
+					channel = "%s:%s" % (self.channel, channel)
+
+				manager.add(handler, channel)
 
 		if not manager == self:
 			manager.push(Registered(), "registered", self.channel)
