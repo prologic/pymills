@@ -50,6 +50,15 @@ class Test(Component):
 
 	channel = "/"
 
+	@listener("index")
+	def onINDEX(self, request, response, *args, **kwargs):
+		if args:
+			response.body = "Hello %s" % " ".join(args)
+		else:
+			response.body = "Hello World!"
+
+		self.send(Response(response), "response")
+
 	@listener("hello")
 	def onHello(self, request, response):
 
