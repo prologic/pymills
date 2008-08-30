@@ -297,12 +297,12 @@ class Dispatcher(Component):
 			for x in y:
 				if x in self.manager.channels:
 					candidates.append([i, x])
-			channel = "".join([channel, name])
+			channel = "".join([channel, ("/" if not channel == "/" else ""), name])
  
 		if candidates:
 			i, channel = candidates.pop()
 
-			vpath = names[(i + 1):]
+			vpath = names[i:]
 			vpath = [x.replace("%2F", "/") for x in vpath]
 
 			return channel, vpath
