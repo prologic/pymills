@@ -77,8 +77,15 @@ class Event(object):
 			raise KeyError(x)
 
 
-def filter(channel=None):
-	"Decorator function for a filter"
+def listener(*args, **kwargs):
+	"""listener(*args, **kwargs) -> new listener handler
+
+	Decorator to wrap a function into an event handler that
+	listens on a set of channels defined by args. The type
+	of the listener defaults to "listener" and is defined
+	by kwargs["type"]. To define a filter, pass type="filter"
+	to kwargs.
+	"""
 
 	def decorate(f):
 		f.type = "filter"
@@ -89,18 +96,14 @@ def filter(channel=None):
 		return f
 	return decorate
 
+def filter(*args, **kwargs):
+	"""filter(*args, **kwargs) -> new filter handler
 
-def listener(channel=None):
-	"Decorator function for a listener"
+	Deprecated - Use listener(... type="filter")
+	"""
 
-	def decorate(f):
-		f.type = "listener"
-		f.channel = channel
-		f.args = getargspec(f)[0]
-		if f.args and f.args[0] == "self":
-			del f.args[0]
-		return f
-	return decorate
+	kwargs["type"] = "filter"
+	return listener(*args, **kwargs)
 
 def _sortHandlers(x, y):
 	if x.type == "filter" and y.type == "filter":
