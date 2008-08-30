@@ -305,15 +305,10 @@ class Dispatcher(Component):
 
 		path = request.path
 		method = request.method.upper()
-		names = [x for x in path.strip('/').split('/') if x] + ["index"]
+		names = [x for x in path.strip('/').split('/') if x]
 		defaults = ["index", method]
 
-		print "path:     %s" % path
-		print "method:   %s" % method
-		print "names:    %s" % names
-		print "defaults: %s" % defaults
-
-		if names == ["index"]:
+		if not names:
 			if "/:index" in self.manager.channels:
 				return "/:index", []
 			elif "/:%s" % method in self.manager.channels:
@@ -321,32 +316,48 @@ class Dispatcher(Component):
 			else:
 				return None, []
 
-		channel = "/"
+		targets = set([x.split(":")[0] for x in self.manager.channels if x and \
+				":" in x and x[0] == "/"])
+
+		i = 0
+		matches = [""]
 		candidates = []
-		for i, name in enumerate(names):
-			y = ["%s:%s" % (channel, name)] + ["%s:%s" % (channel, x) for x in defaults]
-			for x in y:
-				found = x in self.manager.channels
-				print " %s (%s)" % (x, found)
-				if found:
-					candidates.append([i, x])
-			channel = "".join([channel, ("/" if not channel == "/" else ""), name])
- 
-		if candidates:
-			i, channel = candidates.pop()
+		while i <= len(names):
+			x = "/".join(matches) or "/"
+			if x in targets:
+				candidates.append([i, x])
+				if i < len(names):
+					matches.append(names[i])
+			else:
+				break
+			i += 1
 
-			vpath = names[(i + 1):]
-			vpath = [x.replace("%2F", "/") for x in vpath]
+		i, candidate = candidates.pop()
 
-			return channel, vpath
+		if i < len(names):
+			channels = [names[i], "index", method]
 		else:
-			return None, []
+			channels = ["index", method]
+
+		for channel in channels:
+			x = "%s:%s" % (candidate, channel)
+			if x in self.manager.channels:
+				if i < len(names) and channel == names[i]:
+					i += 1
+				channel = x
+				break
+
+		if i < len(names):
+			vpath = names[i:]
+			vpath = [x.replace("%2F", "/") for x in vpath]
+		else:
+			vpath = []
+
+		return channel, vpath
 
 	@filter("request")
 	def onREQUEST(self, request, response):
 		channel, vpath = self.findChannel(request)
-		print "channel: %s" % channel
-		print "vpath: %r" % vpath
 		
 		if channel:
 			params = parseQueryString(request.qs)
