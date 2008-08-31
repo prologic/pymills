@@ -274,8 +274,8 @@ def getFiles(root, pattern=".*", tests=[isfile], **kwargs):
 	applying the predicates listed in tests returning
 	only the files that match the pattern. Some optional
 	kwargs can be specified:
-	 * full=True      (Return full paths)
-	 * recursive=True (Recursive mode)
+	 * full=True		(Return full paths)
+	 * recursive=True	(Recursive mode)
 	"""
 
 	def test(file, tests):
@@ -460,3 +460,15 @@ def MixIn(cls, mixin, last=False):
 			cls.__bases__ += tuple([mixin])
 		else:
 			cls.__bases__ = tuple([mixin]) + cls.__bases__
+
+
+class Cache(object):
+
+	def __init__(self, f):
+		self.f = f
+		self.cache = {}
+
+	def __call__(self, *args):
+		if not args in self.cache:
+			self.cache[args] = self.f(*args)
+		return self.cache[args]
