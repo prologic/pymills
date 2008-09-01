@@ -208,7 +208,7 @@ class _Request(object):
 		return "<Request %s %s %s>" % (self.method, self.path, self.version)
 
 class _Response(object):
-	"""_Response(sock, body="") -> new Response object
+	"""_Response(sock) -> new Response object
 
 	A Response object that holds the response to
 	send back to the client. This ensure that the correct data
