@@ -227,7 +227,7 @@ class _Response(object):
 			("Content-Type", "text/html")])
 		self.cookie = SimpleCookie()
 
-		self.body = StringIO()
+		self.body = ""
 		self.status = "200 OK"
 
 	def __repr__(self):
