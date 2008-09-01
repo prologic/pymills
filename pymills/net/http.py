@@ -256,7 +256,7 @@ class _Response(object):
 					SERVER_PROTOCOL,
 					self.status,
 					self.headers,
-					self.body)
+					self.body or "")
 
 ###
 ### Dispatcher
