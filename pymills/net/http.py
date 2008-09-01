@@ -234,7 +234,7 @@ class _Response(object):
 		return "<Response %s %s (%d)>" % (
 				self.status,
 				self.headers["Content-Type"],
-				(len(self.body) if type(self.bdoy) == str else 0))
+				(len(self.body) if type(self.body) == str else 0))
 
 	def __call__(self):
 		for k, v in self.cookie.iteritems():
@@ -251,7 +251,7 @@ class _Response(object):
 					self.headers)
 		else:
 			self.headers["Content-Length"] = (
-					len(self.body) if type(self.bdoy) == str else 0)
+					len(self.body) if type(self.body) == str else 0)
 			return "%s %s\r\n%s%s" % (
 					SERVER_PROTOCOL,
 					self.status,
