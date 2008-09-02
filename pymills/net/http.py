@@ -377,8 +377,8 @@ class Dispatcher(Component):
 					filename = None
 
 		if filename and os.path.exists(filename):
-			serve_file(filename)
 			expires(3500*24*30)
+			serve_file(filename)
 			self.send(Response(response), "response")
 		else:
 			channel, vpath = self.findChannel(request)
