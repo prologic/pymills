@@ -12,6 +12,7 @@ from types import ListType, TupleType
 # existance of which force quoting of the parameter value.
 
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
+q_separator = re.compile(r'; *q *=')
 
 def _formatparam(param, value=None, quote=1):
 	"""Convenience function to format and return a key=value pair.
