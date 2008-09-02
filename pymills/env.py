@@ -119,7 +119,7 @@ class Environment(Component):
 		"""
 
 		# Create the directory structure
-		os.mkdir(self.path)
+		os.makedirs(self.path)
 		os.mkdir(os.path.join(self.path, "log"))
 		os.mkdir(os.path.join(self.path, "conf"))
 

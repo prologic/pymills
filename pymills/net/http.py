@@ -16,6 +16,7 @@ implementations.
 import re
 import os
 import cgi
+import sys
 import stat
 from urllib import unquote
 from urlparse import urlparse
@@ -552,6 +553,8 @@ class HTTP(Component):
 		except HTTPError, error:
 			self.sendError(sock, error[0], error[1], response)
 		except Exception, error:
+			print >> sys.stderr, "ERROR: %s" % error
+			print >> sys.stderr, format_exc()
 			self.sendError(sock, 500, "Internal Server Error", response)
 			raise
 		finally:
