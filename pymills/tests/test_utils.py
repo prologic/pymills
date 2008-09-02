@@ -29,7 +29,7 @@ class UtilsTestCase(unittest.TestCase):
 		Test the "getProgName" function.
 		"""
 
-		self.assertEquals(getProgName(), "run.py")
+		self.assertEquals(getProgName(), "nosetests")
 
 def suite():
 	return unittest.makeSuite(UtilsTestCase, "test")
