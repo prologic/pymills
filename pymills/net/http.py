@@ -17,16 +17,17 @@ import re
 import os
 import cgi
 import stat
-from time import strftime
 from urllib import unquote
 from urlparse import urlparse
 from cStringIO import StringIO
+from time import time, strftime
 from Cookie import SimpleCookie
 from mimetypes import guess_type
 from traceback import format_exc
 
 try:
 	import cherrypy
+	from cherrypy.lib.caching import expires
 	from cherrypy.lib.static import serve_file
 	from cherrypy._cpcgifs import FieldStorage
 	from cherrypy import HTTPError, NotFound, HTTPRedirect
@@ -228,6 +229,7 @@ class _Response(object):
 		self.cookie = SimpleCookie()
 
 		self.body = ""
+		self.time = time()
 		self.status = "200 OK"
 
 	def __repr__(self):
@@ -376,6 +378,7 @@ class Dispatcher(Component):
 
 		if filename and os.path.exists(filename):
 			serve_file(filename)
+			expires(3500*24*30)
 			self.send(Response(response), "response")
 		else:
 			channel, vpath = self.findChannel(request)
