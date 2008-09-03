@@ -273,38 +273,35 @@ class BaseSession(object):
 
 		from time import time
 
-		try:
-			if not self._dryrun:
-				if self._debug and (self._log is not None):
-					st = time()
-					self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
-						sql,
-						str(args),
-						str(kwargs)))
-				self.__execute__(sql, *args, **kwargs)
-				fields = self.__getFields__()
-				if fields == []:
-					r = []
-				else:
-					r = self.__buildResult__(fields)
-				if self._debug and (self._log is not None):
-					self._log.debug("Rows: %d" % self.getCursor().rowcount)
-					et = time()
-					self._log.debug("Result: %s" % str(r))
-					if (et - st) < 1:
-						self._log.debug("Time: %0.2f" % (et - st))
-					else:
-						self._log.debug("Time: %s+%s:%s:%s" % duration(et - st))
-				return r
+		if not self._dryrun:
+			if self._debug and (self._log is not None):
+				st = time()
+				self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
+					sql,
+					str(args),
+					str(kwargs)))
+			self.__execute__(sql, *args, **kwargs)
+			fields = self.__getFields__()
+			if fields == []:
+				r = []
 			else:
-				if self._debug and (self._log is not None):
-					self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
-						sql,
-						str(args),
-						str(kwargs)))
-				return []
-		except Exception, e:
-			raise Error("Error while executing query \"%s\": %s" % (sql, e))
+				r = self.__buildResult__(fields)
+			if self._debug and (self._log is not None):
+				self._log.debug("Rows: %d" % self.getCursor().rowcount)
+				et = time()
+				self._log.debug("Result: %s" % str(r))
+				if (et - st) < 1:
+					self._log.debug("Time: %0.2f" % (et - st))
+				else:
+					self._log.debug("Time: %s+%s:%s:%s" % duration(et - st))
+			return r
+		else:
+			if self._debug and (self._log is not None):
+				self._log.debug("SQL: %s Args: %s kwArgs: %s" % (
+					sql,
+					str(args),
+					str(kwargs)))
+			return []
 
 	def do(self, sql=None, *args, **kwargs):
 		"""Synonym of execute"""
