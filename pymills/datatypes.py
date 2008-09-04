@@ -217,9 +217,6 @@ class CaselessDict(dict):
 
 class Null(object):
 
-	def __init__(self, *args, **kwargs):
-		return None
-	
 	def __getattr__(self, mname):
 		return self
 
