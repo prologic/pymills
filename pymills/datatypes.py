@@ -171,15 +171,6 @@ class Queue(object):
 
 class CaselessList(list):
 
-#	def __new__(self):
-#		pass
-
-#	def update(self):
-#		pass
-
-#	def setdefault(self):
-#		pass
-
 	def __contains__(self, y):
 		return list.__contains__(self, y.lower())
 
@@ -208,15 +199,6 @@ class CaselessList(list):
 			list.remove(self, value)
 
 class CaselessDict(dict):
-
-#	def __new__(self):
-#		pass
-
-#	def update(self):
-#		pass
-
-#	def setdefault(self):
-#		pass
 
 	def __delitem__(self, key):
 		dict.__delitem__(self, key.lower())
