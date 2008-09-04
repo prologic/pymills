@@ -6,7 +6,7 @@
 
 """Test Suite
 
-Script to run the PyMills Test Suite.
+Main script to run the pymills Test Suite.
 """
 
 import sys
