@@ -472,3 +472,21 @@ class Cache(object):
 		if not args in self.cache:
 			self.cache[args] = self.f(*args)
 		return self.cache[args]
+
+def printdict(d, level=0):
+	"""printdict(d, level=0) -> None
+
+	Print the given dictionary, d. Recursively
+	print any nested dictionaries found. This
+	function is _NOT_ a pretty printer, and
+	prints a human-readable form of the given
+	dictionary rather than something that can
+	be re-read by Python.
+	"""
+
+	for k, v in d.iteritems():
+		if type(v) == dict:
+			print "%s: " % k
+			printdict(v, (level + 1))
+		else:
+			print "%s%s: %s" % (" " * level, k, v)
