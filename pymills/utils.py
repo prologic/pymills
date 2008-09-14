@@ -490,3 +490,18 @@ def printdict(d, level=0):
 			printdict(v, (level + 1))
 		else:
 			print "%s%s: %s" % (" " * level, k, v)
+
+def minmax(iter):
+	"""minmax(iter) -> (min, max)
+
+	Consume the interable iter and calculate and
+	return the min and max of each item.
+	"""
+
+	min = max = None
+	for item in iter:
+		if min is None or item < min:
+			min = item
+		if max is None or item > max:
+			max = item
+	return min, max
