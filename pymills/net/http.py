@@ -338,6 +338,9 @@ class Dispatcher(Component):
 				break
 			i += 1
 
+		if not candidates:
+			return None, []
+
 		i, candidate = candidates.pop()
 
 		if i < len(names):
