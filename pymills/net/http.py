@@ -350,15 +350,16 @@ class Dispatcher(Component):
 
 		vpath = []
 		channel = None
-		for channel in channels:
-			x = "%s:%s" % (candidate, channel)
-			if x in self.manager.channels:
-				if i < len(names) and channel == names[i]:
+		for ch in channels:
+			x = "%s:%s" % (candidate, ch)
+			found = x in self.manager.channels
+			if found:
+				if i < len(names) and ch == names[i]:
 					i += 1
 				channel = x
 				break
 
-		if channel:
+		if channel is not None:
 			if i < len(names):
 				vpath = names[i:]
 				vpath = [x.replace("%2F", "/") for x in vpath]
