@@ -18,6 +18,11 @@ import os
 import cgi
 import sys
 import stat
+import time
+import gzip
+import zlib
+import struct
+import cStringIO
 from urllib import unquote
 from urlparse import urlparse
 from cStringIO import StringIO
@@ -156,6 +161,15 @@ def dictform(form):
 			d[key] = value
 	return d
 
+def compressBuf(buf):
+	zbuf = cStringIO.StringIO()
+	zfile = gzip.GzipFile(mode="wb",  fileobj=zbuf, compresslevel=1)
+	zfile.write(buf)
+	zfile.close()
+	zbuf.flush()
+	zbuf.seek(0)
+	return zbuf
+
 ###
 ### Events
 ###
@@ -229,6 +243,7 @@ class _Response(object):
 			("Content-Type", "text/html")])
 		self.cookie = SimpleCookie()
 
+		self.gzip = False
 		self.body = ""
 		self.time = time()
 		self.status = "200 OK"
@@ -248,6 +263,14 @@ class _Response(object):
 					self.body.fileno())[stat.ST_SIZE]
 			self.headers["Content-Type"] = guess_type(self.body.name)[0] or \
 					"application/octet-stream"
+
+			if self.gzip:
+				self.body = compressBuf(self.body.read())
+				self.headers["Content-Encoding"] = "gzip"
+				self.body.seek(0, 2)
+				self.headers["Content-Length"] = self.body.tell()
+				self.body.seek(0)
+
 			return "%s %s\r\n%s" % (
 					SERVER_PROTOCOL,
 					self.status,
@@ -255,11 +278,15 @@ class _Response(object):
 		else:
 			self.headers["Content-Length"] = (
 					len(self.body) if type(self.body) == str else 0)
+
+			if self.gzip:
+				self.body = compressBuf(self.body).getvalue()
+				self.headers["Content-Encoding"] = "gzip"
+				self.headers["Content-Length"] = len(self.body)
+
 			return "%s %s\r\n%s%s" % (
-					SERVER_PROTOCOL,
-					self.status,
-					self.headers,
-					self.body or "")
+					SERVER_PROTOCOL, self.status,
+					self.headers, self.body)
 
 ###
 ### Dispatcher
@@ -530,6 +557,8 @@ class HTTP(Component):
 				return
 
 		response = _Response(sock)
+
+		response.gzip = "gzip" in headers.get("Accept-Encoding", "")
 
 		if cherrypy:
 			cherrypy.request = request
