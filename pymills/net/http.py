@@ -556,7 +556,7 @@ class HTTP(Component):
 
 		response = _Response(sock)
 
-		response.gzip = "gzip" in headers.get("Accept-Encoding", "")
+		response.gzip = "gzip" in request.headers.get("Accept-Encoding", "")
 
 		if cherrypy:
 			cherrypy.request = request
