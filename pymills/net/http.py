@@ -239,10 +239,10 @@ class _Response(object):
 		
 		self.headers = Headers([
 			("Server", SERVER_VERSION),
-			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z")),
-			("Content-Type", "text/html")])
+			("Date", strftime("%a, %d %b %Y %H:%M:%S %Z"))])
 		self.cookie = SimpleCookie()
 
+		self.stream = False
 		self.gzip = False
 		self.body = ""
 		self.time = time()
@@ -259,34 +259,36 @@ class _Response(object):
 			self.headers.add_header("Set-Cookie", v.OutputString())
 
 		if type(self.body) == file:
-			self.headers["Content-Length"] = os.fstat(
-					self.body.fileno())[stat.ST_SIZE]
-			self.headers["Content-Type"] = guess_type(self.body.name)[0] or \
-					"application/octet-stream"
+			cType = guess_type(self.body.name)[0] or "application/octet-stream"
 
 			if self.gzip:
 				self.body = compressBuf(self.body.read())
 				self.headers["Content-Encoding"] = "gzip"
 				self.body.seek(0, 2)
-				self.headers["Content-Length"] = self.body.tell()
+				cLen = self.body.tell()
 				self.body.seek(0)
+			else:
+				cLen = os.fstat(self.body.fileno())[stat.ST_SIZE]
 
-			return "%s %s\r\n%s" % (
-					SERVER_PROTOCOL,
-					self.status,
-					self.headers)
+			if cLen > BUFFER_SIZE:
+				body = self.body.read(BUFFER_SIZE)
+				self.stream = True
+			else:
+				body = self.body.read()
 		else:
-			self.headers["Content-Length"] = (
-					len(self.body) if type(self.body) == str else 0)
-
+			body = self.body
 			if self.gzip:
-				self.body = compressBuf(self.body).getvalue()
+				body = compressBuf(body).getvalue()
 				self.headers["Content-Encoding"] = "gzip"
-				self.headers["Content-Length"] = len(self.body)
+			cLen = len(body)
+			cType = self.headers.get("Content-Type", "text/html")
 
-			return "%s %s\r\n%s%s" % (
-					SERVER_PROTOCOL, self.status,
-					self.headers, self.body)
+		self.headers["Content-Type"] = cType
+		self.headers["Content-Length"] = cLen
+
+		return "%s %s\r\n%s%s" % (
+				SERVER_PROTOCOL, self.status,
+				self.headers, body or "")
 
 ###
 ### Dispatcher
@@ -478,13 +480,11 @@ class HTTP(Component):
 		
 	@listener("response")
 	def onRESPONSE(self, response):
-		if type(response.body) == file:
-			self.write(response.sock, response())
+		self.write(response.sock, response())
+		if response.stream:
 			self.push(Stream(response), "stream")
-		else:
-			self.write(response.sock, response())
-			if response.close:
-				self.close(response.sock)
+		elif response.close:
+			self.close(response.sock)
 
 	@listener("read")
 	def onREAD(self, sock, data):
