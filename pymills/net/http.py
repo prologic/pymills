@@ -28,7 +28,6 @@ from urlparse import urlparse
 from cStringIO import StringIO
 from time import time, strftime
 from Cookie import SimpleCookie
-from mimetypes import guess_type
 from traceback import format_exc
 
 try:
@@ -259,8 +258,7 @@ class _Response(object):
 			self.headers.add_header("Set-Cookie", v.OutputString())
 
 		if type(self.body) == file:
-			cType = guess_type(self.body.name)[0] or "application/octet-stream"
-
+			cType = self.headers.get("Content-Type", "application/octet-stream")
 			if self.gzip:
 				self.body = compressBuf(self.body.read())
 				self.headers["Content-Encoding"] = "gzip"
