@@ -367,10 +367,8 @@ class Component(Manager):
 		return "<%s/%s component (q: %d h: %d)>" % (name, channel, q, h)
 
 	def register(self, manager):
-		handlers = [x[1] for x in getmembers(
-			self, lambda x: ismethod(x) and
-			callable(x) and x.__name__.startswith("on") and
-			(getattr(x, "type", None) in ["filter", "listener"]))]
+		handlers = [x[1] for x in getmembers(self) if callable(x[1]) and
+				hasattr(x[1], "type")]
 
 		for handler in handlers:
 			if handler.channels:
