@@ -4,3 +4,4 @@ syntax: glob
 build
 dist
 pymills.egg-info
+docs/.build
