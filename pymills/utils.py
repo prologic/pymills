@@ -10,11 +10,7 @@ Various utility classes and functions.
 import os
 import re
 import sys
-import optparse
 from os.path import isfile
-from optparse import _match_abbrev
-
-from pymills.datatypes import CaselessDict
 
 
 class Error(Exception):
@@ -179,92 +175,6 @@ class State(object):
 			self._add(s)
 
 		self._state = s
-
-
-class CaselessOptionParser(optparse.OptionParser):
-	"""CaselessOptionParser() -> new Caseless OptionParser object
-
-	Create a new Caseless OptionParser object based on the
-	standard OptionParser provided by the Python's Standard
-	optparse Library. This allows you to have case-less
-	options, 	which means that -r and -R passed to a program
-	are equivilent.
-	"""
-
-	def _create_option_list(self):
-		self.option_list = []
-		self._short_opt = CaselessDict()
-		self._long_opt = CaselessDict()
-		self._long_opts = []
-		self.defaults = {}
-
-	def _match_long_opt(self, opt):
-		return _match_abbrev(opt.lower(), self._long_opt.keys())
-
-
-class Option(optparse.Option):
-	"""Option(...) -> new Option object
-
-	Creates a new option object based on the standard
-	Option provided by the Python's Standard opparse
-	Library which supports the "required" attribute.
-
-	This means you can specify that an option required
-	some value.
-	"""
-
-	ATTRS = optparse.Option.ATTRS + ["required"]
-
-	def _check_required(self):
-		if self.required and not self.takes_value():
-			raise optparse.OptionError(
-				"required flag set for option that doesn't take a value",
-				self)
-
-	# Make sure _check_required() is called from the constructor!
-	CHECK_METHODS = optparse.Option.CHECK_METHODS + [_check_required]
-
-	def process(self, opt, value, values, parser):
-		"""O.process(opt, value, values, parser) -> None
-
-		Process the option calling the base-classes's process
-		method, then adding this option to the parser's
-		option_seen dict.
-		"""
-
-		optparse.Option.process(self, opt, value, values, parser)
-		parser.option_seen[self] = 1
-
-
-class OptionParser(optparse.OptionParser):
-	"""OptionParser() -> new OptionParser object
-
-	Creates a new OptionParser object based on the standard
-	OptionParser provided by Python's Standard optparse
-	Library which implements the "required" attribute of
-	options checking that all options marked with required
-	are supplied.
-	"""
-
-	def _init_parsing_state(self):
-		optparse.OptionParser._init_parsing_state(self)
-		self.option_seen = {}
-
-	def check_values(self, values, args):
-		"""O.check_values(values, args) -> values, args
-
-		Check that all options marked with "required" are
-		supplied, return (values, args). If any options
-		marked with "required" is not supplied, raise
-		an error.
-		"""
-
-		for option in self.option_list:
-			if (isinstance(option, Option) and
-					option.required and
-					not option in self.option_seen):
-				self.error("%s not supplied" % option)
-		return (values, args)
 
 
 def getFiles(root, pattern=".*", tests=[isfile], **kwargs):
