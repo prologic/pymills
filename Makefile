@@ -2,29 +2,21 @@
 # Makefile for pymills
 # ~~~~~~~~~~~~~~~~~~~~
 
-PYTHON ?= python
+.PHONY: all clean todo lint test graph
 
-export PATH=$(shell echo "$$HOME/bin:$$PATH")
+all: clean lint test graph
 
-export PYTHONPATH=$(shell echo "$$PYTHONPATH"):$(shell python -c 'import os; print ":".join(os.path.abspath(line.strip()) for line in file("PYTHONPATH"))' 2>/dev/null)
+clean:
+	@rm -rf build dist pymills.egg-info
+	@find . -name '*.pyc' -delete
+	@find . -name '*.pyo' -delete
+	@find . -name '*~' -delete
 
-.PHONY: all clean clean-pyc codetags pyflakes test
-
-all: clean-pyc pyflakes test
-
-clean: clean-pyc
-	rm -rf build dist pymills.egg-info
-
-clean-pyc:
-	find . -name '*.pyc' -exec rm -f {} +
-	find . -name '*.pyo' -exec rm -f {} +
-	find . -name '*~' -exec rm -f {} +
-
-codetags:
-	@find_codetags.py
-
-pyflakes:
+lint:
 	@find . -name "*.py" -exec pyflakes {} +
 
 test:
 	@nosetests
+
+graph:
+	@sfood pymills -i -I tests -d -u 2> /dev/null | sfood-graph | dot -Tps | ps2pdf - > pymills.pdf
