@@ -19,4 +19,4 @@ test:
 	@nosetests
 
 graph:
-	@sfood pymills -i -I tests -d -u 2> /dev/null | sfood-graph | dot -Tps | ps2pdf - > pymills.pdf
+	@sfood pymills -i -I tests -d -u 2> /dev/null | sfood-graph | dot -Tps | ps2pdf - > docs/dependencies.pdf
