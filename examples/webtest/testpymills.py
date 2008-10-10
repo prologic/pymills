@@ -16,7 +16,7 @@ class Test(Component):
 
 	@listener("request")
 	def onREQUEST(self, request, response):
-		response.body = "OK"
+		response.body = "Hello World!"
 		self.send(Response(response), "response")
 
 class WebServer(TCPServer, HTTP): pass
@@ -26,7 +26,7 @@ class WebServer(TCPServer, HTTP): pass
 ###
 
 def main():
-	server = WebServer(8000)
+	server = WebServer(10000)
 	event.manager += server
 	event.manager += Test()
 
