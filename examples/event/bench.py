@@ -47,28 +47,40 @@ def parse_options():
 
 	parser.add_option("-l", "--listen",
 			action="store_true", default=False, dest="listen",
-			help="Listen on 0.0.0.0:8000 (UDP) (test remote events)")
+			help="Listen on 0.0.0.0:8000 (UDP) to test remote events")
+
 	parser.add_option("-b", "--bind",
-			action="store", default="0.0.0.0", dest="bind",
-			help="Bind to address:[port] (UDP) (test remote events)")
+			action="store", type="string", default="0.0.0.0", dest="bind",
+			help="Bind to address:[port] (UDP) to test remote events")
+
 	parser.add_option("-c", "--concurrency",
 			action="store", type="int", default=1, dest="concurrency",
-			help="Set concurrency level. (Default: 1)")
+			help="Set concurrency level")
+
 	parser.add_option("-t", "--time",
 			action="store", type="int", default=0, dest="time",
 			help="Stop after specified elapsed seconds")
+
 	parser.add_option("-e", "--events",
 			action="store", type="int", default=0, dest="events",
 			help="Stop after specified number of events")
+
 	parser.add_option("-p", "--profile",
 			action="store_true", default=False, dest="profile",
 			help="Enable execution profiling support")
+
 	parser.add_option("-m", "--mode",
-			action="store", default="sync", dest="mode",
-			help="Operation mode (sync, tpuy). Default: sync")
+			action="store", type="choice", default="sync", dest="mode",
+			choices=["sync", "speed", "latency"],
+			help="Operation mode")
+
+	parser.add_option("-f", "--fill",
+			action="store", type="int", default=0, dest="fill",
+			help="No. of dummy events to fill queue with")
+
 	parser.add_option("-d", "--debug",
 			action="store_true", default=False, dest="debug",
-			help="Enable debug mode. (Default: False)")
+			help="Enable debug mode")
 
 	opts, args = parser.parse_args()
 
@@ -97,6 +109,7 @@ class Stop(Event): pass
 class Term(Event): pass
 class Hello(Event): pass
 class Received(Event): pass
+class Foo(Event): pass
 
 ###
 ### Components
@@ -120,12 +133,27 @@ class Receiver(Component):
 	def onHELLO(self, message=""):
 		self.push(Received(message), "received", self.channel)
 
-class Test(Component):
+class SpeedTest(Component):
 
 	@listener("hello")
 	def onHELLO(self, message):
 		self.push(Hello(message), "hello", self.channel)
 
+class LatencyTest(Component):
+
+	t = None
+
+	@listener("received")
+	def onRECEIVED(self, message=""):
+		print "Latency: %0.2f ms" % ((time.time() - self.t) * 1000)
+		time.sleep(1)
+		self.push(Hello("hello"), "hello", self.channel)
+
+	@listener("hello")
+	def onHELLO(self, message=""):
+		self.t = time.time()
+		self.push(Received(message), "received", self.channel)
+	
 class State(Component):
 
 	done = False
@@ -194,13 +222,17 @@ def main():
 	else:
 		bridge = DummyBridge()
 
-	if opts.mode.lower() == "tput":
-		print "Setting up Test..."
+	if opts.mode.lower() == "speed":
+		print "Setting up speed Test..."
 		if opts.concurrency > 1:
 			for c in xrange(int(opts.concurrency)):
-				event.manager ++ Test(channel=c)
+				event.manager += SpeedTest(channel=c)
 		else:
-			event.manager += Test()
+			event.manager += SpeedTest()
+		monitor.sTime = time.time()
+	if opts.mode.lower() == "latency":
+		print "Setting up latency Test..."
+		event.manager += LatencyTest()
 		monitor.sTime = time.time()
 	elif opts.listen:
 		print "Setting up Receiver..."
@@ -242,6 +274,9 @@ def main():
 		try:
 			manager.flush()
 			bridge.poll()
+
+			for i in xrange(opts.fill):
+				event.manager.push(Foo(), "foo")
 
 			if opts.events > 0 and monitor.events > opts.events:
 				manager.send(Stop(), "stop")
