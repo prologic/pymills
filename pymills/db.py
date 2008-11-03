@@ -167,8 +167,8 @@ class BaseSession(object):
 
 		self._cu = self.newCursor()
 
-	def __getFields__(self):
-		"""C.__getFields__() -> [field1, field2, ...]
+	def getFields(self):
+		"""C.getFields() -> [field1, field2, ...]
 
 		Get a list of field names for the current result set
 		stored in the cursor's .description. If there are
@@ -176,7 +176,7 @@ class BaseSession(object):
 		"""
 
 		if self._cu.description is not None:
-			return map(lambda x: x[0], self._cu.description)
+			return [x[0] for x in self._cu.description]
 		else:
 			return []
 
@@ -281,7 +281,7 @@ class BaseSession(object):
 					str(args),
 					str(kwargs)))
 			self.__execute__(sql, *args, **kwargs)
-			fields = self.__getFields__()
+			fields = self.getFields()
 			if fields == []:
 				r = []
 			else:
