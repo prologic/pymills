@@ -299,40 +299,57 @@ def notags(str):
 
 	return newStr
 
-_proc_status = "/proc/%d/status" % os.getpid()
-_scale = {"KB": 1024.0, "MB": 1024.0 * 1024.0}
+class MemoryStats(object):
 
+	scale = {"KB": 1024.0, "MB": 1024.0 * 1024.0}
 
-def _VmB(VmKey):
-	try:
-		t = open(_proc_status)
-		v = t.read()
-		t.close()
-	except:
-		return 0.0
-	i = v.index(VmKey)
-	v = v[i:].split(None, 3)
-	if len(v) < 3:
-		return 0.0
-	return float(v[1]) * _scale[v[2].upper()]
+	def __init__(self, pid=os.getpid()):
+		self.filename = "/proc/%d/status" % pid
 
+	def __getitem__(self, k):
+		try:
+			t = open(self.filename, "r")
+			v = t.read()
+			t.close()
+		except:
+			return 0.0
+		i = v.index(k)
+		v = v[i:].split(None, 3)
+		if len(v) < 3:
+			return 0.0
+		return float(v[1]) * self.scale[v[2].upper()]
 
+	def __call__(self):
+		return self["VmSize"], self["VmRSS"], self["VmStk"]
+
+	@property
+	def size(self):
+		return self["VmSize"]
+	
+	@property
+	def rss(self):
+		return self["VmRSS"]
+	
+	@property
+	def stack(self):
+		return self["VmStk"]
+		
 def memory(since=0.0):
 	"Return memory usage in bytes."
 
-	return _VmB("VmSize:") - since
+	return MemoryStats().size - since
 
 
 def resident(since=0.0):
 	"Return resident memory usage in bytes."
 
-	return _VmB("VmRSS:") - since
+	return MemoryStats().rss - since
 
 
 def stacksize(since=0.0):
 	"Return stack size in bytes."
 
-	return _VmB("VmStk:") - since
+	return MemoryStats().stack - since
 
 
 def decodeHTML(s=""):
