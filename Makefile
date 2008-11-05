@@ -12,4 +12,9 @@ checks:
 	@find . -name "*.py" -exec pyflakes {} +
 
 tests:
-	@nosetests --with-coverage
+	@nosetests \
+		--with-coverage \
+		--cover-package=pymills \
+		--cover-erase \
+		--cover-inclusive \
+		--with-doctest
