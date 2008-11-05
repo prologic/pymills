@@ -4,9 +4,7 @@
 
 """Teste Suite
 
-Test Suite for PyMills. This will test every module
-in PyMills. As much as possible, all functionality
+Test Suite for pymills. This will test every module
+in pymills. As much as possible, all functionality
 is tested in each module.
 """
-
-__all__ = ("run",)
