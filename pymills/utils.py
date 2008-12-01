@@ -178,7 +178,7 @@ class State(object):
 
 
 def getFiles(root, pattern=".*", tests=[isfile], **kwargs):
-	"""getFiles(root, pattern=".*", tests=[isfile], f**kwargs) -> list of files
+	"""getFiles(root, pattern=".*", tests=[isfile], **kwargs) -> list of files
 
 	Return a list of files in the specified path (root)
 	applying the predicates listed in tests returning
