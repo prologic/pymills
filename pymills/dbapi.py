@@ -165,27 +165,22 @@ class Records(object):
     def __len__(self):
         "x.__len__() <==> len(x)"
 
-        return self.cursor.rowcount
+        rows = self.cursor.rowcount
+        if rows == -1:
+            return 0
+        else:
+            return rows
 
     def next(self):
         "x.next() -> the next value, or raise StopIteration"
 
         row = self.cursor.fetchone()
         if row:
-            return Record(self, zip(self.fields, row))
+            return Record(zip(self.fields, row))
         else:
             raise StopIteration
 
 class Record(odict):
-
-    def __init__(self, records, data):
-        "initializes x; see x.__class__.__doc__ for signature"
-
-        super(Record, self).__init__()
-
-        self.records = records
-
-        self.update(data)
 
     def __repr__(self):
         return "<%s (%r)>" % (self.__class__.__name__, self.keys())
@@ -194,14 +189,5 @@ class Record(odict):
         if type(k) == tuple:
             k = k[0]
 
-        if isinstance(v, self.records.cursor.__class__):
-            if self.records.cursor.description is not None:
-                fields = map(lambda x: x[0], v.description)
-                v = Records(self.records, v)
-
         super(Record, self).__setitem__(k, v)
         setattr(self, k, v)
-
-    def __delitem__(self, k):
-        super(Record, self).__delitem__(k)
-        delattr(self, k)
