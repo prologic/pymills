@@ -2,7 +2,12 @@ syntax: glob
 
 *.pyc
 *.pyo
+tmp
 build
 dist
+.coverage*
+coverage
+docs/build
+docs/source/api
 pymills.egg-info
-docs/.build
+__version__.py

@@ -1,28 +1,62 @@
 #!/usr/bin/env python
 
-from setuptools import setup, find_packages
+try:
+    from setuptools import setup, find_packages
+    HAS_SETUPTOOLS = True
+except ImportError:
+    from distutils.core import setup
+    HAS_SETUPTOOLS = False
 
-import pymills as pkg
+if not HAS_SETUPTOOLS:
+    import os
+    from distutils.util import convert_path
+
+    def find_packages(where=".", exclude=()):
+        """Borrowed directly from setuptools"""
+
+        out = []
+        stack = [(convert_path(where), "")]
+        while stack:
+            where, prefix = stack.pop(0)
+            for name in os.listdir(where):
+                fn = os.path.join(where, name)
+                if ("." not in name and os.path.isdir(fn) and 
+                        os.path.isfile(os.path.join(fn, "__init__.py"))):
+                    out.append(prefix+name)
+                    stack.append((fn, prefix + name + "."))
+
+        from fnmatch import fnmatchcase
+        for pat in list(exclude) + ["ez_setup"]:
+            out = [item for item in out if not fnmatchcase(item, pat)]
+
+        return out
+
+from pymills.version import forget_version, get_version, remember_version
+
+forget_version()
+version = remember_version()
 
 setup(
-		name=pkg.__name__,
-		version=pkg.__version__,
-		description=pkg.__description__,
-		long_description=pkg.__doc__,
-		author=pkg.__author__,
-		author_email=pkg.__author_email__,
-		maintainer=pkg.__maintainer__,
-		maintainer_email=pkg.__maintainer_email__,
-		url=pkg.__url__,
-		download_url=pkg.__download_url__,
-		classifiers=pkg.__classifiers__,
-		license=pkg.__license__,
-		keywords=pkg.__keywords__,
-		platforms=pkg.__platforms__,
-		packages=find_packages(),
-		install_requires=pkg.__install_requires__,
-		setup_requires=pkg.__setup_requires__,
-		extras_require=pkg.__extras_require__,
-		entry_points=pkg.__entry_points__,
-		package_data=pkg.__package_data__,
+    name="pymills",
+    version=get_version(),
+    description="Mills Python Library",
+    long_description=open("README", "r").read(),
+    author="James Mills",
+    author_email="James Mills, prologic at shortcircuit dot net dot au",
+    url="http://bitbucket.org/prologic/pymills/",
+    download_url="http://bitbucket.org/prologic/pymills/downloads/",
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 2.6",
+        "Topic :: Database",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    license="MIT",
+    keywords="James Mills Python Library Utilities Modules",
+    platforms="POSIX",
+    packages=find_packages("."),
 )
