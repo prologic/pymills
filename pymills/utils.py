@@ -351,36 +351,6 @@ def stacksize(since=0.0):
 
 	return MemoryStats().stack - since
 
-
-def decodeHTML(s=""):
-	"""decodeHTML(s) -> str
-
-	Decode HTML entities to their ASCII equivilent.
-	"""
-
-	return s.replace("&amp;", "&") \
-			.replace("&lt;", "<") \
-			.replace("&gt;", ">") \
-			.replace("&quot;", "\"") \
-			.replace("&#039;", "'") \
-			.replace("&mdash", "--")
-
-
-def encodeHTML(s=""):
-	"""encodeHTML(s) -> str
-
-	Encode HTML special characters from their ASCII form to
-	HTML entities.
-	"""
-
-	return s.replace("&", "&amp;") \
-			.replace("<", "&lt;") \
-			.replace(">", "&gt;") \
-			.replace("\"", "&quot;") \
-			.replace("'", "&#039;") \
-			.replace("--", "&mdash")
-
-
 def MixIn(cls, mixin, last=False):
 	if mixin not in cls.__bases__:
 		if last:
