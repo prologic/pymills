@@ -20,4 +20,8 @@ def std(xs):
     m = mean(xs)
     dxs = (x - m for x in xs)
     qdxs = (x * x for x in dxs)
-    return sqrt(sum(qdxs) / (len(qdxs) - 1))
+    s = l = 0
+    for i in qdxs:
+        s += i
+        l += 1
+    return sqrt(s / (l - 1))
