@@ -14,7 +14,7 @@ import string
 from time import time
 from os.path import isfile
 from itertools import chain
-from random import seed, choice, shuffle
+from random import seed, choice, sample
 
 
 class Error(Exception):
@@ -165,9 +165,7 @@ def mkpasswd(length=8, digits=2, upper=2, lower=2):
         )
     )
 
-    shuffle(password)
-
-    return "".join(password)
+    return "".join(sample(password, len(password)))
 
 
 def validateEmail(email):
