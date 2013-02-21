@@ -13,7 +13,8 @@ import sys
 import string
 from time import time
 from os.path import isfile
-from random import seed, choice
+from itertools import chain
+from random import seed, choice, shuffle
 
 
 class Error(Exception):
@@ -153,24 +154,20 @@ def mkpasswd(length=8, digits=2, upper=2, lower=2):
 
     seed(time())
 
-    charset = string.ascii_letters + string.digits
-    charset = charset.strip("oO0")
+    letters = string.letters.strip("oO")
 
-    password = ""
+    password = list(
+        chain(
+            (choice(string.digits) for _ in range(digits)),
+            (choice(string.uppercase) for _ in range(upper)),
+            (choice(string.lowercase) for _ in range(lower)),
+            (choice(letters) for _ in range((length - digits - upper - lower)))
+        )
+    )
 
-    while True:
-        password = "".join(choice(charset) for i in range(length))
+    shuffle(password)
 
-        if len([x for x in password if x.isupper()]) < upper:
-            continue
-        elif len([x for x in password if x.islower()]) < lower:
-            continue
-        elif len([x for x in password if x.isdigit()]) < digits:
-            continue
-        else:
-            break
-
-    return password
+    return "".join(password)
 
 
 def validateEmail(email):
