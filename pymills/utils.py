@@ -154,13 +154,15 @@ def mkpasswd(length=8, digits=2, upper=2, lower=2):
 
     seed(time())
 
-    letters = string.letters.strip("oO")
+    lowercase = string.lowercase.translate(None, "o")
+    uppercase = string.uppercase.translate(None, "O")
+    letters = "{0:s}{1:s}".format(lowercase, uppercase)
 
     password = list(
         chain(
+            (choice(uppercase) for _ in range(upper)),
+            (choice(lowercase) for _ in range(lower)),
             (choice(string.digits) for _ in range(digits)),
-            (choice(string.uppercase) for _ in range(upper)),
-            (choice(string.lowercase) for _ in range(lower)),
             (choice(letters) for _ in range((length - digits - upper - lower)))
         )
     )
