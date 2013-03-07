@@ -2,7 +2,7 @@
 
 
 def enum(*names):
-    """A clean immutable symbolic enumeration with qualified value access."""
+    """A true immutable symbolic enumeration with qualified value access."""
 
     class EnumValue(object):
 
