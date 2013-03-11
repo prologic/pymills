@@ -4,6 +4,7 @@ from os import path
 from crypt import crypt
 from re import compile as compile_regex
 
+
 def check_auth(user, password):
     """Perform authentication against the local systme.
 
