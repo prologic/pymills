@@ -27,9 +27,9 @@ def itime():
     return beats
 
 
-def test():
+def main():
     print("@{0:0.3f}".format(itime()))
 
 
 if __name__ == "__main__":
-    test()
+    main()

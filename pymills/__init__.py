@@ -6,11 +6,11 @@
 
 Mills Python Library
 
-:copyright: CopyRight (C) 2004-2010 by James Mills
+:copyright: CopyRight (C) 2004-2013 by James Mills
 :license: MIT (See: LICENSE)
 """
 
-try:
-    from __version__ import version as __version__
-except ImportError:
-    __version__ = "unknown"
+__author__ = "James Mills"
+__date__ = "20th November 2013"
+
+from .version import version as __version__  # noqa

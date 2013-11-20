@@ -22,7 +22,7 @@ class Error(Exception):
 
 
 class State(object):
-    """State() -> new state object
+    """Create new State object
 
     Creates a new state object that is suitable
     for holding different states of an application.
@@ -61,11 +61,11 @@ class State(object):
 
     def __lt__(self, s):
         return s in self._states and self._state == s and \
-                self._states[s] < self._states[self._state]
+            self._states[s] < self._states[self._state]
 
     def __gr__(self, s):
         return s in self._states and self._state == s and \
-                self._states[s] > self._states[self._state]
+            self._states[s] > self._states[self._state]
 
     def _add(self, s):
         self._states[s] = self._next
@@ -91,8 +91,9 @@ def getFiles(root, pattern=".*", tests=[isfile], **kwargs):
     applying the predicates listed in tests returning
     only the files that match the pattern. Some optional
     kwargs can be specified:
-     * full=True        (Return full paths)
-     * recursive=True   (Recursive mode)
+
+    * full=True        (Return full paths)
+    * recursive=True   (Recursive mode)
     """
 
     def test(file, tests):
@@ -178,14 +179,13 @@ def validateEmail(email):
     """
 
     return len(email) > 7 and \
-            re.match(
-                    "^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\."
-                    "([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$",
-                    email) is not None
+        re.match(
+            "^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\."
+            "([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$",
+            email) is not None
 
 
-def safe__import__(moduleName, globals=globals(),
-        locals=locals(), fromlist=[]):
+def safe__import__(moduleName, globals=globals(), locals=locals(), fromlist=[]):
     """Safe imports: rollback after a failed import.
 
     Initially inspired from the RollbackImporter in PyUnit,
