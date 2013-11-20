@@ -2,12 +2,13 @@ syntax: glob
 
 *.pyc
 *.pyo
+*.xml
+.tox
 tmp
-build
 dist
-.coverage*
+build
+.cache
 coverage
+*egg-info
+.coverage*
 docs/build
-docs/source/api
-pymills.egg-info
-__version__.py
