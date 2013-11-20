@@ -1,6 +1,7 @@
 
 from pymills.dbapi import Connection
 
+
 def test_sqlite():
     db = Connection("sqlite", ":memory:")
 
