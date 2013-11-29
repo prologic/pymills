@@ -35,6 +35,10 @@ others are borrowed from other sources and attributed.
    :target: https://jenkins.shiningpanda-ci.com/prologic/job/pymills/
    :alt: Build Status
 
+.. image:: https://requires.io/bitbucket/prologic/pymills/requirements.png?branch=default
+   :target: https://requires.io/bitbucket/prologic/pymills/requirements/?branch=default
+   :alt: Requirements Status
+
 
 Installation
 ------------
